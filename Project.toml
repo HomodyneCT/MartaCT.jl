@@ -1,0 +1,21 @@
+name = "Marta"
+uuid = "1b4a4c30-53cc-4a73-9c44-e0ae6415a229"
+authors = ["Nicola Mosco <nicola.mosco@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+CurveFit = "5a033b19-8c74-5913-a970-47c3779ef25c"
+FFTW = "7a1cc6ca-52ef-59f5-83cd-3a7055c09341"
+IntervalSets = "8197267c-284f-5f27-9208-e0e47529a953"
+IterTools = "c8e1da08-722c-5040-9ed9-7db0dc04731e"
+LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
+Mmap = "a63ad114-7e13-5084-954f-fe012c677804"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
+Reexport = "189a3867-3050-52da-a836-e630ba90ab69"
+Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
+
+[compat]
+julia = "1.5"

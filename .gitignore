@@ -1,0 +1,65 @@
+# Compiled source #
+###################
+*.com
+*.class
+*.dll
+*.exe
+*.o
+*.so
+*.pyc
+
+# Backup files #
+################
+*.bak
+*~
+
+# Packages #
+############
+# it's better to unpack these files and commit the raw source
+# git has its own built in compression methods
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+*.sqlite
+*.aux
+*.bbl
+*.blg
+*.synctex.gz
+
+# OS generated files #
+######################
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Directories to be ignored #
+#############################
+.idea/
+__pycache__/
+doc/
+
+*.json
+.MathematicaResources
+.project
+docbuild.xml
+*.toc
+*.idx
+.dropbox
+.ipynb_checkpoints/
+Makefile
+.tags
+.vscode/
