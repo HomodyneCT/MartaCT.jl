@@ -26,7 +26,7 @@ include("CTScan.jl")
 include("CTPlots.jl")
 
 @reexport using .Applicative, .Monads, .Info, .Geometry, .CTIO, .CTImages
-@reexport using .AbstractAlgorithms, .RadonAlgorithm,
+@reexport using .AbstractAlgorithms, .RadonAlgorithm
 @reexport using .TestImages, .Calibration, .CTScan, .CTPlots
 
 end # module
