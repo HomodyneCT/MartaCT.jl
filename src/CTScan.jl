@@ -1,4 +1,4 @@
-module CTScanner
+module CTScan
 
 Base.Experimental.@optlevel 0
 
