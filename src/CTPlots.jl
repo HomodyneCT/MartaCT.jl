@@ -13,7 +13,7 @@ using ..Monads
 using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn
 using ..CTImages: ctimage, ctsinogram, cttomogram
 using ..TestImages: AbstractGrayScale, ImageParams, gray_scale_indices
-using ..CTScan: AbstractCTScan
+using ..CTScan: AbstractCTScanner
 
 
 """
@@ -114,7 +114,7 @@ end
 end
 
 
-@recipe function f(gst::AbstractCTScan, s::Symbol)
+@recipe function f(gst::AbstractCTScanner, s::Symbol)
     gst, Val(s)
 end
 
@@ -122,7 +122,7 @@ end
 for (nm, ctf) ∈ pairs(ctfn)
     v = Val{nm}
     @eval begin
-        @recipe function f(gst::AbstractCTScan, ::$v)
+        @recipe function f(gst::AbstractCTScanner, ::$v)
             mjoin($ctf(gst))
         end
     end
@@ -130,27 +130,27 @@ end
 
 
 """
-    plot_image(gst::AbstractCTScan)
+    plot_image(gst::AbstractCTScanner)
 
 Plot input image created for the test `gst`.
 """
-plot_image(gst::AbstractCTScan; kwargs...) = plot(gst, :image; kwargs...)
+plot_image(gst::AbstractCTScanner; kwargs...) = plot(gst, :image; kwargs...)
 
 
 """
-    plot_sinogram(gst::AbstractCTScan)
+    plot_sinogram(gst::AbstractCTScanner)
 
 Plot the sinogram computed for the test `gst`.
 """
-plot_sinogram(gst::AbstractCTScan; kwargs...) = plot(gst, :sinog; kwargs...)
+plot_sinogram(gst::AbstractCTScanner; kwargs...) = plot(gst, :sinog; kwargs...)
 
 
 """
-    plot_tomogram(gst::AbstractCTScan)
+    plot_tomogram(gst::AbstractCTScanner)
 
 Plot the reconstructed image for the test `gst`.
 """
-plot_tomogram(gst::AbstractCTScan; kwargs...) = plot(gst, :tomog; kwargs...)
+plot_tomogram(gst::AbstractCTScanner; kwargs...) = plot(gst, :tomog; kwargs...)
 
 
 function _get_options(options, i)
