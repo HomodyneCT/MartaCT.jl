@@ -9,7 +9,6 @@ include("basic_definitions.jl")
 include("Applicative.jl")
 include("Monads.jl")
 include("TypeDict.jl")
-include("SpecialFunctions.jl")
 include("CTIO.jl")
 include("Info.jl")
 include("Interpolation.jl")
@@ -30,4 +29,4 @@ include("CTPlots.jl")
 @reexport using .AbstractAlgorithms, .RadonAlgorithm,
 @reexport using .TestImages, .Calibration, .CTScan, .CTPlots
 
-end  # module
+end # module
