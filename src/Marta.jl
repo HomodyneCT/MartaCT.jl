@@ -29,4 +29,5 @@ include("CTPlots.jl")
 @reexport using .AbstractAlgorithms, .RadonAlgorithm
 @reexport using .TestImages, .Calibration, .CTScan, .CTPlots
 
+include("precompile_includer.jl")
 end # module

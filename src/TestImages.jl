@@ -494,13 +494,16 @@ end
 
 abstract type AbstractGrayScale end
 
+size(gs::AbstractGrayScale) = size(gs.image)
+size(gs::AbstractGrayScale, d::Integer) = size(gs.image, d)
+
 struct GrayScaleLine{T<:Real} <: AbstractGrayScale
     params::ImageParams{T}
     image::CTImage{Matrix{T}}
 end
 
 
-function Base.getproperty(grimg::GrayScaleLine, s::Symbol)
+function getproperty(grimg::GrayScaleLine, s::Symbol)
     s ∈ fieldnames(GrayScaleLine) && return getfield(grimg, s)
     s ≡ :width && return grimg.cols
     s ≡ :height && return grimg.rows
@@ -694,7 +697,7 @@ struct WhiteRect{T<:Real} <: AbstractGrayScale
 end
 
 
-function Base.getproperty(grimg::WhiteRect, s::Symbol)
+function getproperty(grimg::WhiteRect, s::Symbol)
     s ∈ fieldnames(WhiteRect) && return getfield(grimg, s)
     s ≡ :width && return grimg.cols
     s ≡ :height && return grimg.rows
@@ -728,9 +731,6 @@ function WhiteRect(geometry::AbstractParallelBeamGeometry; kwargs...)
         kwargs...
     )
 end
-
-
-size(grsc::AbstractGrayScale) = size(grsc.image)
 
 
 plateau_length(grsc::GrayScalePyramid) = round(Int, grsc.width * grsc.plateau)

@@ -179,45 +179,44 @@ function similar(gst::CTScanner, data::Optional{<:GrayScaleData} = nothing)
 end
 
 
-# """
-#     struct FBPScanner{M,G} <: AbstractCTScanner{M,G}
-
-# Struct for test using Radon transform and FBP.
-# """
-# struct FBPScanner{M,G} <: AbstractCTScanner{M,G}
-#     name::String
-#     study_id::String
-#     geometry::G
-#     data::GrayScaleData{M}
-
-#     """
-#         FBPScanner{M,G}(par::G[, data::GrayScaleData]; name::Optional{String} = "FBP", study_id::Optional{String} = "Unknown") where {T,G}
-
-#     Construct `FBPScanner` from geometry parameters.
-#     """
-#     function FBPScanner{M,G}(
-#         par::G,
-#         data::GrayScaleData{M} = GrayScaleData(M);
-#         name::Optional{String} = nothing,
-#         study_id::Optional{String} = nothing,
-#     ) where {M<:AbstractArray,G<:AbstractGeometry}
-#         new(maybe("FBP", name), maybe("Unknown", study_id), par, data)
-#     end
-# end
-
-
 """
-    FBPScanner(geometry::AbstractGeometry; name::Optional{String}, study_id::Optional{String})
+    FBPScanner(
+        geometry::AbstractGeometry,
+        data::GrayScaleData;
+        name::Optional{String},
+        study_id::Optional{String}
+    )
 
 Construct a `FBPScanner` object.
 """
-FBPScanner(
+function FBPScanner(
     geometry::G,
     data::GrayScaleData{M} = GrayScaleData(datatype(G));
     name::Optional{_CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
-) where {G<:AbstractGeometry,M<:AbstractArray} =
+) where {G<:AbstractGeometry,M<:AbstractArray}
     FBPScanner{M}(FBP(geometry), data; name, study_id)
+end
+
+
+"""
+    FBPScanner(
+        geometry::AbstractGeometry,
+        image::AbstractGrayScale;
+        name::Optional{String},
+        study_id::Optional{String}
+    )
+
+Construct a `FBPScanner` object.
+"""
+function FBPScanner(
+    geometry::AbstractGeometry,
+    gs::AbstractGrayScale;
+    name::Optional{_CTScannerNameType} = nothing,
+    study_id::Optional{String} = nothing,
+)
+    FBPScanner(geometry, gs.image; name, study_id)
+end
 
 
 """
@@ -247,42 +246,6 @@ function copy(gst::FBPScanner)
 end
 
 
-# function similar(
-#     gst::FBPScanner{M,G},
-#     data::GrayScaleData{M} = GratScaleData(M),
-# ) where {M,G<:AbstractGeometry}
-#     FBPScanner(
-#         gst.geometry,
-#         data;
-#         gst.name,
-#         gst.study_id,
-#     )
-# end
-# function similar(
-#     gst::FBPScanner{M},
-#     data::GrayScaleData{M} = GrayScaleData(M),
-# ) where {M}
-#     FBPScanner(
-#         gst.algorithm,
-#         data;
-#         gst.name,
-#         gst.study_id,
-#     )
-# end
-
-
-# function similar(
-#     gst::FBPScanner{M,G},
-#     g::AbstractGeometry,
-#     data::Optional{GrayScaleData} = nothing,
-# ) where {M,G<:AbstractGeometry}
-#     FBPScanner(
-#         g,
-#         maybe(gst.data, data);
-#         gst.name,
-#         gst.study_id,
-#     )
-# end
 function similar(
     gst::FBPScanner,
     g::AbstractGeometry,
@@ -297,13 +260,6 @@ function similar(
 end
 
 
-# function show(io::IO, gst::FBPScanner)
-#     print(
-#         io,
-#         """*** $(gst.name) Test ***
-# $(gst.geometry)""",
-#     )
-# end
 function show(io::IO, gst::CTScanner)
     print(
         io,
@@ -324,15 +280,24 @@ end
 
 
 """
-    project_image(gst::AbstractCTScanner; <keyword arguments>)
+    project_image(gst::AbstractCTScanner, alg::Optional{A}; <keyword arguments>)
+        where {A <: AbstractProjectionAlgorithm}
 
 Compute sinogram for the test `gst`.
 
 Keyword arguments depend on the algorithm employed, please see the relative
 documentation.
 """
-function project_image(gst::AbstractCTScanner, alg::AbstractProjectionAlgorithm; kwargs...)
-    sinog = project_image(ctimage(gst), alg; kwargs...)
+function project_image(
+    gst::AbstractCTScanner,
+    alg::Optional{A} = nothing;
+    kwargs...
+) where {A <: AbstractProjectionAlgorithm}
+    sinog = project_image(
+        ctimage(gst),
+        isnothing(alg) ? Radon(gst.geometry) : alg;
+        kwargs...
+    )
     similar(gst, similar(gst.data, sinog))
 end
 
