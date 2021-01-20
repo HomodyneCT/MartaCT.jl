@@ -44,6 +44,7 @@ Abstract type for tests in this suite.
 """
 abstract type AbstractCTScanner end
 
+const CTScannerNameType = Union{Symbol,String}
 
 function rename(gst::AbstractCTScanner, name::AbstractString)
     typeof(gst)(gst.geometry, gst.data; name)
@@ -86,14 +87,11 @@ end
 transform_data(f::Function, gst::AbstractCTScanner, s::Symbol) =
     transform_data(f, gst, Val(s))
 
-
-const _CTScannerNameType = Union{Symbol,String}
-
 struct CTScanner{
     Alg <: AbstractReconstructionAlgorithm,
     M <: AbstractArray{<:Real}
 } <: AbstractCTScanner
-    name::_CTScannerNameType
+    name::CTScannerNameType
     study_id::String
     algorithm::Alg
     data::GrayScaleData{M}
@@ -110,7 +108,7 @@ struct CTScanner{
     function CTScanner{A,M}(
         alg::A,
         data::GrayScaleData{M} = GrayScaleData(M);
-        name::Optional{_CTScannerNameType} = nothing,
+        name::Optional{CTScannerNameType} = nothing,
         study_id::Optional{String} = nothing,
     ) where {A<:AbstractReconstructionAlgorithm,M<:AbstractArray{<:Real}}
         new(maybe(nameof(A), name), maybe("Unknown", study_id), alg, data)
@@ -163,7 +161,7 @@ Construct a `FBPScanner` object.
 function FBPScanner(
     geometry::G,
     data::GrayScaleData{M} = GrayScaleData(datatype(G));
-    name::Optional{_CTScannerNameType} = nothing,
+    name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
 ) where {G<:AbstractGeometry,M<:AbstractArray}
     FBPScanner{M}(FBP(geometry), data; name, study_id)
@@ -183,7 +181,7 @@ Construct a `FBPScanner` object.
 function FBPScanner(
     geometry::AbstractGeometry,
     gs::AbstractGrayScale;
-    name::Optional{_CTScannerNameType} = nothing,
+    name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
 )
     FBPScanner(geometry, gs.image; name, study_id)
@@ -201,7 +199,7 @@ Construct a `FBPScanner` object.
 """
 function FBPScanner(
     gs::AbstractGrayScale;
-    name::Optional{_CTScannerNameType} = nothing,
+    name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
 )
     FBPScanner(ParallelBeamGeometry(gs), gs; name, study_id)
@@ -215,7 +213,7 @@ Construct a `FBPScanner` object from another `AbstractCTScanner` object. This al
 """
 function FBPScanner(
     gst::AbstractCTScanner;
-    name::Optional{_CTScannerNameType} = nothing,
+    name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
 )
     data = GrayScaleData(ctimage(gst), ctsinogram(gst), nothing)
