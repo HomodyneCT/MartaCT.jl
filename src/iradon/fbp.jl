@@ -330,7 +330,7 @@ iradon_threaded(f::CTFilterOrFunc; kwargs...) =
 # end
 
 
-function iradon(
+@inline function iradon(
     sinog::AbstractMatrix,
     g::AbstractParallelBeamGeometry,
     f::Optional{F} = nothing;
@@ -340,14 +340,14 @@ function iradon(
 end
 
 
-function iradon(
+@inline function iradon(
     sinog::AbstractMatrix,
     geometry::AbstractFanBeamGeometry,
     f::Optional{F} = nothing;
     kwargs...
 ) where {F <: CTFilterOrFunc}
     g′, par_sinog = fan2para(sinog, geometry)
-    iradon(par_sinog, g′, f; kwargs...)
+    par_sinog ↣ iradon(g′, f; kwargs...)
 end
 
 
