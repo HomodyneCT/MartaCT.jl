@@ -38,35 +38,6 @@ include("simulations/resampling.jl")
 
 
 """
-    ParallelBeamGeometry(imp::ImageParams{T}; nϕ=nothing, nd=nothing, rows=nothing, cols=nothing, α=360, α₀=0) where {T<:Real}
-
-Construct geometry for the simulation.
-
-# Arguments
-- `nϕ=nothing`: number of projections. If not specified, is `max(imp.rows, imp.cols)`.
-- `nd=nothing`: number of detectors. If not specified, same as `nϕ`.
-- `rows=nothing`: number of rows in the reconstructed image. If not specified, same as `nd`.
-- `cols=nothing`: number of columns in the reconstructed image. If not specified, same as `rows`.
-- `α=360`: scan angle in degrees.
-- `α₀=0`: starting scan angle in degrees.
-"""
-function ParallelBeamGeometry(
-    imp::ImageParams{T};
-    nϕ = nothing,
-    nd = nothing,
-    rows = nothing,
-    cols = nothing,
-    α = 360,
-    α₀ = 0,
-) where {T<:Real}
-    if isnothing(nϕ)
-        nϕ = max(imp.rows, imp.cols)
-    end
-    ParallelBeamGeometry(T; nϕ, nd, rows, cols, α, α₀)
-end
-
-
-"""
     abstract type AbstractCTScanner{<:AbstractArray,<:AbstractGeometry} end
 
 Abstract type for tests in this suite.
@@ -216,6 +187,24 @@ function FBPScanner(
     study_id::Optional{String} = nothing,
 )
     FBPScanner(geometry, gs.image; name, study_id)
+end
+
+
+"""
+    FBPScanner(
+        image::AbstractGrayScale;
+        name::Optional{String},
+        study_id::Optional{String}
+    )
+
+Construct a `FBPScanner` object.
+"""
+function FBPScanner(
+    gs::AbstractGrayScale;
+    name::Optional{_CTScannerNameType} = nothing,
+    study_id::Optional{String} = nothing,
+)
+    FBPScanner(ParallelBeamGeometry(gs), gs; name, study_id)
 end
 
 

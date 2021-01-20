@@ -17,6 +17,8 @@ import ..CTIO: yaml_repr, struct2dict
 import ..Marta: datatype
 
 
+const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry)
+
 abstract type AbstractGeometry  end
 
 datatype(x::AbstractGeometry) = datatype(typeof(x))

@@ -26,19 +26,6 @@ else
     end
     end
 
-elseif Sys.isapple() 
-    @static if v"1.5.0-DEV" <= VERSION <= v"1.5.9" 
-    @static if (isfile("../deps/SnoopCompile/precompile/apple/1.5/precompile_Marta.jl"))
-        include("../deps/SnoopCompile/precompile/apple/1.5/precompile_Marta.jl")
-        _precompile_()
-    end
-else 
-    @static if (isfile("../deps/SnoopCompile/precompile/apple/1.5/precompile_Marta.jl"))
-        include("../deps/SnoopCompile/precompile/apple/1.5/precompile_Marta.jl")
-        _precompile_()
-    end
-    end
-
 elseif Sys.iswindows() 
     @static if v"1.5.0-DEV" <= VERSION <= v"1.5.9" 
     @static if (isfile("../deps/SnoopCompile/precompile/windows/1.5/precompile_Marta.jl"))

@@ -2,7 +2,7 @@ using CompileBot
 
 bot_config = BotConfig(
     "Marta";
-    os = ["linux", "macos", "windows"],
+    os = ["linux", "windows"],
     else_os = "linux",
     version = [v"1.5.0"],
     else_version = v"1.5.0",
