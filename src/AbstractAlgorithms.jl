@@ -26,9 +26,14 @@ function project_image end
 function reconstruct_image end
 
 
-radon(alg::AbstractProjectionAlgorithm; kwargs...) = x -> radon(x, alg; kwargs...)
+radon(alg::AbstractProjectionAlgorithm; kwargs...) =
+    x -> radon(x, alg; kwargs...)
 radon(x::Maybe, alg::AbstractProjectionAlgorithm; kwargs...) =
     x ↣ radon(alg; kwargs...)
+project_image(alg::AbstractProjectionAlgorithm; kwargs...) =
+    x -> project_image(x, alg; kwargs...)
+project_image(x::Maybe, alg::AbstractProjectionAlgorithm; kwargs...) =
+    x ↣ project_image(alg; kwargs...)
 
 for nm ∈ (:iradon, :reconstruct_image)
     @eval begin

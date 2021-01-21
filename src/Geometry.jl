@@ -17,6 +17,8 @@ import ..CTIO: yaml_repr, struct2dict
 import ..Marta: datatype
 
 
+const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry)
+
 abstract type AbstractGeometry  end
 
 datatype(x::AbstractGeometry) = datatype(typeof(x))
@@ -192,7 +194,7 @@ function FanBeamGeometry(
     ::Type{T} = Float32,
     ct::AbstractTomograph = DefaultTomograph();
     nϕ::Int = 1024,
-    D::Real,
+    D::Real = 500,
     D′::Optional{<:Real} = nothing,
     γ::Optional{<:Real} = nothing,
     nd::Optional{Int} = nothing,
@@ -215,7 +217,7 @@ function FanBeamGeometry(
         end,
         γ
     )
-    D′′::T = maybe(nd * δ / γ, D′)
+    D′′::T = maybe(nd * δ / γ′, D′) # changed γ to γ′ here, should be tested
     center′::T = maybe((nd - 1) / 2, center)
     FanBeamGeometry{T,typeof(ct)}(
         ct,

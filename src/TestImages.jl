@@ -15,9 +15,10 @@ export WhiteRect
 using IntervalSets
 using ..Monads
 using ..CTImages: CTImage
-using ..Geometry: AbstractParallelBeamGeometry
+import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
+import ..Geometry
 using ..AbstractAlgorithms: AbstractProjectionAlgorithm
-using ..Marta: datatype
+import ..Marta: datatype
 import ..CTIO: yaml_repr, struct2dict
 import ..Info: CTInfo
 import ..AbstractAlgorithms: project_image
@@ -125,11 +126,9 @@ struct ImageParams{T<:Real} <: AbstractImageParams
 end
 
 
+datatype(imp::ImageParams{T}) where T = T
 yaml_repr(imp::ImageParams) = struct2dict(imp)
-
-function CTInfo(imp::ImageParams)
-    CTInfo(pairs(struct2dict(imp))...)
-end
+CTInfo(imp::ImageParams) = CTInfo(pairs(struct2dict(imp))...)
 
 
 """
@@ -494,13 +493,16 @@ end
 
 abstract type AbstractGrayScale end
 
+size(gs::AbstractGrayScale) = size(gs.image)
+size(gs::AbstractGrayScale, d::Integer) = size(gs.image, d)
+
 struct GrayScaleLine{T<:Real} <: AbstractGrayScale
     params::ImageParams{T}
     image::CTImage{Matrix{T}}
 end
 
 
-function Base.getproperty(grimg::GrayScaleLine, s::Symbol)
+function getproperty(grimg::GrayScaleLine, s::Symbol)
     s ∈ fieldnames(GrayScaleLine) && return getfield(grimg, s)
     s ≡ :width && return grimg.cols
     s ≡ :height && return grimg.rows
@@ -694,7 +696,7 @@ struct WhiteRect{T<:Real} <: AbstractGrayScale
 end
 
 
-function Base.getproperty(grimg::WhiteRect, s::Symbol)
+function getproperty(grimg::WhiteRect, s::Symbol)
     s ∈ fieldnames(WhiteRect) && return getfield(grimg, s)
     s ≡ :width && return grimg.cols
     s ≡ :height && return grimg.rows
@@ -730,7 +732,21 @@ function WhiteRect(geometry::AbstractParallelBeamGeometry; kwargs...)
 end
 
 
-size(grsc::AbstractGrayScale) = size(grsc.image)
+const _gs_images = (:GrayScaleLine, :GrayScalePyramid, :WhiteRect)
+
+for nm ∈ _gs_images
+    @eval datatype(gs::$nm{T}) where T = T
+end
+
+
+for nm ∈ Geometry._geometry_names
+    @eval begin
+        $nm(imp::ImageParams; kwargs...) =
+            $nm(datatype(imp); imp.rows, imp.cols, kwargs...)
+        $nm(gs::AbstractGrayScale; kwargs...) =
+            $nm(datatype(gs); gs.width, gs.height, kwargs...)
+    end
+end
 
 
 plateau_length(grsc::GrayScalePyramid) = round(Int, grsc.width * grsc.plateau)
@@ -748,11 +764,13 @@ for nm ∈ (:calibrate_image, :calibrate_tomogram)
             $nm(x, grsc.params; kwargs...)
         $nm(grsc::AbstractGrayScale; kwargs...) =
             $nm(grsc.params; kwargs...)
-        $nm(
+        function $nm(
             m::Maybe,
             x::Union{AbstractImageParams,AbstractGrayScale};
             kwargs...
-        ) = m ↣ $nm(x; kwargs...)
+        )
+            m ↣ $nm(x; kwargs...)
+        end
     end
 end
 
