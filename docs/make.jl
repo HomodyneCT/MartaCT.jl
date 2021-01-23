@@ -9,10 +9,10 @@ makedocs(
 
 deploydocs(
     repo = "github.com/HomodyneCT/Marta.jl.git",
-    deploy_config = GitHubActions()
+    deploy_config = Documenter.GitHubActions()
 )
 
 deploydocs(
     repo = "gitlab.com/homodyne-ct/Marta.git",
-    deploy_config = GitLab()
+    deploy_config = Documenter.GitLab()
 )

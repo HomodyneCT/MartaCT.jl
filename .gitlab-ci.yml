@@ -22,10 +22,7 @@ pages:
   - julia --project=docs/ -e "using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()"
   script:
   - julia --project=docs/ --code-coverage=user docs/make.jl
-  after_script:
-  - mkdir -p public
-  - cp -R docs/build/* public
   artifacts:
     expire_in: 10 days
     paths:
-    - public
+    - docs/build
