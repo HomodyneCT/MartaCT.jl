@@ -59,19 +59,22 @@ function _precompile_()
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{FanBeamGeometry},GrayScaleLine{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{FanBeamGeometry},GrayScaleLine{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{ParallelBeamGeometry},GrayScaleLine{Float32}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width, :height, :nϕ),Tuple{Int64,Int64,Int64}},Type{FanBeamGeometry},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{GrayScaleLine},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{GrayScaleLine},Type{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{GrayScalePyramid},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{GrayScalePyramid},Type{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{WhiteRect},Type{Float32}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{WhiteRect},Type{Float64}})
     Base.precompile(Tuple{Marta.FanBeam.var"#103#threadsfor_fun#3"{Float32,Int64,Array{Float32,2},Float32,Float32,Float32,Float32,Float32,Marta.FanBeam.var"#compute_value#2"{Float32,Int64,Int64,Marta.Interpolation.BilinearInterpolation{Array{Float32,2}},Float32,Float32,Float32},UnitRange{Int64}}})
     Base.precompile(Tuple{Marta.FanBeam.var"#103#threadsfor_fun#3"{Float64,Int64,Array{Float64,2},Float64,Float64,Float64,Float64,Float64,Marta.FanBeam.var"#compute_value#2"{Float64,Int64,Int64,Marta.Interpolation.BilinearInterpolation{Array{Float64,2}},Float64,Float64,Float64},UnitRange{Int64}}})
     Base.precompile(Tuple{Marta.FanBeam.var"#122#threadsfor_fun#13"{Float32,Int64,Array{Float32,2},Float32,Float32,Float32,Float32,Float32,Marta.FanBeam.var"#compute_value#12"{Float32,Int64,Int64,Marta.Interpolation.BilinearInterpolation{Array{Float32,2}},Float32,Float32,Float32},UnitRange{Int64}}})
     Base.precompile(Tuple{Marta.FanBeam.var"#122#threadsfor_fun#13"{Float64,Int64,Array{Float64,2},Float64,Float64,Float64,Float64,Float64,Marta.FanBeam.var"#compute_value#12"{Float64,Int64,Int64,Marta.Interpolation.BilinearInterpolation{Array{Float64,2}},Float64,Float64,Float64},UnitRange{Int64}}})
-    Base.precompile(Tuple{Marta.RadonAlgorithm.var"#149#threadsfor_fun#5"{Array{Float64,1},Array{Tuple{Float64,Float64},1},Array{Tuple{Int64,Int64},1},Array{Tuple{Float64,Float64},1},LinearIndices{2,Tuple{Base.OneTo{Int64},Base.OneTo{Int64}}}}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScaleLine{Float32}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScaleLine{Float64}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScalePyramid{Float32}})
+    Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},WhiteRect{Float32}})
+    Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},WhiteRect{Float64}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},ImageParams{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},ImageParams{Float64}})
@@ -84,6 +87,11 @@ function _precompile_()
     let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32},))) catch missing end
         if !ismissing(fbody)
             precompile(fbody, (Base.Iterators.Pairs{Union{},Union{},Tuple{},NamedTuple{(),Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32},))
+        end
+    end
+    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},GrayScaleLine{Float64},))) catch missing end
+        if !ismissing(fbody)
+            precompile(fbody, (Base.Iterators.Pairs{Union{},Union{},Tuple{},NamedTuple{(),Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},GrayScaleLine{Float64},))
         end
     end
 end
