@@ -3,7 +3,7 @@ name: SnoopCompile
 on:
   push:
     branches:
-      - 'master'
+      #- 'master'
 
 defaults:
   run:
