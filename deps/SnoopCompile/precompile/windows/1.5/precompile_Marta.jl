@@ -69,7 +69,6 @@ function _precompile_()
     Base.precompile(Tuple{Marta.FanBeam.var"#122#threadsfor_fun#13"{Float64,Int64,Array{Float64,2},Float64,Float64,Float64,Float64,Float64,Marta.FanBeam.var"#compute_value#12"{Float64,Int64,Int64,Marta.Interpolation.BilinearInterpolation{Array{Float64,2}},Float64,Float64,Float64},UnitRange{Int64}}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScaleLine{Float32}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScaleLine{Float64}})
-    Base.precompile(Tuple{Type{Radon},ParallelBeamGeometry{Float32,DefaultTomograph}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},ImageParams{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},ImageParams{Float64}})
@@ -79,9 +78,9 @@ function _precompile_()
     Base.precompile(Tuple{typeof(project_image),Some{CTImage{Array{Float64,2}}},Radon{ParallelBeamGeometry{Float64,DefaultTomograph}}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#14#16")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#14#16")),CTSinogram{Array{Float32,2}}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#14#16")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#14#16")),CTSinogram{Array{Float64,2}}})
-    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32},))) catch missing end
+    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},GrayScaleLine{Float64},))) catch missing end
         if !ismissing(fbody)
-            precompile(fbody, (Base.Iterators.Pairs{Union{},Union{},Tuple{},NamedTuple{(),Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32},))
+            precompile(fbody, (Base.Iterators.Pairs{Union{},Union{},Tuple{},NamedTuple{(),Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},GrayScaleLine{Float64},))
         end
     end
 end
