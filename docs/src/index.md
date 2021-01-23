@@ -1,6 +1,6 @@
-# Marta.jl
+# Marta
 
-Documentation for Marta.jl
+Documentation for Marta.
 
 ```@docs
 project_image
