@@ -21,7 +21,7 @@ pages:
   before_script:
   - julia --project=docs/ -e "using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()"
   script:
-  - julia --project=docs/ --code-coverage=user docs/make.jl
+  - julia --project=docs/ --code-coverage=user docs/make_gitlab.jl
   after_script:
   - mkdir -p public
   - cp -R docs/build/* public
