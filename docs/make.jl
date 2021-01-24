@@ -8,11 +8,6 @@ makedocs(
 )
 
 deploydocs(
-    repo = "github.com/HomodyneCT/Marta.git",
-    deploy_config = Documenter.GitHubActions()
-)
-
-deploydocs(
     repo = "gitlab.com/homodyne-ct/Marta.git",
     deploy_config = Documenter.GitLab()
 )
