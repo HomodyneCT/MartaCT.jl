@@ -1,5 +1,5 @@
-[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://homodyne-ct.gitlab.io/Marta/stable)
-[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://homodyne-ct.gitlab.io/Marta/dev)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://HomodyneCT.github.io/Marta/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://HomodyneCT.github.io/Marta/dev)
 
 # **Marta**
 
