@@ -2,6 +2,6 @@
 
 Documentation for Marta.
 
-```@docs
-project_image
+```@autodocs
+Modules = [Marta.CTImages, Marta.CTIO, Marta.CTScan, Marta.CTPlot]
 ```
