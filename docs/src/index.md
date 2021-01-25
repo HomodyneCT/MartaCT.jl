@@ -2,6 +2,7 @@
 
 Documentation for Marta.
 
-```@docs
-project_image
+```@autodocs
+Modules = [Marta]
+Private = false
 ```
