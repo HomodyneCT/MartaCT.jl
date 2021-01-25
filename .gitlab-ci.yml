@@ -14,11 +14,10 @@ pages:
   dependencies:
   - test
   only:
-  - documentation
-  - staging
   - tags
   - master
   before_script:
+  - apt-get update -y && apt-get install git
   - julia --project=docs/ -e "using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()"
   script:
   - julia --project=docs/ --code-coverage=user docs/make_gitlab.jl
