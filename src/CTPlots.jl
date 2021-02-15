@@ -12,7 +12,7 @@ using RecipesBase
 using ..Monads
 using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn
 using ..CTImages: ctimage, ctsinogram, cttomogram
-using ..TestImages: AbstractGrayScale, ImageParams, gray_scale_indices
+using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
 
 
@@ -97,7 +97,7 @@ end
 end
 
 
-@recipe function f(::Type{T}, grsc::T) where {T <: AbstractGrayScale}
+@recipe function f(::Type{T}, grsc::T) where {T <: AbstractTestImage}
     grsc.image
 end
 

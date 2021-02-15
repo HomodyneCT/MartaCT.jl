@@ -10,7 +10,7 @@ using ..CTImages
 using ..TestImages
 
 import Statistics; const Stat = Statistics
-import ..CalibrationBase: calibrate_image, calibrate_tomogram
+import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
 
 
 function calibration_helper(
@@ -100,8 +100,7 @@ function calibrate_image(
     interval::Optional{ClosedInterval{U}} = nothing,
     window::Optional{ClosedInterval{W}} = nothing,
 ) where {T<:Real,U<:Real,W<:Real}
-    min_pos = background_position(imp)
-    max_pos = circle_position(imp)
+    min_pos, max_pos = calibration_data(imp)
     if isnothing(interval)
         interval = imp.background..imp.calibration_value
     end
@@ -115,19 +114,23 @@ function calibrate_image(
 end
 
 
-function calibrate_image(img::AbstractCTImage, imp::ImageParams; kwargs...)
+function calibrate_image(
+    img::AbstractCTImage,
+    imp::AbstractImageParams;
+    kwargs...
+)
     mmap(calibrate_image(imp; kwargs...), img)
 end
 
 
 """
-    calibrate_tomogram(image::AbstractMatrix{T}, imp::ImageParams; interval=nothing, window=nothing) where {T<:Real}
+    calibrate_tomogram(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
 
 Perform calibration of reconstructed `image` with image parameters as reference.
 """
 function calibrate_tomogram(
     image::AbstractMatrix{T},
-    imp::ImageParams;
+    imp::AbstractImageParams;
     interval::Optional{ClosedInterval{U}} = nothing,
     window::Optional{ClosedInterval{W}} = nothing,
 ) where {T<:Real,U<:Real,W<:Real}
@@ -135,7 +138,11 @@ function calibrate_tomogram(
 end
 
 
-function calibrate_tomogram(img::CTTomogram, imp::ImageParams; kwargs...)
+function calibrate_tomogram(
+    img::CTTomogram,
+    imp::AbstractImageParams;
+    kwargs...
+)
     mmap(calibrate_tomogram(imp; kwargs...), img)
 end
 

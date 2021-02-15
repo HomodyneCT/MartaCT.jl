@@ -5,6 +5,7 @@ Base.Experimental.@optlevel 3
 using ..Monads
 
 
+function calibration_data end
 function calibrate_image end
 function calibrate_tomogram end
 

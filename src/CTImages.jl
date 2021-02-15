@@ -274,14 +274,17 @@ sample_sinog(sinog::CTSinogram, n) = CTSinogram(sinog ↣ sample_sinog(n))
 
 function polar2cart(
     mp::AbstractMatrix{T};
-    rows = nothing,
-    cols = nothing,
+    rows::Optional{<:Integer} = nothing,
+    cols::Optional{<:Integer} = nothing,
     interpolation::Optional{Interp} = nothing,
+    background::Real = zero(T),
 ) where {T <: Real, Interp <: Union{Function,AbstractBilinearInterpolation}}
     nϕ, nr = size(mp)
-    rows = maybe(2nr, rows)
+    if isnothing(rows)
+        rows = maybe(2nr, cols)
+    end
     cols = maybe(rows, cols)
-    mc = zeros(T, rows, cols)
+    mc = fill(T(background), rows, cols)
 
     x₀::T = T(cols - 1) / T(2)
     y₀::T = T(rows - 1) / T(2)

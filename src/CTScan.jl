@@ -250,7 +250,7 @@ end
 function show(io::IO, gst::CTScanner)
     print(
         io,
-        """*** $(gst.name) Test ***
+        """*** $(gst.name) Scanner ***
         $(gst.algorithm)""",
     )
 end
