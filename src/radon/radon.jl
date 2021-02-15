@@ -1,3 +1,5 @@
+import LoopVectorization: @avx, vmapreduce
+
 function radon(
     image::AbstractMatrix{T};
     nd::Optional{Int} = nothing,
@@ -37,24 +39,38 @@ function radon(
     rimage = rescale(image)
     interp = isnothing(interpolation) ? interpolate(rimage) : interpolation(rimage)
 
-    interp_value = (y, x) -> begin
-        1 ≤ x ≤ cols && 1 ≤ y ≤ rows && return interp(y, x)
-        return 0
-    end
+    # interp_value = (y, x) -> begin
+    #     1 ≤ x ≤ cols && 1 ≤ y ≤ rows && return interp(y, x)
+    #     return 0
+    # end
 
     compute_projection = (k, iϕ) -> begin
         @inbounds x′x, x′y = x′ϕs[k]
         prex = (x′x + 1) * x₀
         prey = (x′y + 1) * y₀
         offset = iϕ * nd
-        @views sum(x′ϕs[offset + 1:offset + nd]) do (y′y, y′x)
+        #@views sum(x′ϕs[offset + 1:offset + nd]) do (y′y, y′x)
+        #s::T = zero(T)
+        # @avx for ii ∈ view(x′ϕs, offset + 1:offset + nd)
+        #     (y′y, y′x) = ii
+        #     x = prex - y′x * x₀
+        #     y = prey + y′y * y₀
+        #     if 1 ≤ x ≤ cols && 1 ≤ y ≤ rows
+        #         s += interp(y, x)
+        #     end
+        # end
+        # return s
+        vmapreduce(+, view(x′ϕs, offset + 1:offset + nd)) do (y′y, y′x)
             x = prex - y′x * x₀
             y = prey + y′y * y₀
-            interp_value(y, x)
+            if 1 ≤ x ≤ cols && 1 ≤ y ≤ rows
+                return interp(y, x)
+            end
         end
     end
 
-    p = Progress(length(rmat), 0.2, "Computing Radon transform: ")
+    @info "Computing Radon transform..."
+    p = Progress(length(rmat), 0.2)
 
     Threads.@threads for (k, iϕ) in indices
         @inbounds rmat[k] = compute_projection(k, iϕ)
