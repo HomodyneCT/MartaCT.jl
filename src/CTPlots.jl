@@ -93,7 +93,7 @@ end
 
 
 @recipe function f(::Type{<:CTTomogram}, tomog::CTTomogram)
-    mbind(CTImage, tomog)
+    tomog ↣ CTImage
 end
 
 
