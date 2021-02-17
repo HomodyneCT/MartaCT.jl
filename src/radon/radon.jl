@@ -63,9 +63,8 @@ function radon(
         vmapreduce(+, view(x′ϕs, offset + 1:offset + nd)) do (y′y, y′x)
             x = prex - y′x * x₀
             y = prey + y′y * y₀
-            if 1 ≤ x ≤ cols && 1 ≤ y ≤ rows
-                return interp(y, x)
-            end
+            return 1 ≤ x ≤ cols && 1 ≤ y ≤ rows ?
+                interp(y, x) : zero(T)
         end
     end
 

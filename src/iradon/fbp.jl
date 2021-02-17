@@ -1,3 +1,5 @@
+import LoopVectorization: @avx, vmapreduce
+
 function iradon_fast_threaded(
     sinog::AbstractMatrix{T};
     rows::Optional{Integer} = nothing,
@@ -40,8 +42,8 @@ function iradon_fast_threaded(
     # ys = range(-one(T); step = T(2/rows), length = rows)
     indices = Vector{Tuple{T,T}}(undef, rows * cols)
 
-    for k in LinearIndices(indices)
-        @inbounds indices[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
+    @inbounds for k ∈ LinearIndices(indices)
+        indices[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
     end
 
     @info "Computing inverse Radon transform..."
@@ -50,15 +52,15 @@ function iradon_fast_threaded(
     temp_images = Vector{Matrix{T}}(undef, Threads.nthreads())
     fill!(temp_images, zeros(T, rows, cols))
 
-    Threads.@threads for (iϕ, ϕ) in ϕs
+    Threads.@threads for (iϕ, ϕ) ∈ ϕs
         cϕ, sϕ = cos(ϕ), sin(ϕ)
         id = Threads.threadid()
         @inbounds img = temp_images[id]
-        for (k, (x, y)) in enumerate(indices)
+        @inbounds for (k, (x, y)) ∈ indices
             # To be consistent with our conventions should be '+'.
             t = (x * cϕ + y * sϕ + 1) * t₀ + 1
             if 1 ≤ t ≤ nd
-                @inbounds img[k] += interp(t, T(iϕ))
+                img[k] += interp(t, T(iϕ))
             end
         end
         next!(p)
@@ -98,7 +100,7 @@ iradon_fast_threaded(g::AbstractParallelBeamGeometry, f::CTFilterOrFunc; kwargs.
     x -> iradon_fast_threaded(x, g, f; kwargs...)
 iradon_fast_threaded(g::AbstractParallelBeamGeometry; kwargs...) =
     x -> iradon_fast_threaded(x, g; kwargs...)
-    iradon_fast_threaded(f::CTFilterOrFunc; kwargs...) =
+iradon_fast_threaded(f::CTFilterOrFunc; kwargs...) =
     x -> iradon_fast_threaded(x, f; kwargs...)
 
 
@@ -141,8 +143,8 @@ function iradon_threaded(
     # ys = range(-1; step = 2 / rows, length = rows)
     indices = Vector{Tuple{Int,T,T}}(undef, length(image))
 
-    for k in LinearIndices(image)
-        @inbounds indices[k] = k, xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
+    @inbounds for k ∈ LinearIndices(image)
+        indices[k] = k, xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
     end
 
     # ϕs = map(enumerate((0:nϕ-1) * Δϕ .+ ϕ₀)) do (iϕ, ϕ)
@@ -153,13 +155,19 @@ function iradon_threaded(
         T(iϕ), cos(ϕ), sin(ϕ)
     end
 
-    p = Progress(length(image), 0.2, "Computing inverse Radon transform: ")
+    @info "Computing inverse Radon transform..."
+    p = Progress(length(image), 0.2)
 
-    Threads.@threads for (k, x, y) in indices
-        @inbounds image[k] = sum(csϕs) do (iϕ, cϕ, sϕ)
+    Threads.@threads for (k, x, y) ∈ indices
+        # @inbounds image[k] = sum(csϕs) do (iϕ, cϕ, sϕ)
+        #     # To be consistent with our conventions should be '+'.
+        #     t::T = (x * cϕ + y * sϕ + 1) * t₀ + 1
+        #     1 ≤ t ≤ nd && return interp(t, iϕ)
+        # end
+        @inbounds image[k] = vmapreduce(+, csϕs) do (iϕ, cϕ, sϕ)
             # To be consistent with our conventions should be '+'.
             t::T = (x * cϕ + y * sϕ + 1) * t₀ + 1
-            1 ≤ t ≤ nd && return interp(t, iϕ)
+            return 1 ≤ t ≤ nd ? interp(t, iϕ) : zero(T)
         end
         next!(p)
     end
@@ -310,7 +318,7 @@ iradon_threaded(f::CTFilterOrFunc; kwargs...) =
 #
 #     tfs = zeros(T, 3, 2, nϕ)
 #
-#     for (iϕ, ϕ) in enumerate(ϕs)
+#     for (iϕ, ϕ) ∈ enumerate(ϕs)
 #         c, s = cos(ϕ), sin(ϕ)
 #         t₀ϕ = t₀ - x₀ * c - y₀ * s
 #         tfs[:,:,iϕ] .= [[c zero(T)]; [s zero(T)]; [t₀ϕ iϕ]]
@@ -330,13 +338,16 @@ iradon_threaded(f::CTFilterOrFunc; kwargs...) =
 # end
 
 
+const _default_iradon = iradon_threaded
+
+
 @inline function iradon(
     sinog::AbstractMatrix,
     g::AbstractParallelBeamGeometry,
     f::Optional{F} = nothing;
     kwargs...
 ) where {F <: CTFilterOrFunc}
-    iradon_fast_threaded(sinog, g, f; kwargs...)
+    _default_iradon(sinog, g, f; kwargs...)
 end
 
 
@@ -352,12 +363,12 @@ end
 
 
 iradon(sinog::AbstractMatrix, g::AbstractGeometry; kwargs...) =
-    iradon_fast_threaded(sinog, g; kwargs...)
+    _default_iradon(sinog, g; kwargs...)
 
 iradon(sinog::AbstractMatrix, f::CTFilterOrFunc; kwargs...) =
-    iradon_fast_threaded(sinog, f; kwargs...)
+    _default_iradon(sinog, f; kwargs...)
 
-iradon(sinog::AbstractMatrix; kwargs...) = iradon_fast_threaded(sinog; kwargs...)
+iradon(sinog::AbstractMatrix; kwargs...) = _default_iradon(sinog; kwargs...)
 
 # iradon(sinog::AbstractMatrix; kwargs...) = iradon_threaded(sinog; kwargs...)
 # iradon(sinog::AFMatrix; kwargs...) = iradon_af_alt(sinog; kwargs...)
@@ -370,7 +381,7 @@ iradon(f::CTFilterOrFunc; kwargs...) = x -> iradon(x, f; kwargs...)
 struct FBP{
     Geometry <: AbstractGeometry,
     Filter <: AbstractCTFilter
-} <: AbstractIRadonAlgorithm
+    } <: AbstractIRadonAlgorithm
     geometry::Geometry
     filter::Filter
 end
