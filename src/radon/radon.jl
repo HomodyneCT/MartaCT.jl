@@ -7,6 +7,7 @@ function radon(
     α::Real = 360,
     α₀::Real = 0,
     interpolation::Optional{Interp} = nothing,
+    rescaled = true,
 ) where {T <: Real, Interp <: Union{Function,AbstractBilinearInterpolation}}
     M = typeof(image)
     rows, cols = size(image)
@@ -36,7 +37,7 @@ function radon(
         @inbounds x′ϕs[k] = x′s[ix + 1] .* ϕs[iϕ + 1]
     end
 
-    rimage = rescale(image)
+    rimage = rescaled ? rescale(image) : image
     interp = isnothing(interpolation) ? interpolate(rimage) : interpolation(rimage)
 
     # interp_value = (y, x) -> begin
