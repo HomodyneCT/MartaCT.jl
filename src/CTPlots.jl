@@ -63,12 +63,12 @@ end
     rows, cols = size(image)
     xs = (0:(cols - 1)) .- (cols - 1) / 2
     ys = (0:(rows - 1)) .- (rows - 1) / 2
-    seriestype := :heatmap
+    seriestype --> :heatmap
     seriescolor --> :grays
-    tick_direction := :out
-    aspect_ratio := 1
-    xlims := ((xs[1], xs[end]) .+ (-0.5, 0.5))
-    ylims := ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    tick_direction --> :out
+    aspect_ratio --> :equal
+    xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5))
+    ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
     xs, ys, mjoin(image)
 end
 
@@ -81,13 +81,13 @@ const _sinog_xticks = [45i for i in 0:8]
     Δϕ = 360 / (nϕ - 1)
     xs = (0:nϕ - 1) * Δϕ # Now we use midpoints and not edges to support more backends
     ys = (0:nd - 1) .- (nd - 1) / 2
-    seriestype := :heatmap
+    seriestype --> :heatmap
     seriescolor --> :grays
-    tick_direction := :out
+    tick_direction --> :out
     xrotation --> -45
     xticks --> _sinog_xticks
-    xlims := ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
-    ylims := ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
+    ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
     xs, ys, mjoin(sinog)
 end
 
