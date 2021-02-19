@@ -23,10 +23,17 @@ import ..CTIO: yaml_repr, struct2dict
 import ..Info: CTInfo
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
-import Base: getproperty, size
+import Base: getproperty, size, show
 
 
 abstract type AbstractImageParams end
+
+size(p::AbstractImageParams) = p.rows, p.cols
+function size(p::AbstractImageParams, dim::Integer)
+    dim == 1 && return p.rows
+    dim == 2 && return p.cols
+    return 1
+end
 
 yaml_repr(imp::AbstractImageParams) = struct2dict(imp)
 CTInfo(imp::AbstractImageParams) = CTInfo(pairs(struct2dict(imp))...)
@@ -69,71 +76,74 @@ indicator_matrix_2(sq1::Int, sq2::Int, pad::Int = 0) =
     indicator_matrix_2(Float32, sq1, sq2, pad)
 
 
+const _default_gray_scale_params = Dict(
+    :swidth => 200, # Gray scale width
+    :sheight => 40, # Gray scale height
+    :pad => 30,     # Padding around gray scale and calibration circle
+    :dist => 10,    # Distance between gray scale and calibration circle
+    :radius => 15,  # Calibration circle radius
+)
+
+
 """
     struct ImageParams{T<:Real}
 
 Hold information to construct the input test image.
 """
 struct ImageParams{T<:Real} <: AbstractImageParams
-    width::Int # Rectangle scale width
-    height::Int # Rectangle scale height
-    pad::Int # Padding around images
-    dist::Int # Distance between images
-    radius::Int # Calibration circle radius
     rows::Int # Test image rows
     cols::Int # Test image cols
     gray_scale::ClosedInterval{T} # Gray scale interval.
     calibration_value::T # Value for algorithm calibration.
     background::T
+    kw::Dict{Symbol,Any}
 
     function ImageParams{T}(
-        width::Integer,
-        height::Integer,
-        pad::Integer,
-        dist::Integer,
-        radius::Integer,
+        rows::Optional{<:Integer} = nothing,
+        cols::Optional{<:Integer} = nothing,
         gray_scale::ClosedInterval = -1000..1000,
         calibration_value::Optional{<:Real} = nothing,
-        background::Optional{<:Real} = nothing,
+        background::Optional{<:Real} = nothing;
+        kwargs...
     ) where {T<:Real}
-        rows, cols = combined_images_size(
-            width,
-            height,
-            radius,
-            pad,
-            dist,
-        )
-
+        kw = isempty(kwargs) ? _default_gray_scale_params : Dict(kwargs)
+        srows, scols = combined_images_size(; kw...)
+        rows, cols = maybe(srows, rows), maybe(scols, cols)
+        @assert (rows >= srows && cols >= scols) "Requested image size is too small: ($rows, $cols) < ($srows, $scols)"
         minv, maxv = endpoints(gray_scale)
         background = maybe(minv, background)
-
-        if isnothing(calibration_value)
-            calibration_value = (minv + maxv) / 2
-        end
+        calibration_value = isnothing(calibration_value) ?
+            calibration_value = (minv + maxv) / 2 : calibration_value
 
         if calibration_value ∉ gray_scale
             midpoint = (minv + maxv) / 2
-            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
+            @warn(
+                "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
+            )
             calibration_value = midpoint
         end
 
         new(
-            width,
-            height,
-            pad,
-            dist,
-            radius,
             rows,
             cols,
             gray_scale,
-            T(calibration_value),
-            T(background),
+            calibration_value,
+            background,
+            kw,
         )
     end
 end
 
 
 datatype(imp::ImageParams{T}) where T = T
+
+
+function getproperty(p::ImageParams, s::Symbol)
+    s ∈ fieldnames(ImageParams) && return getfield(p, s)
+    s === :width && return p.cols
+    s === :height && return p.rows
+    p.kw[s]
+end
 
 
 """
@@ -152,24 +162,24 @@ Construct ImageParams object.
 """
 function ImageParams(
     ::Type{T} = Float32;
-    width::Integer = 200,
-    height::Integer = 40,
-    pad::Integer = 30,
-    dist::Integer = 10,
-    radius::Integer = 15,
+    rows::Optional{<:Integer} = nothing,
+    cols::Optional{<:Integer} = nothing,
+    width::Optional{<:Integer} = nothing,
+    height::Optional{<:Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
     calibration_value::Optional{<:Real} = nothing,
     background::Optional{<:Real} = nothing,
+    kwargs...
 ) where {T<:Real}
+    rows = maybe(rows, height)
+    cols = maybe(cols, width)
     ImageParams{T}(
-        width,
-        height,
-        pad,
-        dist,
-        radius,
+        rows,
+        cols,
         gray_scale,
         calibration_value,
-        background,
+        background;
+        kwargs...
     )
 end
 
@@ -177,7 +187,7 @@ end
 show(io::IO, p::AbstractImageParams) = print(
     io,
     """Image Params:
-- size (W×H): $(p.cols) × $(p.rows)
+- size (W×H): $(p.width) × $(p.height)
 - gray scale: $(p.gray_scale)
 - calibration value: $(p.calibration_value)
 - background value: $(p.background)""",
@@ -218,8 +228,8 @@ struct CircleParams{T <: Real} <: AbstractImageParams
             rows,
             cols,
             gray_scale,
-            T(calibration_value),
-            T(background),
+            calibration_value,
+            background,
         )
     end
 end
@@ -286,11 +296,11 @@ end
 Return a tuple `(row, column_range)` where `row` is the row index of the scale and `column_range` is the range of columns.
 """
 function gray_scale_indices(imp::ImageParams)
-    # row = imp.pad + 2 * imp.radius + imp.dist + imp.height ÷ 2 + 1
+    # row = imp.pad + 2 * imp.radius + imp.dist + imp.sheight ÷ 2 + 1
     min_row = imp.pad + 2 * imp.radius + imp.dist + 1
-    max_row = min_row + imp.height - 1
+    max_row = min_row + imp.sheight - 1
     min_col = imp.pad + 1
-    max_col = min_col + imp.width - 1
+    max_col = min_col + imp.swidth - 1
     min_row:max_row, min_col:max_col
 end
 
@@ -316,13 +326,14 @@ function circle_image(
     background::Real = -1000,
     rows::Optional{<:Integer} = nothing,
     cols::Optional{<:Integer} = nothing,
-    width::Optional{<:Integer} = nothing,
-    height::Optional{<:Integer} = nothing,
+    swidth::Optional{<:Integer} = nothing,
+    sheight::Optional{<:Integer} = nothing,
 ) where {T<:Real}
-    rows = maybe(rows, height)
-    cols = maybe(cols, width)
+    rows = maybe(maybe(2radius, rows), sheight)
+    cols = maybe(maybe(rows, cols), swidth)
+    nr = min(rows, cols)
     polar2cart(
-        circle_polar_image(T; radius, calibration_value, background);
+        circle_polar_image(T; radius, nr, calibration_value, background);
         rows, cols, background)
 end
 
@@ -332,7 +343,18 @@ end
 
 Create a square image with a circle of given value from parameters `imp`.
 """
-function circle_image(imp::AbstractImageParams)
+function circle_image end
+
+function circle_image(imp::ImageParams)
+    circle_image(
+        datatype(imp);
+        imp.radius,
+        imp.calibration_value,
+        imp.background,
+    )
+end
+
+function circle_image(imp::CircleParams)
     circle_image(
         datatype(imp);
         imp.radius,
@@ -345,13 +367,20 @@ end
 
 
 """
-    gray_scale_image([T=Float32]; width=200, height=40, gray_scale=(0,1)) where {T <: Real}
+    gray_scale_image(
+        [T=Float32];
+        rows=40,
+        cols=200,
+        swidth=nothing,
+        sheight=nothing,
+        gray_scale=-1000..1000
+    ) where {T <: Real}
 
 Create an image with a gray scale rectangle with given scale gray_scale.
 
 # Examples
 ```julia-repl
-julia> gray_scale_image(width=80, height=40, gray_scale=(0,1))
+julia> gray_scale_image(swidth=80, sheight=40, gray_scale=-1000..1000)
 40×80 Array{Float32,2}:
 [...]
 ```
@@ -360,46 +389,32 @@ See also: [`circle_image`](@ref), [`combine_images`](@ref)
 """
 function gray_scale_image(
     ::Type{T} = Float32;
-    width::Integer = 200,
-    height::Integer = 40,
+    rows::Integer = 200,
+    cols::Integer = 40,
+    swidth::Optional{<:Integer} = nothing,
+    sheight::Optional{<:Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
     background::Optional{<:Real} = nothing,
 ) where {T<:Real}
-    minv, maxv = endpoints(gray_scale)
-
-    if isnothing(background)
-        background = minv
-    end
-
-    if minv == maxv
-        val_range = fill(T(minv), width)
-    else
-        val_range = range(T(minv); stop = T(maxv), length = width) |> collect
-    end
-
-    rows, cols = height, width
-
-    image = fill(T(background), rows, cols)
-
-    start_r, end_r = 1, height
-    start_c, end_c = 1, width
-
-    for j in start_c:end_c, i in start_r:end_r
-        image[i, j] = val_range[j]
-    end
-
+    rows = maybe(rows, sheight)
+    cols = maybe(cols, swidth)
+    minv, maxv = endpoints(gray_scale) .|> T
+    background = isnothing(background) ? minv : T(background)
+    val_range = minv == maxv ? minv : range(minv, maxv, length = cols)
+    image = fill(background, rows, cols)
+    image[1:rows,1:cols] .= val_range'
     image
 end
 
 
 """
-    pyramid_gray_scale_image([T=Float32]; width=200, height=40, gray_scale=(0,1)plateau = 0) where {T <: Real}
+pyramid_gray_scale_image([T=Float32]; swidth=200, sheight=40, gray_scale=-1000..1000, plateau = 0) where {T <: Real}
 
 Create an image with a pyramid gray scale rectangle with given scale gray_scale.
 
 # Examples
 ```julia-repl
-julia> pyramid_gray_scale_image(width=80, height=40, gray_scale=(0,1))
+julia> pyramid_gray_scale_image(swidth=80, sheight=40, gray_scale=-1000..1000)
 40×80 Array{Float32,2}:
 [...]
 ```
@@ -408,45 +423,26 @@ See also: [`gray_scale_image`](@ref), [`circle_image`](@ref), [`combine_images`]
 """
 function pyramid_gray_scale_image(
     ::Type{T} = Float32;
-    width::Integer = 200,
-    height::Integer = 40,
+    swidth::Integer = 200,
+    sheight::Integer = 40,
     gray_scale::ClosedInterval = -1000..1000,
     background::Optional{<:Real} = nothing,
     plateau::Real = 0,
 ) where {T<:Real}
-    @assert 0 ≤ plateau ≤ 1
-
-    minv, maxv = endpoints(gray_scale)
-
-    if isnothing(background)
-        background = minv
-    end
-
-    val_range = fill(T(maxv), width)
-
-    plateau_len = round(Int, width * plateau)
-    len = (width - plateau_len) ÷ 2
-
+    @assert 0 ≤ plateau ≤ 1 "Plateau is a fraction of the gray scale width!"
+    minv, maxv = endpoints(gray_scale) .|> T
+    background = isnothing(background) ? minv : T(background)
+    val_range = fill(maxv, swidth)
+    plateau_len = round(Int, swidth * plateau)
+    len = (swidth - plateau_len) ÷ 2
     if len ≠ 0
-        half_scale = range(
-            T(minv);
-            step = T((maxv - minv) / (width - plateau_len - len - 1)),
-            length = len,
-        )
-
+        step = (maxv - minv) / (swidth - plateau_len - len - 1)
+        half_scale = range(minv; step, length = len)
         val_range[1:len] .= half_scale
-        val_range[end:-1:(width-len+1)] .= half_scale # Odd case included.
+        val_range[end:-1:(swidth-len+1)] .= half_scale # Odd case included.
     end
-
-    image = fill(T(background), height, width)
-
-    start_r, end_r = 1, height
-    start_c, end_c = 1, width
-
-    for j in start_c:end_c, i in start_r:end_r
-        image[i, j] = val_range[j]
-    end
-
+    image = fill(background, sheight, swidth)
+    image .= val_range'
     image
 end
 
@@ -458,7 +454,7 @@ Create an image with a gray scale rectangle with given scale gray_scale
 from parameters `imp`.
 """
 function gray_scale_image(imp::ImageParams{T}) where {T<:Real}
-    gray_scale_image(T; imp.width, imp.height, imp.gray_scale, imp.background)
+    gray_scale_image(T; imp.swidth, imp.sheight, imp.gray_scale, imp.background)
 end
 
 
@@ -477,8 +473,8 @@ function pyramid_gray_scale_image(
 ) where {T<:Real}
     pyramid_gray_scale_image(
         T;
-        imp.width,
-        imp.height,
+        imp.swidth,
+        imp.sheight,
         imp.gray_scale,
         imp.background,
         plateau,
@@ -486,8 +482,8 @@ function pyramid_gray_scale_image(
 end
 
 
-function combined_images_size(; width, height, radius, pad, dist)
-    height + 2radius + 2pad + dist, width + 2pad
+function combined_images_size(; swidth, sheight, radius, pad, dist)
+    sheight + 2radius + 2pad + dist, swidth + 2pad
 end
 
 
@@ -509,34 +505,54 @@ function combine_images(
     rect_rows, rect_cols = size(rect)
     circ_rows, circ_cols = size(circle)
 
-    #@assert (rect_rows > circ_rows || rect_cols > circ_cols) "Circle image should be smaller than gray scale rectangle"
+    @assert(
+        (rect_rows, rect_cols) == (imp.sheight, imp.swidth),
+        "expected gray scale size $((imp.sheight, imp.swidth)), got $((srows, scols)) instead"
+    )
+
+    if circ_rows >= rect_rows || circ_cols >= rect_cols
+        @warn(
+            "Circle image should be smaller than gray scale rectangle",
+            (circ_rows, circ_cols),
+            (rect_rows, rect_cols)
+        )
+    end
 
     radius = circ_rows ÷ 2
 
-    rows, cols = combined_images_size(
-        width = rect_cols,
-        height = rect_rows,
+    srows, scols = combined_images_size(;
+        swidth = rect_cols,
+        sheight = rect_rows,
         radius,
         imp.pad,
         imp.dist,
     )
 
-    image = fill(T(imp.background), rows, cols)
+    rows, cols = size(imp)
+    @assert (rows >= srows && cols >= scols) "Requested image size too small: ($rows, $cols) < ($srows, $scols)"
+
+    simage = fill(imp.background, srows, scols)
+    image = fill(imp.background, rows, cols)
 
     crow_beg = imp.pad + 1
     crow_end = crow_beg + circ_rows - 1
-    ccol_beg = cols ÷ 2 - radius + 1
+    ccol_beg = scols ÷ 2 - radius + 1
     ccol_end = ccol_beg + circ_cols - 1
 
-    image[crow_beg:crow_end, ccol_beg:ccol_end] .= circle
+    simage[crow_beg:crow_end, ccol_beg:ccol_end] .= circle
 
     rrow_beg = crow_end + imp.dist + 1
     rrow_end = rrow_beg + rect_rows - 1
     rcol_beg = imp.pad + 1
     rcol_end = rcol_beg + rect_cols - 1
 
-    image[rrow_beg:rrow_end, rcol_beg:rcol_end] .= rect
+    simage[rrow_beg:rrow_end, rcol_beg:rcol_end] .= rect
 
+    ri = (rows - srows) ÷ 2 + 1
+    rf = ri + srows - 1
+    ci = (cols - scols) ÷ 2 + 1
+    cf = ci + scols - 1
+    image[ri:rf,ci:cf] .= simage
     image
 end
 
@@ -620,8 +636,6 @@ end
 
 function getproperty(grimg::GrayScaleLine, s::Symbol)
     s ∈ fieldnames(GrayScaleLine) && return getfield(grimg, s)
-    s ≡ :width && return grimg.cols
-    s ≡ :height && return grimg.rows
     getfield(grimg.params, s)
 end
 
@@ -643,16 +657,18 @@ function GrayScaleLine(
     if isnothing(height)
         height = round(Int, width * factor)
     end
-    gray_scale_width = round(Int, 17 / 25 * width)
-    gray_scale_height = round(Int, 6 / 31 * height)
+    swidth = round(Int, 17 / 25 * width)
+    sheight = round(Int, 6 / 31 * height)
     pad = round(Int, 3 / 25 * width)
     dist = 2pad ÷ 3
     radius = round(Int, 1 / 17 * width)
 
     imp = ImageParams(
         T;
-        width = gray_scale_width,
-        height = gray_scale_height,
+        width,
+        height,
+        swidth,
+        sheight,
         pad,
         dist,
         radius,
@@ -684,15 +700,13 @@ end
 
 function getproperty(grimg::GrayScalePyramid, s::Symbol)
     s ∈ fieldnames(GrayScalePyramid) && return getfield(grimg, s)
-    s ≡ :width && return grimg.cols
-    s ≡ :height && return grimg.rows
     getfield(grimg.params, s)
 end
 
 
-function GrayScalePyramid(imp::ImageParams{T}; plateau::Real) where {T<:Real}
+function GrayScalePyramid(imp::ImageParams{T}; plateau::Real = zero(T)) where {T<:Real}
     image = create_pyramid_image(imp; plateau)
-    GrayScalePyramid(imp, T(plateau), image)
+    GrayScalePyramid(imp, plateau, image)
 end
 
 
@@ -709,16 +723,18 @@ function GrayScalePyramid(
     if isnothing(height)
         height = round(Int, width * factor)
     end
-    gray_scale_width = round(Int, 17 / 25 * width)
-    gray_scale_height = round(Int, 6 / 31 * height)
+    swidth = round(Int, 17 / 25 * width)
+    sheight = round(Int, 6 / 31 * height)
     pad = round(Int, 3 / 25 * width)
     dist = 2pad ÷ 3
-    radius = round(Int, 1 / 17 * width)
+    radius = round(Int, 1 / 13 * width)
 
     imp = ImageParams(
         T;
-        width = gray_scale_width,
-        height = gray_scale_height,
+        width,
+        height,
+        swidth,
+        sheight,
         pad,
         dist,
         radius,
@@ -838,8 +854,6 @@ end
 
 function getproperty(grimg::WhiteRect, s::Symbol)
     s ∈ fieldnames(WhiteRect) && return getfield(grimg, s)
-    s ≡ :width && return grimg.cols
-    s ≡ :height && return grimg.rows
     getfield(grimg.params, s)
 end
 
@@ -861,11 +875,10 @@ function WhiteRect(
     if gray_scale isa Real
         gray_scale = gray_scale..gray_scale
     end
-    rows, cols = height, width
     imp = ImageParams(
         T;
-        rows,
-        cols,
+        width,
+        height,
         gray_scale,
         calibration_value,
         background,
@@ -894,14 +907,14 @@ end
 for nm ∈ Geometry._geometry_names
     @eval begin
         $nm(imp::ImageParams; kwargs...) =
-            $nm(datatype(imp); imp.rows, imp.cols, kwargs...)
+            $nm(datatype(imp); imp.width, imp.height, kwargs...)
         $nm(gs::AbstractTestImage; kwargs...) =
             $nm(datatype(gs); gs.width, gs.height, kwargs...)
     end
 end
 
 
-plateau_length(grsc::GrayScalePyramid) = round(Int, grsc.width * grsc.plateau)
+plateau_length(grsc::GrayScalePyramid) = round(Int, grsc.swidth * grsc.plateau)
 
 
 project_image(image::AbstractTestImage, alg::AbstractProjectionAlgorithm; kwargs...) =

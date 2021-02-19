@@ -58,17 +58,28 @@ function plot_sinogram(sinog::AbstractMatrix{T}; kwargs...) where {T}
     plot(CTSinogram(sinog); kwargs...)
 end
 
+# TODO: Check lims for plot again!
 
-@recipe function f(image::CTImage)
+@recipe function f(
+    image::CTImage,
+    α::Optional{Real} = nothing,
+    β::Optional{Real} = nothing,
+)
     rows, cols = size(image)
-    xs = (0:(cols - 1)) .- (cols - 1) / 2
-    ys = (0:(rows - 1)) .- (rows - 1) / 2
+    β = maybe(maybe(rows, α), β)
+    α = maybe(cols, α)
+    # xs = (0:(cols - 1)) .- (cols - 1) / 2
+    # ys = (0:(rows - 1)) .- (rows - 1) / 2
+    xs = range(-α/2, α/2; length = cols)
+    ys = range(-β/2, β/2; length = rows)
     seriestype --> :heatmap
     seriescolor --> :grays
     tick_direction --> :out
     aspect_ratio --> :equal
-    xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5))
-    ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5))
+    xlims --> (xs[1], xs[end])
+    # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    ylims --> (ys[1], ys[end])
     xs, ys, mjoin(image)
 end
 
@@ -76,18 +87,23 @@ end
 const _sinog_xticks = [45i for i in 0:8]
 
 
-@recipe function f(sinog::CTSinogram)
+@recipe function f(sinog::CTSinogram, α::Optional{Real} = nothing)
     nd, nϕ = size(sinog)
-    Δϕ = 360 / (nϕ - 1)
-    xs = (0:nϕ - 1) * Δϕ # Now we use midpoints and not edges to support more backends
-    ys = (0:nd - 1) .- (nd - 1) / 2
+    #Δϕ = 360 / (nϕ - 1)
+    #xs = (0:nϕ - 1) * Δϕ # Now we use midpoints and not edges to support more backends
+    xs = range(0, 360; length = nϕ)
+    #ys = (0:nd - 1) .- (nd - 1) / 2
+    α = maybe(nd - 1, α)
+    ys = range(-α/2, α/2; length = nd)
     seriestype --> :heatmap
     seriescolor --> :grays
     tick_direction --> :out
     xrotation --> -45
     xticks --> _sinog_xticks
-    xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
-    ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
+    xlims --> (xs[1], xs[end])
+    # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    ylims --> (ys[1], ys[end])
     xs, ys, mjoin(sinog)
 end
 

@@ -22,6 +22,7 @@ function cttomogram end
 abstract type AbstractCTImage{M<:AbstractArray{<:Number}} <: Monad end
 
 size(img::AbstractCTImage) = mbind(size, img)
+size(img::AbstractCTImage, dim::Integer) = mbind(x -> size(x, dim), img)
 map(f::Function, img::AbstractCTImage) = mmap(fmap(f), img)
 
 _atype(::Type{<:AbstractCTImage{M}}) where {M} = M
