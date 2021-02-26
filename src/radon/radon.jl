@@ -32,7 +32,7 @@ function radon_std(
     y₀::T = x′₀ * sθ + 1
     ϕ₀::T = deg2rad(α₀)
     Δϕ::T = deg2rad(α) / nϕ
-    x′s = linspace(-x′₀, x′₀, nd) * ν
+    x′s = linspace(-x′₀..x′₀, nd) * ν
     scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
     z::T = maybe(zero(T), background)
     rmat = fill(z, nd, nϕ)
@@ -96,7 +96,7 @@ function radon_alt(
     y₀::T = (rows - 1) / 2 + 1
     ϕ₀::T = deg2rad(α₀)
     Δϕ::T = deg2rad(α) / nϕ
-    ts = linspace(-t₀, t₀, nd)
+    ts = linspace(-t₀..t₀, nd)
     scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
     rimage = rescaled ? rescale(image) : image
     interp = isnothing(interpolation) ?

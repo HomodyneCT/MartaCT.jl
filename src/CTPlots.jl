@@ -12,6 +12,8 @@ using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn
 using ..CTImages: ctimage, ctsinogram, cttomogram
 using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
+using ..Marta: linspace
+using IntervalSets
 
 function __init__()
     ENV["GKS_ENCODING"] = "utf-8"
@@ -72,8 +74,8 @@ end
     α = maybe(cols, α)
     # xs = (0:(cols - 1)) .- (cols - 1) / 2
     # ys = (0:(rows - 1)) .- (rows - 1) / 2
-    xs = range(-α/2, α/2; length = cols)
-    ys = range(-β/2, β/2; length = rows)
+    xs = linspace(-α/2..α/2, cols)
+    ys = linspace(-β/2..β/2, rows)
     seriestype --> :heatmap
     seriescolor --> :grays
     tick_direction --> :out
@@ -93,10 +95,10 @@ const _sinog_xticks = [45i for i in 0:8]
     nd, nϕ = size(sinog)
     #Δϕ = 360 / (nϕ - 1)
     #xs = (0:nϕ - 1) * Δϕ # Now we use midpoints and not edges to support more backends
-    xs = range(0, 360; length = nϕ)
+    xs = linspace(0..360, nϕ)
     #ys = (0:nd - 1) .- (nd - 1) / 2
     α = maybe(nd - 1, α)
-    ys = range(-α/2, α/2; length = nd)
+    ys = linspace(-α/2..α/2, nd)
     seriestype --> :heatmap
     seriescolor --> :grays
     tick_direction --> :out

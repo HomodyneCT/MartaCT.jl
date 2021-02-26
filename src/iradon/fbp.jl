@@ -34,8 +34,8 @@ function iradon_fast_threaded(
     sθ, cθ = sincos(atan(T(rows), T(cols)))
     x₀, y₀ = t₀ * cθ / ν, t₀ * sθ / ν
     scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
-    xs = linspace(-x₀, x₀, cols)
-    ys = linspace(-y₀, y₀, rows)
+    xs = linspace(-x₀..x₀, cols)
+    ys = linspace(-y₀..y₀, rows)
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
     @inbounds @simd for k ∈ eachindex(xys)
         xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
@@ -95,8 +95,8 @@ function iradon_fast_threaded_alt(
     t₀::T = T(nd + 1) / 2
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
     scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
-    xs = linspace(-t₀, t₀, l) / ν
-    ys = linspace(-t₀, t₀, l) / ν
+    xs = linspace(-t₀..t₀, l) / ν
+    ys = linspace(-t₀..t₀, l) / ν
     indices = Vector{NTuple{2,Int}}(undef, l^2)
     xys = Vector{NTuple{2,T}}(undef, l^2)
     @inbounds @simd for k ∈ eachindex(xys)
@@ -193,8 +193,8 @@ function iradon_threaded(
     t₀::T = T(nd + 1) / 2
     sθ, cθ = sincos(atan(T(rows), T(cols)))
     x₀, y₀ = t₀ * cθ / ν, t₀ * sθ / ν
-    xs = linspace(-x₀, x₀, cols)
-    ys = linspace(-y₀, y₀, rows)
+    xs = linspace(-x₀..x₀, cols)
+    ys = linspace(-y₀..y₀, rows)
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
     @inbounds @simd for k ∈ eachindex(xys)
         xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
@@ -249,8 +249,8 @@ function iradon_threaded_alt(
     ϕ₀::T = deg2rad(α₀)
     t₀::T = T(nd + 1) / 2
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
-    xs = linspace(-t₀, t₀, l) / ν
-    ys = linspace(-t₀, t₀, l) / ν
+    xs = linspace(-t₀..t₀, l) / ν
+    ys = linspace(-t₀..t₀, l) / ν
     xys = Vector{NTuple{2,T}}(undef, l^2)
     indices = Vector{NTuple{2,Int}}(undef, l^2)
     @inbounds @simd for k ∈ eachindex(xys)
