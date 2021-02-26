@@ -1,7 +1,7 @@
 module Marta
 
 using Reexport
-import Measures, Statistics, LinearAlgebra
+import Measures, Statistics, LinearAlgebra, IntervalSets, IterTools, YAML, FFTW
 
 include("basic_definitions.jl")
 include("Applicative.jl")

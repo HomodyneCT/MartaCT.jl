@@ -9,8 +9,7 @@ export load_image, write_image
 export load_sinogram, write_sinogram
 export load_tomogram, write_tomogram
 
-import YAML
-using Mmap: mmap
+import YAML, Mmap
 using IterTools: imap
 
 include("TypeDict.jl")
@@ -53,7 +52,7 @@ function load_data(
     if header != 0
         seek(io, header)
     end
-    mmap(io, Vector{standardize_type(dtype)})
+    Mmap.mmap(io, Vector{standardize_type(dtype)})
 end
 
 
