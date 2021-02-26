@@ -90,13 +90,13 @@ end
 
 
 """
-    calibrate_image(image::AbstractMatrix{T}, imp::ImageParams; interval=nothing, window=nothing) where {T<:Real}
+    calibrate_image(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
 
 Perform calibration of `image` using image parameters as reference.
 """
 function calibrate_image(
     image::AbstractMatrix{T},
-    imp::ImageParams;
+    imp::AbstractImageParams;
     interval::Optional{ClosedInterval{U}} = nothing,
     window::Optional{ClosedInterval{W}} = nothing,
 ) where {T<:Real,U<:Real,W<:Real}

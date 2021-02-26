@@ -1,6 +1,7 @@
 module Marta
 
 using Reexport
+import Measures, Statistics, LinearAlgebra
 
 include("basic_definitions.jl")
 include("Applicative.jl")

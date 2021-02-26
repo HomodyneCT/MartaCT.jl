@@ -17,8 +17,8 @@ import CurveFit; const Fit = CurveFit
 using ..Applicative
 using ..Monads
 using ..Geometry
-import ..AbstractAlgorithms: alg_geometry, alg_params,
-    reconstruct_image, project_image
+import ..AbstractAlgorithms:
+    alg_geometry, alg_params, reconstruct_image, project_image
 using ..AbstractAlgorithms
 import ..Marta: datatype, _atype
 using ..RadonAlgorithm

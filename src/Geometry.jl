@@ -82,7 +82,7 @@ Construct geometry for the simulation.
 function ParallelBeamGeometry(
     ::Type{T} = Float32,
     ct::AbstractTomograph = DefaultTomograph();
-    nϕ::Int = 1024,
+    nϕ::Optional{Int} = nothing,
     nd::Optional{Int} = nothing,
     rows::Optional{Int} = nothing,
     cols::Optional{Int} = nothing,
@@ -92,9 +92,12 @@ function ParallelBeamGeometry(
     α₀::Real = 0,
     center::Optional{<:Real} = nothing,
 ) where {T <: Real}
-    nd = maybe(nϕ, nd)
-    rows = maybe(nd, maybe(rows, height))
+    rows = maybe(512, maybe(rows, height))
     cols = maybe(rows, maybe(cols, width))
+    nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
+    # nϕ = maybe(1024, nϕ)
+    nϕ = isnothing(nϕ) ?
+        2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
     center′::T = maybe((nd - 1) / 2, center)
     ParallelBeamGeometry{T,typeof(ct)}(
         ct,
@@ -193,7 +196,7 @@ not flat.
 function FanBeamGeometry(
     ::Type{T} = Float32,
     ct::AbstractTomograph = DefaultTomograph();
-    nϕ::Int = 1024,
+    nϕ::Optional{Int} = nothing,
     D::Real = 500,
     D′::Optional{<:Real} = nothing,
     γ::Optional{<:Real} = nothing,
@@ -202,19 +205,20 @@ function FanBeamGeometry(
     cols::Optional{Int} = nothing,
     width::Optional{Int} = nothing,
     height::Optional{Int} = nothing,
-    δ::Real = 1,
+    δ::Real = one(T),
     α::Real = 360,
-    α₀::Real = 0,
+    α₀::Real = zero(T),
     center::Optional{<:Real} = nothing,
 ) where {T <: Real}
-    nd = maybe(nϕ, nd)
-    rows = maybe(nd, maybe(rows, height))
+    rows = maybe(512, maybe(rows, height))
     cols = maybe(rows, maybe(cols, width))
+    nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
+    # nϕ = maybe(1024, nϕ)
+    nϕ = isnothing(nϕ) ?
+        2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
     γ′::T = maybe(
         deg2rad,
-        maybe(1, D′) do x
-            nd * δ / x
-        end,
+        isnothing(D') ? one(T) : nd * δ / D′,
         γ
     )
     D′′::T = maybe(nd * δ / γ′, D′) # changed γ to γ′ here, should be tested

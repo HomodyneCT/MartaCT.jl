@@ -1,136 +1,137 @@
-import LoopVectorization: @avx, vmapreduce
+using IntervalSets
+using ..Marta: linspace
 
-function radon(
+
+"""radon_std(image::AbstractMatrix; <keyword arguments>)
+
+Compute the Radon transform of `image` inside a circle of
+radius `hypot(rows,cols)/2` where `rows` and `cols` are the
+dimensions of `image`.
+
+See Also: [`radon_alt`](@ref)
+"""
+function radon_std(
     image::AbstractMatrix{T};
     nd::Optional{Int} = nothing,
     nϕ::Optional{Int} = nothing,
     α::Real = 360,
     α₀::Real = 0,
+    ν::Real = 1,
+    background::Optional{<:Real} = nothing,
+    rescaled::Bool = true,
     interpolation::Optional{Interp} = nothing,
-    rescaled = true,
-) where {T <: Real, Interp <: Union{Function,AbstractBilinearInterpolation}}
+) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
     M = typeof(image)
     rows, cols = size(image)
-    nd = maybe(round(Int, sqrt(rows * rows + cols * cols)), nd)
-    nϕ = maybe(2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1, nϕ)
-
-    x′₀::T = T(nd - 1) / 2
-    x₀::T = T(cols + 1) / 2
-    y₀::T = T(rows + 1) / 2
-    t₀ = (x₀, y₀)
+    nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
+    nϕ = isnothing(nϕ) ?
+        2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
+    x′₀::T = hypot(rows, cols) / 2
+    sθ, cθ = atan(rows, cols) |> sincos
+    x₀::T = x′₀ * cθ + 1
+    y₀::T = x′₀ * sθ + 1
     ϕ₀::T = deg2rad(α₀)
     Δϕ::T = deg2rad(α) / nϕ
-
-    x′s = range(-1, 1; length = nd) |> collect
-    # x′s = range(-1; step = 2 / nd, length = nd) |> collect
-    # ϕs = map(reim ∘ cis, (0:nϕ - 1) * Δϕ .+ ϕ₀)
-    ϕs = map(reim ∘ cis, range(ϕ₀; step = Δϕ, length = nϕ))
-
-    rmat = zeros(T, nd, nϕ)
-    indices = Vector{NTuple{2,Int}}(undef, length(rmat))
-    x′ϕs = Vector{NTuple{2,T}}(undef, length(rmat))
-
-    Threads.@threads for k in LinearIndices(rmat)
+    x′s = linspace(-x′₀, x′₀, nd) * ν
+    scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
+    z::T = maybe(zero(T), background)
+    rmat = fill(z, nd, nϕ)
+    indices = similar(vec(rmat), NTuple{2,Int})
+    x′ϕs = similar(indices, NTuple{2,T})
+    foreach(eachindex(rmat)) do k
         ix = (k - 1) % nd
         iϕ = (k - 1) ÷ nd
+        @inbounds x′::T = x′s[ix + 1]
+        @inbounds s, c = scϕs[iϕ + 1]
         @inbounds indices[k] = k, iϕ
-        @inbounds x′ϕs[k] = x′s[ix + 1] .* ϕs[iϕ + 1]
+        @inbounds x′ϕs[k] = x′ * c, x′ * s
     end
-
     rimage = rescaled ? rescale(image) : image
-    interp = isnothing(interpolation) ? interpolate(rimage) : interpolation(rimage)
-
-    # interp_value = (y, x) -> begin
-    #     1 ≤ x ≤ cols && 1 ≤ y ≤ rows && return interp(y, x)
-    #     return 0
-    # end
-
-    compute_projection = (k, iϕ) -> begin
-        @inbounds x′x, x′y = x′ϕs[k]
-        prex = (x′x + 1) * x₀
-        prey = (x′y + 1) * y₀
-        offset = iϕ * nd
-        #@views sum(x′ϕs[offset + 1:offset + nd]) do (y′y, y′x)
-        #s::T = zero(T)
-        # @avx for ii ∈ view(x′ϕs, offset + 1:offset + nd)
-        #     (y′y, y′x) = ii
-        #     x = prex - y′x * x₀
-        #     y = prey + y′y * y₀
-        #     if 1 ≤ x ≤ cols && 1 ≤ y ≤ rows
-        #         s += interp(y, x)
-        #     end
-        # end
-        # return s
-        vmapreduce(+, view(x′ϕs, offset + 1:offset + nd)) do (y′y, y′x)
-            x = prex - y′x * x₀
-            y = prey + y′y * y₀
-            return 1 ≤ x ≤ cols && 1 ≤ y ≤ rows ?
-                interp(y, x) : zero(T)
-        end
-    end
-
+    interp = isnothing(interpolation) ?
+        interpolate(rimage) : interpolation(rimage)
     @info "Computing Radon transform..."
     p = Progress(length(rmat), 0.2)
-
-    Threads.@threads for (k, iϕ) in indices
-        @inbounds rmat[k] = compute_projection(k, iϕ)
+    Threads.@threads for (k, iϕ) ∈ indices
+        @inbounds x′x, x′y = x′ϕs[k]
+        prex, prey = x′x + x₀, x′y + y₀
+        o = iϕ * nd
+        @inbounds rmat[k] = sum(view(x′ϕs, o + 1:o + nd)) do (y′y, y′x)
+            x, y = prex - y′x, prey + y′y
+            return x ∈ 1..cols && y ∈ 1..rows ? interp(y, x) : z
+        end
         next!(p)
     end
-
     rmat |> CTSinogram{M}
 end
 
 
-# function radon(
-#     image::AFMatrix{T};
-#     nd = nothing,
-#     nϕ = nothing,
-#     α = 360,
-#     α₀ = 0,
-#     interpolation = nothing,
-# ) where {T<:Real}
-#     rows, cols = size(image)
-#     if isnothing(nd)
-#         nd = round(Int, sqrt(rows * rows + cols * cols))
-#     end
-#     if isnothing(nϕ)
-#         nϕ = 2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1
-#     end
-#     if isnothing(interpolation)
-#         interpolation = mat -> LinearInterpolation(axes(mat), mat)
-#     end
-#     x′₀::T = T(nd - 1) / 2
-#     x₀::T = T(cols + 1) / 2
-#     y₀::T = T(rows + 1) / 2
-#     y′s = (0:nd-1) .- x′₀
-#     Δϕ::T = deg2rad(α) / nϕ
-#     ϕ₀::T = deg2rad(α₀)
-#     rmat = AFArray(zeros(T, nd, nϕ))
-#     m = length(rmat)
-#     interp = interpolation(image)
-#
-#     @info Computing Radon transform..."
-#
-#     for k = 1:m
-#         ϕ::T = (((k - 1) ÷ nd) * Δϕ + ϕ₀)
-#         x′ = (k - 1) % nd - x′₀
-#         cϕ::T = cos(ϕ)
-#         sϕ::T = sin(ϕ)
-#         prex = x′ * cϕ + x₀
-#         prey = x′ * sϕ + y₀
-#         sum = zero(T)
-#         for y′ in y′s
-#             x = prex - y′ * sϕ
-#             y = prey + y′ * cϕ
-#             if 1 <= x <= cols && 1 <= y <= rows
-#                 sum += interp(y, x)
-#             end
-#         end
-#         rmat[k] = sum
-#     end
-#
-#     rmat
-# end
+"""radon_alt(image::AbstractMatrix; <keyword arguments>)
+
+Compute the Radon transform of `image` inside a circle of
+radius `(min(rows,cols)-1) / 2` where `rows` and `cols` are the
+dimensions of `image`.
+
+See also: [`radon_std`](@ref)
+"""
+function radon_alt(
+    image::AbstractMatrix{T};
+    nd::Optional{Int} = nothing,
+    nϕ::Optional{Int} = nothing,
+    α::Real = 360,
+    α₀::Real = 0,
+    ν::Real = 1,
+    background::Optional{<:Real} = nothing,
+    rescaled::Bool = true,
+    interpolation::Optional{Interp} = nothing,
+) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
+    M = typeof(image)
+    rows, cols = size(image)
+    l = min(rows, cols)
+    nd = isnothing(nd) ? round(Int, l) : nd
+    nϕ = isnothing(nϕ) ?
+        2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
+    x′₀ = (nd-l) ÷ 2
+    t₀::T = (l - 1) / 2 * ν
+    x₀::T = (cols - 1) / 2 + 1
+    y₀::T = (rows - 1) / 2 + 1
+    ϕ₀::T = deg2rad(α₀)
+    Δϕ::T = deg2rad(α) / nϕ
+    ts = linspace(-t₀, t₀, nd)
+    scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
+    rimage = rescaled ? rescale(image) : image
+    interp = isnothing(interpolation) ?
+        interpolate(rimage) : interpolation(rimage)
+    z::T = maybe(zero(T), background)
+    rmat = fill(z, nd, nϕ)
+    @info "Computing Radon transform..."
+    p = Progress(nϕ, 0.2)
+    Threads.@threads for iϕ ∈ 1:nϕ
+        @inbounds s, c = scϕs[iϕ]
+        @inbounds @simd for it ∈ 1:l
+            t::T = ts[it+x′₀]
+            prex::T = t * c + x₀
+            prey::T = t * s + y₀
+            for z ∈ ts
+                x::T = prex - z * s
+                y::T = prey + z * c
+                if x ∈ 1..cols && y ∈ 1..rows
+                    rmat[x′₀ + it,iϕ] += interp(y,x)
+                end
+            end
+        end
+        next!(p)
+    end
+    rmat |> CTSinogram{M}
+end
+
+
+const _default_radon_ref = Ref{Function}(radon_std)
+default_radon() = _default_radon_ref[]
+default_radon(other::Function) = _default_radon_ref[] = other
+default_radon(other::Symbol) = @eval _default_radon_ref[] = $other
+
+
+radon(image::AbstractMatrix; kwargs...) = default_radon()(image; kwargs...)
 
 
 function radon(

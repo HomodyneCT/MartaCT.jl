@@ -58,7 +58,8 @@ maybe(b, m::Optional) = isnothing(m) ? b : m
 maybe(b) = m::Optional -> maybe(b, m)
 # maybe(f::Function, b, m::Union{Maybe,Optional}) =
 #     maybe(b, mbind(f, m))
-maybe(f::Function, b, m::Optional) = maybe(b, mbind(f, Maybe(m)))
-maybe(f::Function, b) = maybe(b) ∘ f
+#maybe(f::Function, b, m::Optional) = maybe(b, mbind(f, Maybe(m)))
+maybe(f::Function, b, m::Optional) = f(maybe(b, m)) # Not sure which one is correct, this works for FBP
+#maybe(f::Function, b) = maybe(b) ∘ f
 
 end # module

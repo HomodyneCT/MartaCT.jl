@@ -5,7 +5,7 @@ export para2fan, fan2para
 using ..Monads, ..Applicative
 using ..CTImages: CTSinogram
 using ..Geometry
-using ..Interpolation: interpolate, AbstractBilinearInterpolation
+using ..Interpolation: interpolate, AbstractInterp2DOrNone
 
 
 """
@@ -41,7 +41,7 @@ function para2fan(
     sinog_para::AbstractMatrix{T},
     fbg::FanBeamGeometry{T};
     interpolation::Optional{Interp} = nothing,
-) where {T <: Real, Interp <: Union{Function,AbstractBilinearInterpolation}}
+) where {T <: Real, Interp <: Union{Function,AbstractInterp2DOrNone}}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     interpolation = maybe(interpolate, interpolation)
@@ -49,13 +49,13 @@ function para2fan(
     sinog_fan = zeros(T, nd, nϕ)
 
     D::T = f2iso(fbg)
-    Δβ::T = (deg2rad ∘ T ∘ scan_angle)(fbg) / T(nϕ-1) # This should be 2π / (nβ-1)?
-    β₀::T = (deg2rad ∘ T ∘ start_angle)(fbg) + T(1)
-    Δϕ::T = T(2π) / T(nϕ-1) # This should be α / (nϕ-1)?
+    Δβ::T = (deg2rad ∘ T ∘ scan_angle)(fbg) / (nϕ-1) # This should be 2π / (nβ-1)?
+    β₀::T = (deg2rad ∘ T ∘ start_angle)(fbg) + 1
+    Δϕ::T = 2π / (nϕ-1) # This should be α / (nϕ-1)?
     γ::T = (T ∘ fan_angle)(fbg)
-    Δγ::T = γ / T(nd)
-    x′max::T = T(D) * sin(γ/2)
-    Δx′::T = 2x′max / T(nd)
+    Δγ::T = γ / nd
+    x′max::T = D * sin(γ/2)
+    Δx′::T = 2x′max / nd
     center = center_channel(fbg)
     γ₀::T = center + 1
     x′₀::T = center + 1
@@ -79,7 +79,7 @@ function para2fan(
 
     Threads.@threads for iγ = 1:nd
         γ′::T = (T(iγ) - γ₀) * Δγ
-        x′::T = T(D) * sin(γ′)
+        x′::T = D * sin(γ′)
         for iβ = 1:nϕ
             β::T = T(iβ - β₀) * Δβ
             ϕ::T = β - γ′
@@ -95,10 +95,10 @@ end
 function para2fan(
     sinog_para::AbstractMatrix{T},
     pbg::ParallelBeamGeometry{T};
-    D,
-    D′ = nothing,
-    γ = nothing,
-    δ = 1,
+    D::Real = 500,
+    D′::Optional{<:Real} = nothing,
+    γ::Optional{<:Real} = nothing,
+    δ::Optional{<:Real} = one(T),
     kwargs...,
 ) where {T<:Real}
     @assert (pbg.nd, pbg.nϕ) == size(sinog_para) "Sinogram size $(size(sinog_para)) should match geometry ($(pbg.nd),$(pbg.nϕ))"
@@ -164,7 +164,7 @@ function fan2para(
     sinog_fan::AbstractMatrix{T},
     fbg::FanBeamGeometry{T,DefaultTomograph};
     interpolation::Optional{Interp} = nothing,
-) where {T <: Real, Interp <: Union{Function,AbstractBilinearInterpolation}}
+) where {T <: Real, Interp <: Union{Function,AbstractInterp2DOrNone}}
     nd, nϕ = fbg.nd, fbg.nϕ
 
     @assert (nd, nϕ) == size(sinog_fan) "Sinogram size $(size(sinog_fan)) should match geometry ($nd,$nϕ)"
@@ -185,12 +185,12 @@ function fan2para(
     sinog_para = zeros(T, nd, nϕ)
     D::T = f2iso(fbg)
     γ::T = fan_angle(fbg)
-    Δϕ::T = (deg2rad ∘ T ∘ scan_angle)(fbg) / T(nϕ - 1)
-    Δβ::T = 2π / T(nϕ - 1)
+    Δϕ::T = (deg2rad ∘ T ∘ scan_angle)(fbg) / (nϕ - 1)
+    Δβ::T = 2π / (nϕ - 1)
     β₀::T = (deg2rad ∘ T ∘ start_angle)(fbg)
-    Δγ::T = γ / T(nd)
+    Δγ::T = γ / nd
     x′max::T = D * sin(γ/2)
-    Δx′::T = 2x′max / T(nd)
+    Δx′::T = 2x′max / nd
     center = center_channel(pbg)
     x′₀::T = center + 1 # support for custom center channel
     @assert (x′₀ * Δx′ / D) <= 1 "Fan beam parameters incompatible |x′₀/D| = $(x′₀ * Δx′ / D) which should be less than 1"
@@ -218,7 +218,7 @@ function fan2para(
     end
 
     Threads.@threads for ix = 1:nd
-        x′::T = (ix - x′₀) * Δx′
+        x′::T = (T(ix) - x′₀) * Δx′
         γ′::T = asin(x′ / D)
         for iϕ = 1:nϕ
             ϕ::T = (iϕ - 1) * Δϕ

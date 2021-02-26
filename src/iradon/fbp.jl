@@ -1,4 +1,6 @@
-import LoopVectorization: @avx, vmapreduce
+using IntervalSets
+using ..Marta: linspace
+
 
 function iradon_fast_threaded(
     sinog::AbstractMatrix{T};
@@ -7,65 +9,121 @@ function iradon_fast_threaded(
     filter::Optional{F} = nothing,
     α::Real = 360,
     α₀::Real = 0,
+    ν::Real = 1,
+    background::Optional{<:Real} = nothing,
     interpolation::Optional{Interp} = nothing,
 ) where {
     T <: Real,
     F <: CTFilterOrFunc,
-    Interp <: Union{Function,AbstractBilinearInterpolation}
+    Interp <: Union{Function,AbstractInterp2DOrNone}
 }
     M = typeof(sinog)
     nd, nϕ = size(sinog)
-    rows = maybe(round(Int, nd / sqrt(2)), rows)
+    rows = maybe(cols, rows)
+    rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-
-    interpolation = maybe(interpolate, interpolation)
-
     filtered = maybe(RamLak(), filter) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
-        ifft(filter_freq, 1) .|> real .|> T # fastest solution (?),
-                                            # not '.|> T ∘ real'
+        ifft(filter_freq, 1) |> real
     end
-
+    interpolation = maybe(interpolate, interpolation)
     interp = interpolation(filtered)
-
     Δϕ::T = deg2rad(α) / nϕ
     ϕ₀::T = deg2rad(α₀)
-    x₀::T = T(cols - 1) / 2
-    y₀::T = T(rows - 1) / 2
-    t₀::T = T(nd - 1) / 2
-
-    # ϕs = collect(enumerate((0:nϕ-1) * Δϕ .+ ϕ₀))
-    ϕs = collect(enumerate(range(ϕ₀; step = Δϕ, length = nϕ)))
-    xs = range(-1, 1; length = cols)
-    # xs = range(-one(T); step = T(2 / cols), length = cols)
-    ys = range(-1, 1; length = rows)
-    # ys = range(-one(T); step = T(2/rows), length = rows)
-    indices = Vector{Tuple{T,T}}(undef, rows * cols)
-
-    @inbounds for k ∈ LinearIndices(indices)
-        indices[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
+    t₀::T = T(nd + 1) / 2
+    sθ, cθ = sincos(atan(T(rows), T(cols)))
+    x₀, y₀ = t₀ * cθ / ν, t₀ * sθ / ν
+    scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
+    xs = linspace(-x₀, x₀, cols)
+    ys = linspace(-y₀, y₀, rows)
+    xys = Vector{NTuple{2,T}}(undef, rows * cols)
+    @inbounds @simd for k ∈ eachindex(xys)
+        xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
     end
-
+    z::T = maybe(zero(T), background)
+    temp_images = fill(fill(z, rows, cols), 1)
+    Threads.resize_nthreads!(temp_images)
     @info "Computing inverse Radon transform..."
     p = Progress(nϕ, 0.2)
-
-    temp_images = Vector{Matrix{T}}(undef, Threads.nthreads())
-    fill!(temp_images, zeros(T, rows, cols))
-
-    Threads.@threads for (iϕ, ϕ) ∈ ϕs
-        cϕ, sϕ = cos(ϕ), sin(ϕ)
+    Threads.@threads for iϕ ∈ eachindex(scϕs)
+        sϕ, cϕ = scϕs[iϕ]
         id = Threads.threadid()
         @inbounds img = temp_images[id]
-        @inbounds for (k, (x, y)) ∈ indices
+        @inbounds @simd for k ∈ eachindex(xys)
+            x, y = xys[k]
             # To be consistent with our conventions should be '+'.
-            t = (x * cϕ + y * sϕ + 1) * t₀ + 1
-            if 1 ≤ t ≤ nd
+            t::T = x * cϕ + y * sϕ + t₀
+            if t ∈ 1..nd
                 img[k] += interp(t, T(iϕ))
             end
         end
         next!(p)
     end
+    temp_images |> sum |> CTTomogram{M}
+end
 
+
+function iradon_fast_threaded_alt(
+    sinog::AbstractMatrix{T};
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    filter::Optional{F} = nothing,
+    α::Real = 360,
+    α₀::Real = 0,
+    ν::Real = 1,
+    background::Optional{<:Real} = nothing,
+    interpolation::Optional{Interp} = nothing,
+) where {
+    T <: Real,
+    F <: CTFilterOrFunc,
+    Interp <: Union{Function,AbstractInterp2DOrNone}
+}
+    M = typeof(sinog)
+    nd, nϕ = size(sinog)
+    rows = maybe(cols, rows)
+    rows = maybe(round(Int, nd), rows)
+    cols = maybe(rows, cols)
+    l = min(rows, cols)
+    filtered = maybe(RamLak(), filter) do f
+        filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
+        ifft(filter_freq, 1) |> real
+    end
+    interpolation = maybe(interpolate, interpolation)
+    interp = interpolation(filtered)
+    Δϕ::T = deg2rad(α) / nϕ
+    ϕ₀::T = deg2rad(α₀)
+    t₀::T = T(nd + 1) / 2
+    x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
+    scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
+    xs = linspace(-t₀, t₀, l) / ν
+    ys = linspace(-t₀, t₀, l) / ν
+    indices = Vector{NTuple{2,Int}}(undef, l^2)
+    xys = Vector{NTuple{2,T}}(undef, l^2)
+    @inbounds @simd for k ∈ eachindex(xys)
+        ix, iy = (k - 1) ÷ l + 1, (k - 1) % l + 1
+        indices[k] = x₀ + ix, y₀ + iy
+        xys[k] = xs[ix], ys[iy]
+    end
+    z::T = maybe(zero(T), background)
+    temp_images = fill(fill(z, rows, cols), 1)
+    Threads.resize_nthreads!(temp_images)
+    @info "Computing inverse Radon transform..."
+    p = Progress(nϕ, 0.2)
+    Threads.@threads for iϕ ∈ eachindex(scϕs)
+        sϕ, cϕ = scϕs[iϕ]
+        id = Threads.threadid()
+        @inbounds img = temp_images[id]
+        @inbounds @simd for k ∈ eachindex(xys)
+            ix, iy = indices[k]
+            x, y = xys[k]
+            # To be consistent with our conventions should be '+'.
+            t::T = x * cϕ + y * sϕ + t₀
+            if t ∈ 1..nd
+                img[iy,ix] += interp(t, T(iϕ))
+            end
+        end
+        next!(p)
+    end
     temp_images |> sum |> CTTomogram{M}
 end
 
@@ -75,7 +133,7 @@ function iradon_fast_threaded(
     geometry::AbstractParallelBeamGeometry,
     filter::Optional{F} = nothing;
     kwargs...
-) where {T <: Real, F <: CTFilterOrFunc}
+) where {T <: Real,F <: CTFilterOrFunc}
     rows = geometry.rows
     cols = geometry.cols
     α = geometry.α
@@ -90,7 +148,7 @@ function iradon_fast_threaded(
     geometry::Optional{G} = nothing,
     kwargs...
 ) where {G <: AbstractParallelBeamGeometry}
-    isnothing(geometry) &&  return iradon_fast_threaded(sinog; filter, kwargs...)
+    isnothing(geometry) && return iradon_fast_threaded(sinog; filter, kwargs...)
     iradon_fast_threaded(sinog, geometry, filter; kwargs...)
 end
 
@@ -111,67 +169,111 @@ function iradon_threaded(
     filter::Optional{F} = nothing,
     α::Real = 360,
     α₀::Real = 0,
+    ν::Real = 1,
+    background::Optional{<:Real} = nothing,
     interpolation::Optional{Interp} = nothing,
 ) where {
     T <: Real,
     F <: CTFilterOrFunc,
-    Interp <: Union{Function,AbstractBilinearInterpolation}
+    Interp <: Union{Function,AbstractInterp2DOrNone}
 }
     M = typeof(sinog)
     nd, nϕ = size(sinog)
-    rows = maybe(round(Int, nd / sqrt(2)), rows)
+    rows = maybe(cols, rows)
+    rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-
     filtered = maybe(RamLak(), filter) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
-        ifft(filter_freq, 1) .|> real .|> T # fastest solution (?),
-                                            # not '.|> T ∘ real'
+        ifft(filter_freq, 1) |> real
     end
-
-    interp = isnothing(interpolation) ? interpolate(filtered) : interpolation(filtered)
-
+    interpolation = maybe(interpolate, interpolation)
+    interp = interpolation(filtered)
     Δϕ::T = deg2rad(α) / nϕ
     ϕ₀::T = deg2rad(α₀)
-    x₀::T = T(cols - 1) / 2
-    y₀::T = T(rows - 1) / 2
-    t₀::T = T(nd - 1) / 2
-
-    image = zeros(T, rows, cols)
-    xs = range(-1, 1; length = cols)
-    # xs = range(-1; step = 2 / cols, length = cols)
-    ys = range(-1, 1; length = rows)
-    # ys = range(-1; step = 2 / rows, length = rows)
-    indices = Vector{Tuple{Int,T,T}}(undef, length(image))
-
-    @inbounds for k ∈ LinearIndices(image)
-        indices[k] = k, xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
+    t₀::T = T(nd + 1) / 2
+    sθ, cθ = sincos(atan(T(rows), T(cols)))
+    x₀, y₀ = t₀ * cθ / ν, t₀ * sθ / ν
+    xs = linspace(-x₀, x₀, cols)
+    ys = linspace(-y₀, y₀, rows)
+    xys = Vector{NTuple{2,T}}(undef, rows * cols)
+    @inbounds @simd for k ∈ eachindex(xys)
+        xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
     end
-
-    # ϕs = map(enumerate((0:nϕ-1) * Δϕ .+ ϕ₀)) do (iϕ, ϕ)
-    #     T(iϕ), cos(ϕ), sin(ϕ)
-    # end
-    indϕs = enumerate(range(ϕ₀; step = Δϕ, length = nϕ))
-    csϕs = map(indϕs) do (iϕ, ϕ)
-        T(iϕ), cos(ϕ), sin(ϕ)
-    end
-
+    scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
+    z::T = maybe(zero(T, background))
+    image = fill(z, rows, cols)
     @info "Computing inverse Radon transform..."
     p = Progress(length(image), 0.2)
-
-    Threads.@threads for (k, x, y) ∈ indices
-        # @inbounds image[k] = sum(csϕs) do (iϕ, cϕ, sϕ)
-        #     # To be consistent with our conventions should be '+'.
-        #     t::T = (x * cϕ + y * sϕ + 1) * t₀ + 1
-        #     1 ≤ t ≤ nd && return interp(t, iϕ)
-        # end
-        @inbounds image[k] = vmapreduce(+, csϕs) do (iϕ, cϕ, sϕ)
+    Threads.@threads for k ∈ eachindex(xys)
+        x, y = xys[k]
+        @inbounds image[k] = sum(eachindex(scϕs)) do iϕ
+            sϕ, cϕ = scϕs[iϕ]
             # To be consistent with our conventions should be '+'.
-            t::T = (x * cϕ + y * sϕ + 1) * t₀ + 1
-            return 1 ≤ t ≤ nd ? interp(t, iϕ) : zero(T)
+            t::T = x * cϕ + y * sϕ + t₀
+            t ∈ 1..nd ? interp(t, T(iϕ)) : z
         end
         next!(p)
     end
+    image |> CTTomogram{M}
+end
 
+
+function iradon_threaded_alt(
+    sinog::AbstractMatrix{T};
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    filter::Optional{F} = nothing,
+    α::Real = 360,
+    α₀::Real = 0,
+    ν::Real = 1,
+    background::Optional{<:Real} = nothing,
+    interpolation::Optional{Interp} = nothing,
+) where {
+    T <: Real,
+    F <: CTFilterOrFunc,
+    Interp <: Union{Function,AbstractInterp2DOrNone}
+}
+    M = typeof(sinog)
+    nd, nϕ = size(sinog)
+    rows = maybe(cols, rows)
+    rows = maybe(round(Int, nd), rows)
+    cols = maybe(rows, cols)
+    l = min(rows, cols)
+    filtered = maybe(RamLak(), filter) do f
+        filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
+        ifft(filter_freq, 1) |> real
+    end
+    interpolation = maybe(interpolate, interpolation)
+    interp = interpolation(filtered)
+    Δϕ::T = deg2rad(α) / nϕ
+    ϕ₀::T = deg2rad(α₀)
+    t₀::T = T(nd + 1) / 2
+    x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
+    xs = linspace(-t₀, t₀, l) / ν
+    ys = linspace(-t₀, t₀, l) / ν
+    xys = Vector{NTuple{2,T}}(undef, l^2)
+    indices = Vector{NTuple{2,Int}}(undef, l^2)
+    @inbounds @simd for k ∈ eachindex(xys)
+        ix, iy = (k - 1) ÷ l + 1, (k - 1) % l + 1
+        indices[k] = x₀ + ix, y₀ + iy
+        xys[k] = xs[ix], ys[iy]
+    end
+    scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
+    z::T = maybe(zero(T), background)
+    image = fill(z, rows, cols)
+    @info "Computing inverse Radon transform..."
+    p = Progress(length(xys), 0.2)
+    Threads.@threads for k ∈ eachindex(xys)
+        ix, iy = indices[k]
+        x, y = xys[k]
+        @inbounds image[iy, ix] = sum(eachindex(scϕs)) do iϕ
+            sϕ, cϕ = scϕs[iϕ]
+            # To be consistent with our conventions should be '+'.
+            t::T = x * cϕ + y * sϕ + t₀
+            t ∈ 1..nd ? interp(t, T(iϕ)) : z
+        end
+        next!(p)
+    end
     image |> CTTomogram{M}
 end
 
@@ -181,7 +283,7 @@ function iradon_threaded(
     geometry::AbstractParallelBeamGeometry,
     filter::Optional{F} = nothing;
     kwargs...
-) where {T <: Real, F <: CTFilterOrFunc}
+) where {T <: Real,F <: CTFilterOrFunc}
     rows = geometry.rows
     cols = geometry.cols
     α = geometry.α
@@ -210,144 +312,26 @@ iradon_threaded(f::CTFilterOrFunc; kwargs...) =
     x -> iradon_threaded(x, f; kwargs...)
 
 
-# function iradon_af(
-#     sinog::AFMatrix{T};
-#     rows = nothing,
-#     cols = nothing,
-#     filter::Union{Nothing,Function} = ram_lak,
-#     α = 360,
-#     α₀ = 0,
-#     interpolation = nothing,
-# ) where {T<:Real}
-#     nd, nϕ = size(sinog)
-#     if isnothing(rows)
-#         rows = round(Int, nd / sqrt(2))
-#     end
-#     if isnothing(cols)
-#         cols = rows
-#     end
-#     if isnothing(interpolation)
-#         interpolation = mat -> LinearInterpolation(axes(mat), mat)
-#     end
-#     filtered = sinog
-#     if !isnothing(filter)
-#         af_filter = AFArray(filter(T, nd, nϕ))
-#         filtered = fft(filtered, 1) .* af_filter
-#         filtered = ifft(filtered, 1) .|> real
-#     end
-#     interp = interpolation(filtered)
-#     image = AFArray(zeros(T, rows, cols))
-#     m = length(image)
-#     xs = AFArray(zeros(T, m))
-#     ys = AFArray(zeros(T, m))
-#     x₀::T = T(cols - 1) / 2
-#     y₀::T = T(rows - 1) / 2
-#     t₀::T = T(nd + 1) / 2
-#
-#     for k = 1:m
-#         x::T = (k - 1) ÷ rows - x₀
-#         y::T = (k - 1) % rows - y₀
-#         xs[k] = x
-#         ys[k] = y
-#     end
-#
-#     Δϕ::T = deg2rad(α) / nϕ
-#     ϕ₀::T = deg2rad(α₀)
-#
-#     @info "Computing inverse Radon transform..."
-#
-#     for iϕ = 1:nϕ
-#         ϕ::T = ((iϕ - 1) * Δϕ + ϕ₀)
-#         cϕ = cos(ϕ)
-#         sϕ = sin(ϕ)
-#         for k = 1:m
-#             x = xs[k]
-#             y = ys[k]
-#             # To be consistent with our conventions should be '+'.
-#             t = x * cϕ + y * sϕ + t₀
-#             if 1 <= t <= nd
-#                 image[k] += interp(t, iϕ)
-#             end
-#         end
-#     end
-#
-#     image
-# end
-#
-#
-# function iradon_af_alt(
-#     #sinog::AFMatrix{T};
-#     sinog::Matrix{T};
-#     rows = nothing,
-#     cols = nothing,
-#     filter::Union{Nothing,Function} = ram_lak,
-#     α = 360,
-#     α₀ = 0,
-#     interpolation = nothing,
-# ) where {T<:Real}
-#     nd, nϕ = size(sinog)
-#     if isnothing(rows)
-#         rows = round(Int, nd / sqrt(2))
-#     end
-#     if isnothing(cols)
-#         cols = rows
-#     end
-#     if isnothing(interpolation)
-#         interpolation = mat -> LinearInterpolation(axes(mat), mat)
-#     end
-#     filtered = sinog
-#     if !isnothing(filter)
-#         #af_filter = AFArray(filter(T, nd, nϕ))
-#         af_filter = filter(T, nd, nϕ)
-#         filtered = fft(filtered, 1) .* af_filter
-#         filtered = ifft(filtered, 1) .|> real
-#     end
-#     interp = interpolation(filtered)
-#     #image = AFArray(zeros(T, rows, cols))
-#     # cph = AFArray(Vector{T}(undef, nϕ))
-#     # sph = AFArray(Vector{T}(undef, nϕ))
-#     #m = length(image)
-#     #m = rows * cols;
-#     Δϕ::T = deg2rad(α) / nϕ
-#     ϕ₀::T = deg2rad(α₀)
-#     x₀::T = T(cols - 1) / 2
-#     y₀::T = T(rows - 1) / 2
-#     t₀::T = T(nd + 1) / 2
-#
-#     ϕs = T.(0:(nϕ-1)) * Δϕ .+ ϕ₀
-#
-#     tfs = zeros(T, 3, 2, nϕ)
-#
-#     for (iϕ, ϕ) ∈ enumerate(ϕs)
-#         c, s = cos(ϕ), sin(ϕ)
-#         t₀ϕ = t₀ - x₀ * c - y₀ * s
-#         tfs[:,:,iϕ] .= [[c zero(T)]; [s zero(T)]; [t₀ϕ iϕ]]
-#     end
-#
-#     #tfsa = AFArray(tfs)
-#     tfsa = tfs
-#
-#     @info "Computing inverse Radon transform..."
-#
-#     sum(
-#         map(1:nϕ) do iϕ
-#             tf = tfsa[:,:,iϕ]
-#             transform(filtered, tf, rows, cols, AF_INTERP_BILINEAR, true)
-#         end
-#     )
-# end
+const _default_iradon_ref = Ref{Function}(iradon_fast_threaded)
+default_iradon() = _default_iradon_ref[]
+default_iradon(other::Function) = _default_iradon_ref[] = other
+default_iradon(other::Symbol) = @eval _default_iradon_ref[] = $other
 
 
-const _default_iradon = iradon_threaded
+iradon(sinog::AbstractMatrix; kwargs...) = default_iradon()(sinog; kwargs...)
 
 
 @inline function iradon(
     sinog::AbstractMatrix,
-    g::AbstractParallelBeamGeometry,
-    f::Optional{F} = nothing;
+    geometry::AbstractParallelBeamGeometry,
+    filter::Optional{F} = nothing;
     kwargs...
 ) where {F <: CTFilterOrFunc}
-    _default_iradon(sinog, g, f; kwargs...)
+    rows = geometry.rows
+    cols = geometry.cols
+    α = geometry.α
+    α₀ = geometry.α₀
+    iradon(sinog; rows, cols, α, α₀, filter, kwargs...)
 end
 
 
@@ -363,25 +347,18 @@ end
 
 
 iradon(sinog::AbstractMatrix, g::AbstractGeometry; kwargs...) =
-    _default_iradon(sinog, g; kwargs...)
+    default_iradon()(sinog, g; kwargs...)
 
 iradon(sinog::AbstractMatrix, f::CTFilterOrFunc; kwargs...) =
-    _default_iradon(sinog, f; kwargs...)
+    default_iradon()(sinog, f; kwargs...)
 
-iradon(sinog::AbstractMatrix; kwargs...) = _default_iradon(sinog; kwargs...)
-
-# iradon(sinog::AbstractMatrix; kwargs...) = iradon_threaded(sinog; kwargs...)
-# iradon(sinog::AFMatrix; kwargs...) = iradon_af_alt(sinog; kwargs...)
 iradon(; kwargs...) = x -> iradon(x; kwargs...)
 iradon(g::AbstractGeometry, f::CTFilterOrFunc; kwargs...) = x -> iradon(x, g, f; kwargs...)
 iradon(g::AbstractGeometry; kwargs...) = x -> iradon(x, g; kwargs...)
 iradon(f::CTFilterOrFunc; kwargs...) = x -> iradon(x, f; kwargs...)
 
 
-struct FBP{
-    Geometry <: AbstractGeometry,
-    Filter <: AbstractCTFilter
-    } <: AbstractIRadonAlgorithm
+struct FBP{Geometry <: AbstractGeometry,Filter <: AbstractCTFilter} <: AbstractIRadonAlgorithm
     geometry::Geometry
     filter::Filter
 end

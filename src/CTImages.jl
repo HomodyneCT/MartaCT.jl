@@ -1,16 +1,17 @@
 module CTImages
 
 export rescale!, rescale, rotate
-export sample_sinog, polar2cart
+export sample_sinog, polar2cart, cart2polar
 export AbstractCTImage, CTImage, CTSinogram, CTTomogram, CTImageOrTomog
 export ctimage, ctsinogram, cttomogram
 
 using IntervalSets
+using ..Marta:linspace
 using ..Monads, ..Applicative, ..Interpolation
 using ..Geometry: AbstractParallelBeamGeometry, AbstractFanBeamGeometry,
     ParallelBeamGeometry
-import ..Monads: mbind
-import ..Marta: _atype
+import ..Monads:mbind
+import ..Marta:_atype
 import Base: size, map, convert
 
 
@@ -19,7 +20,7 @@ function ctsinogram end
 function cttomogram end
 
 
-abstract type AbstractCTImage{M<:AbstractArray{<:Number}} <: Monad end
+abstract type AbstractCTImage{M <: AbstractArray{<:Number}} <: Monad end
 
 size(img::AbstractCTImage) = mbind(size, img)
 size(img::AbstractCTImage, dim::Integer) = mbind(x -> size(x, dim), img)
@@ -36,8 +37,8 @@ const ctfn = (image = :ctimage, sinog = :ctsinogram, tomog = :cttomogram)
 for nm in ctnames
     @eval begin
         struct $nm{M} <: AbstractCTImage{M}
-            data::M
-        end
+        data::M
+    end
         $nm{M}(img::$nm) where {M} = $nm{M}(convert(M, img.data))
         mbind(f::Union{Function,Type}, m::$nm) = f(m.data)
         convert(::Type{$nm{M}}, img::$nm) where {M} = $nm{M}(convert(M, img.data))
@@ -49,7 +50,7 @@ const CTImageOrTomog{M} = Union{CTImage{M},CTTomogram{M}}
 
 
 """
-    rotate(mat::AbstractMatrix{T}, α; <keyword arguments>) where {T <: Real}
+    rotate(mat::AbstractMatrix{T}, α::Real; <keyword arguments>) where {T <: Real}
 
 Rotate matrix `mat` about the center of angle `α` given in degrees.
 If `rows` and `cols` are not given, the rotated matrix has the same
@@ -61,37 +62,32 @@ dimensions of the original matrix.
 - `rows=nothing`: number of rows of the rotated matrix.
 - `cols=nothing`: number of columns of the rotated matrix.
 - `interpolation`: interpolation strategy. By default is
-    `LinearInterpolation`.
+    `BilinearInterpolation`.
 """
 function rotate(
     mat::AbstractMatrix{T},
-    α;
-    rows = nothing,
-    cols = nothing,
-    interpolation = mat -> LinearInterpolation(axes(mat), mat),
-) where {T<:Real}
+    α::Real;
+    rows::Optional{<:Integer} = nothing,
+    cols::Optional{<:Integer} = nothing,
+    interpolation::Optional{<:Interp} = nothing,
+) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
     orows, ocols = size(mat)
-    if isnothing(rows)
-        rows = orows
-    end
-    if isnothing(cols)
-        cols = ocols
-    end
-    ϕ = deg2rad(α)
-    cϕ = cos(ϕ)
-    sϕ = sin(ϕ)
+    rows = maybe(orows, rows)
+    cols = maybe(ocols, cols)
+    sϕ, cϕ = sincos(deg2rad(α))
     rmat = zeros(T, rows, cols)
+    interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mat)
-    x₀::T = T(cols + 1) / T(2)
-    y₀::T = T(rows + 1) / T(2)
-    x′₀::T = T(ocols + 1) / T(2)
-    y′₀::T = T(orows + 1) / T(2)
-    for ix in 1:rows, iy in 1:cols
+    x₀::T = T(cols + 1) / 2
+    y₀::T = T(rows + 1) / 2
+    x′₀::T = T(ocols + 1) / 2
+    y′₀::T = T(orows + 1) / 2
+    for ix ∈ 1:rows, iy ∈ 1:cols
         x::T = T(ix) - x₀
         y::T = T(iy) - y₀
         x′::T = x * cϕ + y * sϕ + x′₀
         y′::T = y * cϕ - x * sϕ + y′₀
-        if 1 <= x′ <= ocols && 1 <= y′ <= orows
+        if x′ ∈ 1..ocols && y′ ∈ 1..orows
             rmat[iy, ix] = interp(y′, x′)
         end
     end
@@ -112,48 +108,37 @@ minimum and maximum are assumed to be the values specified by
 See also: [`rescale`](@ref)
 """
 function rescale!(
-    x::AbstractArray{T};
+    img::AbstractArray{T};
     interval::ClosedInterval = zero(T)..one(T),
     calibration::Optional{ClosedInterval{U}} = nothing,
     window::Optional{ClosedInterval{W}} = nothing,
-) where {T<:Number,U<:Number,W<:Number}
+) where {T <: Number,U <: Number,W <: Number}
     if isnothing(calibration)
-        calibration = ClosedInterval(extrema(x)...)
+        calibration = ClosedInterval(extrema(img)...)
     end
-
     a, b = T.(endpoints(interval))
     m, M = T.(endpoints(calibration))
-
-    @assert m != M "Calibration values m, M = $(calibration) should be m!=M"
-
+    @assert(
+        m != M,
+        "Cannot calibrate image as calibration values " *
+        "m, M = $(calibration) are equal"
+    )
     f = (b - a) / (M - m)
-
     if m != zero(T)
-        x .-= m
+        img .-= m
     end
-
-    x .*= f
-
+    img .*= f
     if a != zero(T)
-        x .+= a
+        img .+= a
     end
-
-    if isnothing(window)
+    isnothing(window) && return img
+    a, b = T.(endpoints(window))
+    map!(img, img) do x
+        x < a && return a
+        x > b && return b
         return x
     end
-
-    a, b = T.(endpoints(window))
-
-    for i in eachindex(x)
-        val = x[i]
-        if val < a
-            x[i] = a
-        elseif val > b
-            x[i] = b
-        end
-    end
-
-    x
+    img
 end
 
 
@@ -170,23 +155,14 @@ function rescale(
     slope::Number,
     intercept::Number;
     window::Optional{ClosedInterval{U}} = nothing,
-) where {T<:Number,U<:Number}
+) where {T <: Number,U <: Number}
     res = @. image * slope + intercept
-
-    if isnothing(window)
-        return res
-    end
-
+    isnothing(window) && return res
     a, b = T.(endpoints(window))
-
     map(res) do x
-        if x < a
-            return a
-        elseif x > b
-            return b
-        else
-            return x
-        end
+        x < a && return a
+        x > b && return b
+        return x
     end
 end
 
@@ -200,29 +176,20 @@ In place linear rescaling of `x`.
 See also: [`rescale`](@ref)
 """
 function rescale!(
-    x::AbstractArray{T},
+    img::AbstractArray{T},
     slope::Number,
     intercept::Number;
     window::Optional{ClosedInterval{U}} = nothing,
-) where {T<:Number,U<:Number}
-    @. x = slope * x + intercept
-
-    if isnothing(window)
+) where {T <: Number,U <: Number}
+    @. img = slope * img + intercept
+    isnothing(window) && return img
+    a, b = T.(endpoints(window))
+    map(img) do x
+        x < a && return a
+        x > b && return b
         return x
     end
-
-    a, b = T.(endpoints(window))
-
-    for i in eachindex(x)
-        val = x[i]
-        if val < a
-            x[i] = a
-        elseif val > b
-            x[i] = b
-        end
-    end
-
-    x
+    img
 end
 
 
@@ -242,22 +209,33 @@ See also: [`rescale!`](@ref)
 function rescale(
     x::AbstractArray;
     interval = 0..1,
-    calibration  = nothing,
+    calibration = nothing,
     window = nothing,
 )
     rescale!(deepcopy(x); interval, calibration, window)
 end
 
 
+for nm ∈ (:rescale, :rescale!)
+    @eval begin
+        $nm(img::AbstractCTImage, args...) = mmap(img) do x
+            $nm(x, args...)
+        end
+        $nm(img::AbstractCTImage; kwargs...) = mmap(img) do x
+            $nm(x; kwargs...)
+        end
+    end
+end
 
-function sample_sinog(sinog::AbstractMatrix{T}, n) where {T<:Real}
+
+function sample_sinog(sinog::AbstractMatrix{T}, n) where {T <: Real}
     nd, nϕ = size(sinog)
     cumsum_sinog = rescale!(cumsum(sinog, dims = 1))
     low_sample = zeros(eltype(sinog), nd, nϕ)
-    Threads.@threads for iϕ in 1:nϕ
-        for _ in 1:n
+    Threads.@threads for iϕ ∈ 1:nϕ
+            foreach(1:n) do _
             u = rand()
-            for x′ in nd:-1:1
+            for x′ ∈ nd:-1:1
                 if cumsum_sinog[x′, iϕ] < u
                     low_sample[x′, iϕ] += 1
                     break
@@ -278,43 +256,43 @@ function polar2cart(
     rows::Optional{<:Integer} = nothing,
     cols::Optional{<:Integer} = nothing,
     interpolation::Optional{Interp} = nothing,
-    background::Real = zero(T),
-) where {T <: Real, Interp <: Union{Function,AbstractBilinearInterpolation}}
+    background::Optional{<:Real} = nothing,
+    ν::Real = 1,
+) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
     nϕ, nr = size(mp)
-    if isnothing(rows)
-        rows = maybe(2nr, cols)
-    end
+    rows = isnothing(rows) ? maybe(2nr, cols) : rows
     cols = maybe(rows, cols)
-    mc = fill(T(background), rows, cols)
-
-    x₀::T = T(cols - 1) / T(2)
-    y₀::T = T(rows - 1) / T(2)
-    Δr::T = T(1) / T(nr - 1)
-    Δϕ::T = T(2π) / T(nϕ - 1)
-
+    ν = T(ν)
+    X::T, Y::T = cols, rows
+    y₀, x₀ = sincos(atan(Y, X))
+    Δr::T = (nr - 1) / ν
+    Δϕ::T = (nϕ - 1) / (2π)
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
-
     compute_radius = (x, y) -> begin
         x == 0 && return abs(y)
         y == 0 && return abs(x)
-        sqrt(x^2 + y^2)
+        return √(x^2 + y^2)
     end
-
-    for ix in 1:cols, iy in 1:rows
-        x::T = T(ix - 1) / x₀ - T(1)
-        y::T = T(iy - 1) / y₀ - T(1)
+    xs = linspace(-x₀, x₀, cols)
+    ys = linspace(-y₀, y₀, rows)
+    indices = Vector{NTuple{2,Int}}(undef, rows * cols)
+    @inbounds for k ∈ eachindex(indices)
+        indices[k] = (k - 1) ÷ rows + 1, (k - 1) % rows + 1
+    end
+    z::T = maybe(zero(T), background)
+    mc = fill(z, rows, cols)
+    Threads.@threads for k ∈ eachindex(indices)
+        @inbounds ix, iy = indices[k]
+        @inbounds x, y = xs[ix], ys[iy]
         r::T = compute_radius(x, y)
         ϕ::T = mod2pi(atan(y, x))
-
-        ir::T = r / Δr + T(1)
-        iϕ::T = ϕ / Δϕ + T(1)
-
-        if 1 <= ir <= nr && 1 <= iϕ <= nϕ
-            mc[iy, ix] = interp(iϕ, ir)
+        R::T = r * Δr + 1
+        Θ::T = ϕ * Δϕ + 1
+        if R ∈ 1..nr && Θ ∈ 1..nϕ
+            @inbounds mc[iy,ix] = interp(Θ, R)
         end
     end
-
     mc
 end
 
@@ -327,6 +305,9 @@ polar2cart(image::AbstractMatrix, geometry::AbstractParallelBeamGeometry; kwargs
 
 polar2cart(image::CTImageOrTomog, geometry::AbstractParallelBeamGeometry; kwargs...) =
     typeof(image)(image ↣ polar2cart(geometry; kwargs...))
+
+polar2cart(image::CTImageOrTomog; kwargs...) =
+    typeof(image)(image ↣ polar2cart(; kwargs...))
 
 polar2cart(image, geometry::AbstractFanBeamGeometry; kwargs...) =
     polar2cart(image, ParallelBeamGeometry(geometry); kwargs...)

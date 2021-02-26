@@ -1,8 +1,6 @@
 module CTPlots
 
-Base.Experimental.@optlevel 0
-
-ENV["GKS_ENCODING"] = "utf-8"
+Base.Experimental.@optlevel 1
 
 export plot_image, plot_sinogram, plot_tomogram
 export plot_gray_scale
@@ -14,6 +12,10 @@ using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn
 using ..CTImages: ctimage, ctsinogram, cttomogram
 using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
+
+function __init__()
+    ENV["GKS_ENCODING"] = "utf-8"
+end
 
 
 """

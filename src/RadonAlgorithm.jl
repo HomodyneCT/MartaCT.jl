@@ -11,10 +11,10 @@ using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
 import ..Marta: datatype
-import ..AbstractAlgorithms: radon, iradon, project_image, reconstruct_image,
-    alg_geometry, alg_params
+import ..AbstractAlgorithms:
+    radon, iradon, project_image, reconstruct_image, alg_geometry, alg_params
 using ..AbstractAlgorithms
-using ..Interpolation: interpolate, AbstractBilinearInterpolation
+using ..Interpolation: interpolate, AbstractInterp2DOrNone
 using FFTW, ProgressMeter
 
 
