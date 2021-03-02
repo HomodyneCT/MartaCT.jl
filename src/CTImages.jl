@@ -12,7 +12,7 @@ using ..Geometry: AbstractParallelBeamGeometry, AbstractFanBeamGeometry,
     ParallelBeamGeometry
 import ..Monads:mbind
 import ..Marta:_atype
-import Base: size, map, convert
+import Base: size, map, convert, length
 
 
 function ctimage end
@@ -24,6 +24,7 @@ abstract type AbstractCTImage{M <: AbstractArray{<:Number}} <: Monad end
 
 size(img::AbstractCTImage) = mbind(size, img)
 size(img::AbstractCTImage, dim::Integer) = mbind(x -> size(x, dim), img)
+length(img::AbstractCTImage) = mbind(length, img)
 map(f::Function, img::AbstractCTImage) = mmap(fmap(f), img)
 
 _atype(::Type{<:AbstractCTImage{M}}) where {M} = M
@@ -258,7 +259,12 @@ function polar2cart(
     interpolation::Optional{Interp} = nothing,
     background::Optional{<:Real} = nothing,
     ν::Real = 1,
-) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
+    transposed::Bool = false,
+) where {
+    T <: Real,
+    Interp <: Union{Function,AbstractInterp2DOrNone},
+}
+    mp = transposed ? permutedims(mp) : mp
     nϕ, nr = size(mp)
     rows = isnothing(rows) ? maybe(2nr, cols) : rows
     cols = maybe(rows, cols)
@@ -266,7 +272,7 @@ function polar2cart(
     X::T, Y::T = cols, rows
     y₀, x₀ = sincos(atan(Y, X))
     Δr::T = (nr - 1) / ν
-    Δϕ::T = (nϕ - 1) / (2π)
+    Δϕ::T = (nϕ - 1) / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
     compute_radius = (x, y) -> begin
@@ -291,7 +297,7 @@ function polar2cart(
         Θ::T = ϕ * Δϕ + 1
         if R ∈ 1..nr && Θ ∈ 1..nϕ
             @inbounds mc[iy,ix] = interp(Θ, R)
-        end
+         end
     end
     mc
 end
