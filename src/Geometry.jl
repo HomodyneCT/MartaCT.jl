@@ -92,10 +92,11 @@ function ParallelBeamGeometry(
     α₀::Real = 0,
     center::Optional{<:Real} = nothing,
 ) where {T <: Real}
-    rows = maybe(512, maybe(rows, height))
-    cols = maybe(rows, maybe(cols, width))
+    height = maybe(width, height)
+    width = maybe(height, width)
+    rows = maybe(512, maybe(height, rows))
+    cols = maybe(rows, maybe(width, cols))
     nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
-    # nϕ = maybe(1024, nϕ)
     nϕ = isnothing(nϕ) ?
         2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
     center′::T = maybe((nd - 1) / 2, center)
@@ -210,10 +211,11 @@ function FanBeamGeometry(
     α₀::Real = zero(T),
     center::Optional{<:Real} = nothing,
 ) where {T <: Real}
-    rows = maybe(512, maybe(rows, height))
-    cols = maybe(rows, maybe(cols, width))
+    height = maybe(width, height)
+    width = maybe(height, width)
+    rows = maybe(512, maybe(height, rows))
+    cols = maybe(rows, maybe(width, cols))
     nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
-    # nϕ = maybe(1024, nϕ)
     nϕ = isnothing(nϕ) ?
         2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
     γ′::T = maybe(
