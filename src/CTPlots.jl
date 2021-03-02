@@ -64,27 +64,45 @@ end
 
 # TODO: Check lims for plot again!
 
-@recipe function f(
-    image::CTImage,
-    α::Optional{Real} = nothing,
-    β::Optional{Real} = nothing,
-)
+@recipe function f(xs, ys, image::CTImage)
     rows, cols = size(image)
-    β = maybe(maybe(rows, α), β)
-    α = maybe(cols, α)
-    # xs = (0:(cols - 1)) .- (cols - 1) / 2
-    # ys = (0:(rows - 1)) .- (rows - 1) / 2
-    xs = linspace(-α/2..α/2, cols)
-    ys = linspace(-β/2..β/2, rows)
+    proj = get(plotattributes, :projection, nothing)
     seriestype --> :heatmap
     seriescolor --> :grays
-    tick_direction --> :out
     aspect_ratio --> :equal
-    # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5))
-    xlims --> (xs[1], xs[end])
-    # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
-    ylims --> (ys[1], ys[end])
-    xs, ys, mjoin(image)
+    if proj === :polar
+        xs, ys, mjoin(image)
+    else
+        tick_direction --> :out
+        # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5))
+        xlims --> (xs[1], xs[end])
+        # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+        ylims --> (ys[1], ys[end])
+        xs, ys, mjoin(image)
+    end
+end
+
+
+@recipe function f(
+    image::CTImage,
+    α::Optional{<:Real} = nothing,
+    β::Optional{<:Real} = nothing,
+)
+    rows, cols = size(image)
+    proj = get(plotattributes, :projection, nothing)
+    if proj === :polar
+        α = maybe(rows, α)
+        β = maybe(2π, β)
+        rs = linspace(0..α, rows+1)
+        ϕs = linspace(0..β, cols+1)
+        ϕs, rs, image
+    else
+        β = maybe(maybe((rows - 1) / 2, α), β)
+        α = maybe((cols - 1) / 2, α)
+        xs = linspace(-α..α, cols)
+        ys = linspace(-β..β, rows)
+        xs, ys, image
+    end
 end
 
 
