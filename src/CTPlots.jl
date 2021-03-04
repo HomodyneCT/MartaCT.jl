@@ -67,10 +67,11 @@ end
 @recipe function f(xs, ys, image::CTImage)
     rows, cols = size(image)
     proj = get(plotattributes, :projection, nothing)
-    seriestype --> :heatmap
     seriescolor --> :grays
     aspect_ratio --> :equal
+    seriestype --> :heatmap
     if proj === :polar
+        yaxis --> false
         xs, ys, mjoin(image)
     else
         tick_direction --> :out
