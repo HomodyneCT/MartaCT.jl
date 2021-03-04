@@ -1,18 +1,19 @@
 module CTImages
 
 export rescale!, rescale, rotate
-export sample_sinog, polar2cart, cart2polar
+export polar2cart
 export AbstractCTImage, CTImage, CTSinogram, CTTomogram, CTImageOrTomog
 export ctimage, ctsinogram, cttomogram
 
 using IntervalSets
-using ..Marta:linspace
+using ..Marta: linspace
 using ..Monads, ..Applicative, ..Interpolation
 using ..Geometry: AbstractParallelBeamGeometry, AbstractFanBeamGeometry,
     ParallelBeamGeometry
 import ..Monads:mbind
 import ..Marta:_atype
-import Base: size, map, convert, length
+import Base: size, map, convert, length, similar, iterate, axes, copyto!
+import Base: getindex, setindex!, firstindex, lastindex
 
 
 function ctimage end
@@ -25,10 +26,27 @@ abstract type AbstractCTImage{M <: AbstractArray{<:Number}} <: Monad end
 size(img::AbstractCTImage) = mbind(size, img)
 size(img::AbstractCTImage, dim::Integer) = mbind(x -> size(x, dim), img)
 length(img::AbstractCTImage) = mbind(length, img)
+axes(img::AbstractCTImage) = mbind(axes, img)
+iterate(img::AbstractCTImage) = mbind(iterate, img)
+iterate(img::AbstractCTImage, state) = mbind(x->iterate(x, state), img)
+getindex(img::AbstractCTImage, inds...) = mbind(x->getindex(x, inds...), img)
+setindex!(img::AbstractCTImage, v, inds...) = mbind(x->setindex!(x, v, inds...), img)
+firstindex(img::AbstractCTImage) = mbind(firstindex, img)
+lastindex(img::AbstractCTImage) = mbind(lastindex, img)
 map(f::Function, img::AbstractCTImage) = mmap(fmap(f), img)
 
-_atype(::Type{<:AbstractCTImage{M}}) where {M} = M
+_atype(::Type{<:AbstractCTImage{M}}) where M = M
 _atype(img::AbstractCTImage) = _atype(typeof(img))
+
+Base.broadcastable(img::AbstractCTImage) = mjoin(img)
+Base.BroadcastStyle(::Type{T}) where {T<:AbstractCTImage} = Base.Broadcast.Style{T}()
+function similar(bc::Base.Broadcast.Broadcasted{S}, ::Type{T}) where {S<:Base.Broadcast.Style{M},T} where {M<:AbstractCTImage}
+    @info axes(bc)
+    similar(M, T, axes(bc))
+end
+function copyto!(img::AbstractCTImage, bc::Base.Broadcast.Broadcasted)
+    mmap(x->copyto!(x, bc), img)
+end
 
 
 const ctnames = (image = :CTImage, sinog = :CTSinogram, tomog = :CTTomogram)
@@ -38,11 +56,12 @@ const ctfn = (image = :ctimage, sinog = :ctsinogram, tomog = :cttomogram)
 for nm in ctnames
     @eval begin
         struct $nm{M} <: AbstractCTImage{M}
-        data::M
-    end
-        $nm{M}(img::$nm) where {M} = $nm{M}(convert(M, img.data))
+            data::M
+        end
         mbind(f::Union{Function,Type}, m::$nm) = f(m.data)
-        convert(::Type{$nm{M}}, img::$nm) where {M} = $nm{M}(convert(M, img.data))
+        $nm{M}(img::$nm) where {M} = mreturn($nm{M}, img ↣ x -> convert(M, x))
+        convert(::Type{T}, img::$nm) where {T<:$nm} = mreturn(T, img)
+        similar(::Type{T}, args...) where {T<:$nm} = mreturn(T, similar(_atype(T), args...))
     end
 end
 
@@ -229,29 +248,6 @@ for nm ∈ (:rescale, :rescale!)
 end
 
 
-function sample_sinog(sinog::AbstractMatrix{T}, n) where {T <: Real}
-    nd, nϕ = size(sinog)
-    cumsum_sinog = rescale!(cumsum(sinog, dims = 1))
-    low_sample = zeros(eltype(sinog), nd, nϕ)
-    Threads.@threads for iϕ ∈ 1:nϕ
-            foreach(1:n) do _
-            u = rand()
-            for x′ ∈ nd:-1:1
-                if cumsum_sinog[x′, iϕ] < u
-                    low_sample[x′, iϕ] += 1
-                    break
-                end
-            end
-        end
-    end
-    rescale!(low_sample)
-end
-
-
-sample_sinog(n) = x -> sample_sinog(x, n)
-sample_sinog(sinog::CTSinogram, n) = CTSinogram(sinog ↣ sample_sinog(n))
-
-
 function polar2cart(
     mp::AbstractMatrix{T};
     rows::Optional{<:Integer} = nothing,
@@ -291,13 +287,13 @@ function polar2cart(
     Threads.@threads for k ∈ eachindex(indices)
         @inbounds ix, iy = indices[k]
         @inbounds x, y = xs[ix], ys[iy]
-        r::T = compute_radius(x, y)
-        ϕ::T = mod2pi(atan(y, x))
+        @fastmath r::T = compute_radius(x, y)
+        @fastmath ϕ::T = mod2pi(atan(y, x))
         R::T = r * Δr + 1
         Θ::T = ϕ * Δϕ + 1
         if R ∈ 1..nr && Θ ∈ 1..nϕ
-            @inbounds mc[iy,ix] = interp(Θ, R)
-         end
+            @fastmath @inbounds mc[iy,ix] = interp(Θ, R)
+        end
     end
     mc
 end
