@@ -20,10 +20,11 @@ const FuncOrType = Union{Function,Type}
 
 mreturn(::Type{M}, x) where {M<:MonadOrMaybe} = M(x)
 mjoin(m::MonadOrMaybe) = mbind(identity, m)
-mmap(f::FuncOrType, m::M) where {M<:MonadOrMaybe} =
+function mmap(f::FuncOrType, m::M) where {M<:MonadOrMaybe}
     mbind(m) do x
         mreturn(M, f(x))
     end
+end
 ↣(m::MonadOrMaybe, f::FuncOrType) = mbind(f, m)
 
 

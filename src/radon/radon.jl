@@ -55,7 +55,7 @@ function radon_std(
         @inbounds x′x, x′y = x′ϕs[k]
         prex, prey = x′x + x₀, x′y + y₀
         o = iϕ * nd
-        @inbounds rmat[k] = sum(view(x′ϕs, o + 1:o + nd)) do (y′y, y′x)
+        @inbounds rmat[k] = sum(view(x′ϕs, o+1:o+nd)) do (y′y, y′x)
             x, y = prex - y′x, prey + y′y
             return x ∈ 1..cols && y ∈ 1..rows ? interp(y, x) : z
         end

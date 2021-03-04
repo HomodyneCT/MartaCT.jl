@@ -3,7 +3,6 @@ module CTScan
 Base.Experimental.@optlevel 0
 
 export AbstractCTScanner, CTScanner, FBPScanner
-export resample_sinogram
 export calibrate_image, calibrate_tomogram, calibration_parameters
 export rename, transform_data
 export compute_gray_scale
@@ -32,9 +31,6 @@ using ..TestImages
 import ..CTIO: load_image, write_image
 import ..CTIO: load_sinogram, write_sinogram
 import ..CTIO: load_tomogram, write_tomogram
-
-
-include("simulations/resampling.jl")
 
 
 """

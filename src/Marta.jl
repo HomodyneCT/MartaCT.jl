@@ -2,6 +2,7 @@ module Marta
 
 using Reexport
 import Measures, Statistics, LinearAlgebra, IntervalSets, IterTools, YAML, FFTW
+import Distributions
 
 include("basic_definitions.jl")
 include("Applicative.jl")
@@ -20,6 +21,7 @@ include("RadonAlgorithm.jl")
 include("CalibrationBase.jl")
 include("TestImages.jl")
 include("Calibration.jl")
+include("Simulations.jl")
 include("CTScan.jl")
 include("CTPlots.jl")
 

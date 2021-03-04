@@ -15,6 +15,7 @@ export GrayScaleLine, GrayScalePyramid, CircleImage, WhiteRect
 using IntervalSets
 using ..Monads
 using ..CTImages: CTImage, polar2cart
+import ..CTImages: rescale, rescale!
 using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
@@ -1019,6 +1020,16 @@ function calibration_data(imp::AbstractImageParams)
     min_pos = background_position(imp)
     max_pos = circle_position(imp)
     min_pos, max_pos
+end
+
+
+function rescale!(img::AbstractTestImage, args...; kwargs...)
+    rescale!(img.image, args...; kwargs...)
+end
+
+
+function rescale(img::AbstractTestImage, args...; kwargs...)
+    rescale(img.image, args...; kwargs...)
 end
 
 end # module
