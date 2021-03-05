@@ -6,6 +6,7 @@ using ..Monads, ..Applicative
 using ..CTImages: CTSinogram
 using ..Geometry
 using ..Interpolation: interpolate, AbstractInterp2DOrNone
+using IntervalSets
 
 
 """
@@ -49,10 +50,10 @@ function para2fan(
     sinog_fan = zeros(T, nd, nϕ)
 
     D::T = f2iso(fbg)
-    Δβ::T = (deg2rad ∘ T ∘ scan_angle)(fbg) / (nϕ-1) # This should be 2π / (nβ-1)?
-    β₀::T = (deg2rad ∘ T ∘ start_angle)(fbg) + 1
+    Δβ::T = deg2rad(scan_angle(fbg)) / (nϕ-1) # This should be 2π / (nβ-1)?
+    β₀::T = deg2rad(start_angle(fbg)) + 1
     Δϕ::T = 2π / (nϕ-1) # This should be α / (nϕ-1)?
-    γ::T = (T ∘ fan_angle)(fbg)
+    γ::T = fan_angle(fbg)
     Δγ::T = γ / nd
     x′max::T = D * sin(γ/2)
     Δx′::T = 2x′max / nd
@@ -71,19 +72,16 @@ function para2fan(
         end
         x′ = x′ / Δx′ + x′₀
         ϕ = mod2pi(ϕ) / Δϕ + 1 # need +1 in order to be in 1:nϕ
-        if 1 <= x′ <= nd && 1 <= ϕ <= nϕ
-            return interp(x′, ϕ)
-        end
-        return 0
+        return x′ ∈ 1..nd && ϕ ∈ 1..nϕ ? interp(x′, ϕ) : 0
     end
 
-    Threads.@threads for iγ = 1:nd
+    Threads.@threads for iγ ∈ 1:nd
         γ′::T = (T(iγ) - γ₀) * Δγ
         x′::T = D * sin(γ′)
-        for iβ = 1:nϕ
+        @inbounds @simd for iβ = 1:nϕ
             β::T = T(iβ - β₀) * Δβ
             ϕ::T = β - γ′
-            @inbounds sinog_fan[iγ, iβ] = compute_value(x′, ϕ)
+            sinog_fan[iγ, iβ] = compute_value(x′, ϕ)
         end
     end
 
@@ -211,19 +209,16 @@ function fan2para(
         end
         γ′ = γ′ / Δγ + γ₀
         β = mod2pi(β) / Δβ + 1 # need +1 in order to be in 1:nβ
-        if 1 <= γ′ <= nd && 1 <= β <= nϕ
-            return interp(γ′, β)
-        end
-        return 0
+        return γ′ ∈ 1..nd && β ∈ 1..nϕ ? interp(γ′, β) : 0
     end
 
-    Threads.@threads for ix = 1:nd
+    Threads.@threads for ix ∈ 1:nd
         x′::T = (T(ix) - x′₀) * Δx′
         γ′::T = asin(x′ / D)
-        for iϕ = 1:nϕ
+        @inbounds @simd for iϕ ∈ 1:nϕ
             ϕ::T = (iϕ - 1) * Δϕ
             β::T = ϕ - γ′ + β₀ # Default tomograph geometry requires '-'
-            @inbounds sinog_para[ix, iϕ] = compute_value(γ′, β)
+            sinog_para[ix, iϕ] = compute_value(γ′, β)
         end
     end
 
