@@ -3,7 +3,6 @@ module CTScan
 Base.Experimental.@optlevel 0
 
 export AbstractCTScanner, CTScanner, FBPScanner
-export calibrate_image, calibrate_tomogram, calibration_parameters
 export rename, transform_data
 export compute_gray_scale
 export make_phantom
@@ -25,7 +24,7 @@ import ..CTImages: ctimage, ctsinogram, cttomogram
 using ..CTImages
 using ..CTData
 import ..FanBeam: para2fan, fan2para
-import ..Calibration: calibrate_image, calibrate_tomogram
+import ..CalibrationBase: calibrate_image, calibrate_tomogram
 using ..Calibration
 using ..TestImages
 import ..CTIO: load_image, write_image
@@ -176,7 +175,7 @@ Construct a `FBPScanner` object.
 """
 function FBPScanner(
     geometry::AbstractGeometry,
-    gs::AbstractGrayScale;
+    gs::AbstractTestImage;
     name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
 )
@@ -194,7 +193,7 @@ end
 Construct a `FBPScanner` object.
 """
 function FBPScanner(
-    gs::AbstractGrayScale;
+    gs::AbstractTestImage;
     name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
 )
@@ -476,7 +475,7 @@ Perform calibration of input image using image parameters as reference.
 """
 function calibrate_image(
     gst::AbstractCTScanner,
-    imp::ImageParams;
+    imp::AbstractImageParams;
     interval::Optional{ClosedInterval{T}} = nothing,
     window::Optional{ClosedInterval{U}} = nothing,
 ) where {T<:Real,U<:Real}
@@ -520,7 +519,7 @@ Perform calibration of reconstructed image using image parameters as reference.
 """
 function calibrate_tomogram(
     gst::AbstractCTScanner,
-    imp::ImageParams;
+    imp::AbstractImageParams;
     interval::Optional{ClosedInterval{T}} = nothing,
     window::Optional{ClosedInterval{U}} = nothing,
 ) where {T<:Real,U<:Real}

@@ -5,17 +5,18 @@ Base.Experimental.@optlevel 3
 export AbstractIRadonAlgorithm, FBP, Radon
 
 
+using ..Applicative
 using ..Monads
 using ..Filters
 using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
-import ..Marta: datatype
+import ..Marta: datatype, linspace
 import ..AbstractAlgorithms:
     radon, iradon, project_image, reconstruct_image, alg_geometry, alg_params
 using ..AbstractAlgorithms
 using ..Interpolation: interpolate, AbstractInterp2DOrNone
-using FFTW, ProgressMeter
+using FFTW, ProgressMeter, IntervalSets
 
 
 @inline _flip(x, y) = (-y, x)

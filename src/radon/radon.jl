@@ -1,7 +1,3 @@
-using IntervalSets
-using ..Marta: linspace
-
-
 """radon_std(image::AbstractMatrix; <keyword arguments>)
 
 Compute the Radon transform of `image` inside a circle of

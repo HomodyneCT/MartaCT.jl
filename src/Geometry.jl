@@ -218,11 +218,7 @@ function FanBeamGeometry(
     nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
     nϕ = isnothing(nϕ) ?
         2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
-    γ′::T = maybe(
-        deg2rad,
-        isnothing(D') ? one(T) : nd * δ / D′,
-        γ
-    )
+    γ′::T = maybe(deg2rad, maybe(x->nd * δ / x, one(T), D′), γ)
     D′′::T = maybe(nd * δ / γ′, D′) # changed γ to γ′ here, should be tested
     center′::T = maybe((nd - 1) / 2, center)
     FanBeamGeometry{T,typeof(ct)}(

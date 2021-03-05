@@ -138,11 +138,10 @@ function rescale!(
     end
     a, b = T.(endpoints(interval))
     m, M = T.(endpoints(calibration))
-    @assert(
-        m != M,
-        "Cannot calibrate image as calibration values " *
-        "m, M = $(calibration) are equal"
-    )
+    if m == M
+        @warn "Cannot calibrate image as calibration values ($calibration) are equal, image unchanged"
+        return img
+    end
     f = (b - a) / (M - m)
     if m != zero(T)
         img .-= m

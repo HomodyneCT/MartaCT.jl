@@ -46,9 +46,9 @@ version = "1.0.5"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "4bffea7ed1a9f0f3d1a131bbcd4b925548d75288"
+git-tree-sha1 = "5e9769a17f17b587c951d57ba4319782b40c3513"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.10.9"
+version = "0.10.10"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "InteractiveUtils", "Reexport"]
@@ -145,10 +145,10 @@ uuid = "f5851436-0d7a-5f13-b9de-f02708fd171a"
 version = "3.3.9+7"
 
 [[FileIO]]
-deps = ["Pkg"]
-git-tree-sha1 = "83a417f955d8073feb8e7bc8900d6beb0c7b69c2"
+deps = ["Pkg", "Requires", "UUIDs"]
+git-tree-sha1 = "fca4d06b629ba6ded40bc6562db3dfa330959c11"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.5.0"
+version = "1.6.0"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
@@ -403,9 +403,9 @@ uuid = "1a1011a3-84de-559e-8e89-a11a2f7dc383"
 
 [[SnoopCompile]]
 deps = ["Cthulhu", "FlameGraphs", "InteractiveUtils", "OrderedCollections", "Pkg", "Printf", "Profile", "Requires", "Serialization", "SnoopCompileCore", "YAML"]
-git-tree-sha1 = "7d5529fa0592dde81f89850696db734345ca6807"
+git-tree-sha1 = "ad31dfca1bbe91d2adaaf319e218ffee7a8eec9f"
 uuid = "aa65fe97-06da-5843-b5b1-d5d13cad87d2"
-version = "2.5.2"
+version = "2.6.0"
 
 [[SnoopCompileCore]]
 deps = ["Serialization"]

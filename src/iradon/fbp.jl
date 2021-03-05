@@ -1,7 +1,3 @@
-using IntervalSets
-using ..Marta: linspace
-
-
 function iradon_fast_threaded(
     sinog::AbstractMatrix{T};
     rows::Optional{Integer} = nothing,
@@ -22,7 +18,7 @@ function iradon_fast_threaded(
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-    filtered = maybe(RamLak(), filter) do f
+    filtered = apply(maybe(RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
@@ -84,7 +80,7 @@ function iradon_fast_threaded_alt(
     rows = maybe(round(Int, nd), rows)
     cols = maybe(rows, cols)
     l = min(rows, cols)
-    filtered = maybe(RamLak(), filter) do f
+    filtered = apply(maybe(RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
@@ -182,7 +178,7 @@ function iradon_threaded(
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-    filtered = maybe(RamLak(), filter) do f
+    filtered = apply(maybe(RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
@@ -239,7 +235,7 @@ function iradon_threaded_alt(
     rows = maybe(round(Int, nd), rows)
     cols = maybe(rows, cols)
     l = min(rows, cols)
-    filtered = maybe(RamLak(), filter) do f
+    filtered = apply(maybe(RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
