@@ -9,9 +9,60 @@ macro warnpcfail(ex::Expr)
         $(esc(ex)) || @warn """precompile directive
      $($(Expr(:quote, ex)))
  failed. Please report an issue in $($modl) (after checking for duplicates) or remove this directive.""" _file=$file _line=$line
-        end
+    end
 end
 
+
+const __bodyfunction__ = Dict{Method,Any}()
+
+# Find keyword "body functions" (the function that contains the body
+# as written by the developer, called after all missing keyword-arguments
+# have been assigned values), in a manner that doesn't depend on
+# gensymmed names.
+# `mnokw` is the method that gets called when you invoke it without
+# supplying any keywords.
+function __lookup_kwbody__(mnokw::Method)
+    function getsym(arg)
+        isa(arg, Symbol) && return arg
+        @assert isa(arg, GlobalRef)
+        return arg.name
+    end
+
+    f = get(__bodyfunction__, mnokw, nothing)
+    if f === nothing
+        fmod = mnokw.module
+        # The lowered code for `mnokw` should look like
+        #   %1 = mkw(kwvalues..., #self#, args...)
+        #        return %1
+        # where `mkw` is the name of the "active" keyword body-function.
+        ast = Base.uncompressed_ast(mnokw)
+        if isa(ast, Core.CodeInfo) && length(ast.code) >= 2
+            callexpr = ast.code[end-1]
+            if isa(callexpr, Expr) && callexpr.head == :call
+                fsym = callexpr.args[1]
+                if isa(fsym, Symbol)
+                    f = getfield(fmod, fsym)
+                elseif isa(fsym, GlobalRef)
+                    if fsym.mod === Core && fsym.name === :_apply
+                        f = getfield(mnokw.module, getsym(callexpr.args[2]))
+                    elseif fsym.mod === Core && fsym.name === :_apply_iterate
+                        f = getfield(mnokw.module, getsym(callexpr.args[3]))
+                    else
+                        f = getfield(fsym.mod, fsym.name)
+                    end
+                else
+                    f = missing
+                end
+            else
+                f = missing
+            end
+        else
+            f = missing
+        end
+        __bodyfunction__[mnokw] = f
+    end
+    return f
+end
 
 function _precompile_()
     ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
@@ -24,7 +75,6 @@ function _precompile_()
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{FanBeamGeometry},GrayScaleLine{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{ParallelBeamGeometry},GrayScaleLine{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{ParallelBeamGeometry},GrayScaleLine{Float64}})
-    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width, :height, :nϕ),Tuple{Int64,Int64,Int64}},Type{FanBeamGeometry},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{CircleImage},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{CircleImage},Type{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{GrayScaleLine},Type{Float32}})
@@ -49,6 +99,8 @@ function _precompile_()
     Base.precompile(Tuple{Marta.FanBeam.var"#180#threadsfor_fun#13"{Float64,Int64,Array{Float64,2},Float64,Float64,Float64,Float64,Float64,Marta.FanBeam.var"#compute_value#12"{Float64,Int64,Int64,Marta.Interpolation.var"#1#2"{Array{Float64,2},Marta.Interpolation.BilinearInterpolation},Float64,Float64,Float64},UnitRange{Int64}}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},CircleImage{Float32}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},CircleImage{Float64}})
+    Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},FanBeamGeometry{Float32,DefaultTomograph},GrayScaleLine{Float32}})
+    Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},FanBeamGeometry{Float64,DefaultTomograph},GrayScaleLine{Float64}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScaleLine{Float32}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScaleLine{Float64}})
     Base.precompile(Tuple{Type{CTScanner{FBP,M} where M},GrayScalePyramid{Float32}})
@@ -61,15 +113,20 @@ function _precompile_()
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.Filters.RamLak},Array{Float32,2}},ImageParams{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},CircleParams{Float64}})
+    Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},GrayScalePyramid{Float64}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},ImageParams{Float64}})
     Base.precompile(Tuple{typeof(project_image),Some{CTImage{Array{Float32,2}}},Radon{FanBeamGeometry{Float32,DefaultTomograph}}})
     Base.precompile(Tuple{typeof(project_image),Some{CTImage{Array{Float32,2}}},Radon{ParallelBeamGeometry{Float32,DefaultTomograph}}})
     Base.precompile(Tuple{typeof(project_image),Some{CTImage{Array{Float64,2}}},Radon{FanBeamGeometry{Float64,DefaultTomograph}}})
     Base.precompile(Tuple{typeof(project_image),Some{CTImage{Array{Float64,2}}},Radon{ParallelBeamGeometry{Float64,DefaultTomograph}}})
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float32,2}},CTSinogram{Array{Float32,2}}})
-    Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float32,2}},CTTomogram{Array{Float32,2}}})
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float64,2}},CTSinogram{Array{Float64,2}}})
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float64,2}},CTTomogram{Array{Float64,2}}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#2#3")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#2#3")),Array{Float32,2}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#2#3")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#2#3")),Array{Float64,2}})
+    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},GrayScaleLine{Float64},))) catch missing end
+        if !ismissing(fbody)
+            precompile(fbody, (Base.Iterators.Pairs{Union{},Union{},Tuple{},NamedTuple{(),Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.Filters.RamLak},Array{Float64,2}},GrayScaleLine{Float64},))
+        end
+    end
 end
