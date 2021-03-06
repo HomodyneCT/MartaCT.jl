@@ -117,7 +117,7 @@ const _sinog_xticks = [45i for i in 0:8]
     xs = linspace(0..360, nϕ)
     #ys = (0:nd - 1) .- (nd - 1) / 2
     α = maybe(nd - 1, α)
-    ys = linspace(-α/2..α/2, nd)
+    ys = linspace(-α..α, nd)
     seriestype --> :heatmap
     seriescolor --> :grays
     tick_direction --> :out
