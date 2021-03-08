@@ -117,12 +117,14 @@ function _precompile_()
     Base.precompile(Tuple{typeof(project_image),Some{CTImage{Array{Float64,2}}},Radon{FanBeamGeometry{Float64,DefaultTomograph}}})
     Base.precompile(Tuple{typeof(project_image),Some{CTImage{Array{Float64,2}}},Radon{ParallelBeamGeometry{Float64,DefaultTomograph}}})
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float32,2}},CTSinogram{Array{Float32,2}}})
+    Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float32,2}},CTTomogram{Array{Float32,2}}})
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float64,2}},CTSinogram{Array{Float64,2}}})
+    Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float64,2}},CTTomogram{Array{Float64,2}}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#2#3")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#2#3")),Array{Float32,2}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#2#3")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#2#3")),Array{Float64,2}})
-    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.RadonAlgorithm.Filters.RamLak},Array{Float64,2}},CircleImage{Float64},))) catch missing end
+    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.RadonAlgorithm.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32},))) catch missing end
         if !ismissing(fbody)
-            precompile(fbody, (Base.Iterators.Pairs{Union{},Union{},Tuple{},NamedTuple{(),Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float64,DefaultTomograph},Marta.RadonAlgorithm.Filters.RamLak},Array{Float64,2}},CircleImage{Float64},))
+            precompile(fbody, (Base.Iterators.Pairs{Union{},Union{},Tuple{},NamedTuple{(),Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBP{ParallelBeamGeometry{Float32,DefaultTomograph},Marta.RadonAlgorithm.Filters.RamLak},Array{Float32,2}},GrayScaleLine{Float32},))
         end
     end
 end
