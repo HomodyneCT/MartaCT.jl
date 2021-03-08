@@ -11,6 +11,7 @@ export load_tomogram, write_tomogram
 
 import YAML, Mmap
 using IterTools: imap
+using ..CTImages
 
 include("TypeDict.jl")
 using .TypeDict: standardize_type
@@ -285,7 +286,7 @@ function load_image(
         cols = cols,
         row_major = false,
         header_type = header_type,
-    )
+    ) |> CTImage
 end
 
 
@@ -390,7 +391,7 @@ function load_sinogram(
         cols = nϕ,
         row_major = false,
         header_type = header_type,
-    )
+    ) |> CTSinogram
 end
 
 
@@ -498,7 +499,7 @@ function load_tomogram(
         cols = cols,
         row_major = row_major,
         header_type = header_type,
-    )
+    ) |> CTTomogram
 end
 
 
@@ -560,6 +561,18 @@ function write_tomogram(
 ) where {T<:Real}
     open(f, "w") do s
         write_tomogram(s, tomog; kwargs...)
+    end
+end
+
+
+const _io_write_funcs = (:write_image, :write_sinogram, :write_tomogram)
+
+for nm ∈ _io_write_funcs
+    @eval begin
+        $nm(io::Union{IO,AbstractString}; kwargs...) =
+            x -> $nm(io, x; kwargs...)
+        $nm(io::Union{IO,AbstractString}, img::AbstractCTImage; kwargs...) =
+            img ↣ $nm(io; kwargs...)
     end
 end
 
