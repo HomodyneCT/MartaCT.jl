@@ -16,6 +16,7 @@ function radon_std(
     background::Optional{<:Real} = nothing,
     rescaled::Bool = true,
     interpolation::Optional{Interp} = nothing,
+    progress::Bool = true,
 ) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
     M = typeof(image)
     rows, cols = size(image)
@@ -45,8 +46,12 @@ function radon_std(
     rimage = rescaled ? rescale(image) : image
     interp = isnothing(interpolation) ?
         interpolate(rimage) : interpolation(rimage)
-    @info "Computing Radon transform..."
-    p = Progress(length(rmat), 0.2)
+    p = Progress(
+        length(rmat);
+        dt=0.2,
+        desc="Computing Radon transform...",
+        enabled=progress,
+    )
     Threads.@threads for (k, iϕ) ∈ indices
         @inbounds x′x, x′y = x′ϕs[k]
         prex, prey = x′x + x₀, x′y + y₀
@@ -79,6 +84,7 @@ function radon_alt(
     background::Optional{<:Real} = nothing,
     rescaled::Bool = true,
     interpolation::Optional{Interp} = nothing,
+    progress::Bool = true,
 ) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
     M = typeof(image)
     rows, cols = size(image)
@@ -99,8 +105,12 @@ function radon_alt(
         interpolate(rimage) : interpolation(rimage)
     z::T = maybe(zero(T), background)
     rmat = fill(z, nd, nϕ)
-    @info "Computing Radon transform..."
-    p = Progress(nϕ, 0.2)
+    p = Progress(
+        nϕ; 
+        dt=0.2, 
+        desc="Computing Radon transform...", 
+        enabled=progress,
+    )
     Threads.@threads for iϕ ∈ 1:nϕ
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for it ∈ 1:l

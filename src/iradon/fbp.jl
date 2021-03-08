@@ -8,6 +8,7 @@ function iradon_fast_threaded(
     ν::Real = 1,
     background::Optional{<:Real} = nothing,
     interpolation::Optional{Interp} = nothing,
+    progress::Bool = true,
 ) where {
     T <: Real,
     F <: CTFilterOrFunc,
@@ -39,8 +40,12 @@ function iradon_fast_threaded(
     z::T = maybe(zero(T), background)
     temp_images = fill(fill(z, rows, cols), 1)
     Threads.resize_nthreads!(temp_images)
-    @info "Computing inverse Radon transform..."
-    p = Progress(nϕ, 0.2)
+    p = Progress(
+        nϕ;
+        dt=0.2,
+        desc="Computing inverse Radon transform...",
+        enabled=progress,
+    )
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
         id = Threads.threadid()
@@ -69,6 +74,7 @@ function iradon_fast_threaded_alt(
     ν::Real = 1,
     background::Optional{<:Real} = nothing,
     interpolation::Optional{Interp} = nothing,
+    progress::Bool = true,
 ) where {
     T <: Real,
     F <: CTFilterOrFunc,
@@ -103,8 +109,12 @@ function iradon_fast_threaded_alt(
     z::T = maybe(zero(T), background)
     temp_images = fill(fill(z, rows, cols), 1)
     Threads.resize_nthreads!(temp_images)
-    @info "Computing inverse Radon transform..."
-    p = Progress(nϕ, 0.2)
+    p = Progress(
+        nϕ;
+        dt=0.2,
+        desc="Computing inverse Radon transform...",
+        enabled=progress,
+    )
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
         id = Threads.threadid()
@@ -168,6 +178,7 @@ function iradon_threaded(
     ν::Real = 1,
     background::Optional{<:Real} = nothing,
     interpolation::Optional{Interp} = nothing,
+    progress::Bool = true,
 ) where {
     T <: Real,
     F <: CTFilterOrFunc,
@@ -198,8 +209,12 @@ function iradon_threaded(
     scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
     z::T = maybe(zero(T, background))
     image = fill(z, rows, cols)
-    @info "Computing inverse Radon transform..."
-    p = Progress(length(image), 0.2)
+    p = Progress(
+        length(image);
+        dt=0.2,
+        desc="Computing inverse Radon transform...",
+        enabled=progress,
+    )
     Threads.@threads for k ∈ eachindex(xys)
         x, y = xys[k]
         @inbounds image[k] = sum(eachindex(scϕs)) do iϕ
@@ -224,6 +239,7 @@ function iradon_threaded_alt(
     ν::Real = 1,
     background::Optional{<:Real} = nothing,
     interpolation::Optional{Interp} = nothing,
+    progress::Bool = true,
 ) where {
     T <: Real,
     F <: CTFilterOrFunc,
@@ -257,8 +273,12 @@ function iradon_threaded_alt(
     scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
     z::T = maybe(zero(T), background)
     image = fill(z, rows, cols)
-    @info "Computing inverse Radon transform..."
-    p = Progress(length(xys), 0.2)
+    p = Progress(
+        length(xys);
+        dt=0.2,
+        desc="Computing inverse Radon transform...",
+        enabled=progress,
+    )
     Threads.@threads for k ∈ eachindex(xys)
         ix, iy = indices[k]
         x, y = xys[k]
