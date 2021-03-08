@@ -10,11 +10,9 @@ export num_proj, num_det, f2iso, f2det, fan_angle, cell_size
 export scan_angle, start_angle, center_channel
 export num_rows, num_cols, tomograph, channel_spacing
 
-import Base: show, getproperty
-
 using ..Monads
-import ..CTIO: yaml_repr, struct2dict
-import ..Marta: datatype
+import ..Marta: datatype, yaml_repr, struct2dict
+import Base: show, getproperty
 
 
 const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry)

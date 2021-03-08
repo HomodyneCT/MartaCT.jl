@@ -3,7 +3,7 @@ module CTIO
 Base.Experimental.@optlevel 0
 
 export load_data, sinog_extract, sinog_load
-export load_yaml, write_yaml, struct2dict, yaml_repr
+export load_yaml, write_yaml
 export write_ct_image, read_ct_image
 export load_image, write_image
 export load_sinogram, write_sinogram
@@ -12,9 +12,8 @@ export load_tomogram, write_tomogram
 import YAML, Mmap
 using IterTools: imap
 using ..CTImages
-
-include("TypeDict.jl")
-using .TypeDict: standardize_type
+using ..Marta: yaml_repr
+using ..TypeDict: standardize_type
 
 
 struct DataFileHelper
@@ -108,18 +107,6 @@ function load_yaml(f::AbstractString)
     open(f) do s
         load_yaml(s)
     end
-end
-
-
-yaml_repr(obj) = obj
-yaml_repr(ntup::NamedTuple) = struct2dict(ntup)
-
-
-function struct2dict(obj)
-    Dict(map(propertynames(obj)) do p
-        field = getproperty(obj, p)
-        p => yaml_repr(field)
-    end)
 end
 
 

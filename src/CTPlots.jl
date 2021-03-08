@@ -70,17 +70,17 @@ end
     seriescolor --> :grays
     aspect_ratio --> :equal
     seriestype --> :heatmap
+    _seriestype = get(plotattributes, :seriestype, nothing)
     if proj === :polar
         yaxis --> false
-        xs, ys, mjoin(image)
-    else
+    elseif _seriestype === :heatmap
         tick_direction --> :out
         # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5))
         xlims --> (xs[1], xs[end])
         # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
         ylims --> (ys[1], ys[end])
-        xs, ys, mjoin(image)
     end
+    xs, ys, mjoin(image)
 end
 
 
@@ -120,13 +120,16 @@ const _sinog_xticks = [45i for i in 0:8]
     ys = linspace(-α..α, nd)
     seriestype --> :heatmap
     seriescolor --> :grays
-    tick_direction --> :out
-    xrotation --> -45
     xticks --> _sinog_xticks
-    # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
-    xlims --> (xs[1], xs[end])
-    # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
-    ylims --> (ys[1], ys[end])
+    _seriestype = get(plotattributes, :seriestype, nothing)
+    if _seriestype === :heatmap
+        xrotation --> -45
+        tick_direction --> :out
+        # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
+        xlims --> (xs[1], xs[end])
+        # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+        ylims --> (ys[1], ys[end])
+    end
     xs, ys, mjoin(sinog)
 end
 

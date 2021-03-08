@@ -11,7 +11,7 @@ function iradon_fast_threaded(
     progress::Bool = true,
 ) where {
     T <: Real,
-    F <: CTFilterOrFunc,
+    F <: Filters.CTFilterOrFunc,
     Interp <: Union{Function,AbstractInterp2DOrNone}
 }
     M = typeof(sinog)
@@ -19,7 +19,7 @@ function iradon_fast_threaded(
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-    filtered = apply(maybe(RamLak(), filter)) do f
+    filtered = apply(maybe(Filters.RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
@@ -77,7 +77,7 @@ function iradon_fast_threaded_alt(
     progress::Bool = true,
 ) where {
     T <: Real,
-    F <: CTFilterOrFunc,
+    F <: Filters.CTFilterOrFunc,
     Interp <: Union{Function,AbstractInterp2DOrNone}
 }
     M = typeof(sinog)
@@ -86,7 +86,7 @@ function iradon_fast_threaded_alt(
     rows = maybe(round(Int, nd), rows)
     cols = maybe(rows, cols)
     l = min(rows, cols)
-    filtered = apply(maybe(RamLak(), filter)) do f
+    filtered = apply(maybe(Filters.RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
@@ -139,7 +139,7 @@ function iradon_fast_threaded(
     geometry::AbstractParallelBeamGeometry,
     filter::Optional{F} = nothing;
     kwargs...
-) where {T <: Real,F <: CTFilterOrFunc}
+) where {T <: Real,F <: Filters.CTFilterOrFunc}
     rows = geometry.rows
     cols = geometry.cols
     α = geometry.α
@@ -150,7 +150,7 @@ end
 
 function iradon_fast_threaded(
     sinog::AbstractMatrix,
-    filter::CTFilterOrFunc;
+    filter::Filters.CTFilterOrFunc;
     geometry::Optional{G} = nothing,
     kwargs...
 ) where {G <: AbstractParallelBeamGeometry}
@@ -160,11 +160,13 @@ end
 
 
 iradon_fast_threaded(; kwargs...) = x -> iradon_fast_threaded(x; kwargs...)
-iradon_fast_threaded(g::AbstractParallelBeamGeometry, f::CTFilterOrFunc; kwargs...) =
+function iradon_fast_threaded(
+    g::AbstractParallelBeamGeometry, f::Filters.CTFilterOrFunc; kwargs...)
     x -> iradon_fast_threaded(x, g, f; kwargs...)
+end
 iradon_fast_threaded(g::AbstractParallelBeamGeometry; kwargs...) =
     x -> iradon_fast_threaded(x, g; kwargs...)
-iradon_fast_threaded(f::CTFilterOrFunc; kwargs...) =
+iradon_fast_threaded(f::Filters.CTFilterOrFunc; kwargs...) =
     x -> iradon_fast_threaded(x, f; kwargs...)
 
 
@@ -181,7 +183,7 @@ function iradon_threaded(
     progress::Bool = true,
 ) where {
     T <: Real,
-    F <: CTFilterOrFunc,
+    F <: Filters.CTFilterOrFunc,
     Interp <: Union{Function,AbstractInterp2DOrNone}
 }
     M = typeof(sinog)
@@ -189,7 +191,7 @@ function iradon_threaded(
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-    filtered = apply(maybe(RamLak(), filter)) do f
+    filtered = apply(maybe(Filters.RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
@@ -242,7 +244,7 @@ function iradon_threaded_alt(
     progress::Bool = true,
 ) where {
     T <: Real,
-    F <: CTFilterOrFunc,
+    F <: Filters.CTFilterOrFunc,
     Interp <: Union{Function,AbstractInterp2DOrNone}
 }
     M = typeof(sinog)
@@ -251,7 +253,7 @@ function iradon_threaded_alt(
     rows = maybe(round(Int, nd), rows)
     cols = maybe(rows, cols)
     l = min(rows, cols)
-    filtered = apply(maybe(RamLak(), filter)) do f
+    filtered = apply(maybe(Filters.RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
@@ -299,7 +301,7 @@ function iradon_threaded(
     geometry::AbstractParallelBeamGeometry,
     filter::Optional{F} = nothing;
     kwargs...
-) where {T <: Real,F <: CTFilterOrFunc}
+) where {T <: Real,F <: Filters.CTFilterOrFunc}
     rows = geometry.rows
     cols = geometry.cols
     α = geometry.α
@@ -310,7 +312,7 @@ end
 
 function iradon_threaded(
     sinog::AbstractMatrix,
-    filter::CTFilterOrFunc;
+    filter::Filters.CTFilterOrFunc;
     geometry::Optional{G} = nothing,
     kwargs...
 ) where {G <: AbstractParallelBeamGeometry}
@@ -320,11 +322,13 @@ end
 
 
 iradon_threaded(; kwargs...) = x -> iradon_threaded(x; kwargs...)
-iradon_threaded(g::AbstractParallelBeamGeometry, f::CTFilterOrFunc; kwargs...) =
+function iradon_threaded(
+    g::AbstractParallelBeamGeometry, f::Filters.CTFilterOrFunc; kwargs...)
     x -> iradon_threaded(x, g, f; kwargs...)
+end
 iradon_threaded(g::AbstractParallelBeamGeometry; kwargs...) =
     x -> iradon_threaded(x, g; kwargs...)
-iradon_threaded(f::CTFilterOrFunc; kwargs...) =
+iradon_threaded(f::Filters.CTFilterOrFunc; kwargs...) =
     x -> iradon_threaded(x, f; kwargs...)
 
 
@@ -342,7 +346,7 @@ iradon(sinog::AbstractMatrix; kwargs...) = default_iradon()(sinog; kwargs...)
     geometry::AbstractParallelBeamGeometry,
     filter::Optional{F} = nothing;
     kwargs...
-) where {F <: CTFilterOrFunc}
+) where {F <: Filters.CTFilterOrFunc}
     rows = geometry.rows
     cols = geometry.cols
     α = geometry.α
@@ -356,7 +360,7 @@ end
     geometry::AbstractFanBeamGeometry,
     f::Optional{F} = nothing;
     kwargs...
-) where {F <: CTFilterOrFunc}
+) where {F <: Filters.CTFilterOrFunc}
     g′, par_sinog = fan2para(sinog, geometry)
     par_sinog ↣ iradon(g′, f; kwargs...)
 end
@@ -365,16 +369,20 @@ end
 iradon(sinog::AbstractMatrix, g::AbstractGeometry; kwargs...) =
     default_iradon()(sinog, g; kwargs...)
 
-iradon(sinog::AbstractMatrix, f::CTFilterOrFunc; kwargs...) =
+iradon(sinog::AbstractMatrix, f::Filters.CTFilterOrFunc; kwargs...) =
     default_iradon()(sinog, f; kwargs...)
 
 iradon(; kwargs...) = x -> iradon(x; kwargs...)
-iradon(g::AbstractGeometry, f::CTFilterOrFunc; kwargs...) = x -> iradon(x, g, f; kwargs...)
+iradon(g::AbstractGeometry, f::Filters.CTFilterOrFunc; kwargs...) =
+    x -> iradon(x, g, f; kwargs...)
 iradon(g::AbstractGeometry; kwargs...) = x -> iradon(x, g; kwargs...)
-iradon(f::CTFilterOrFunc; kwargs...) = x -> iradon(x, f; kwargs...)
+iradon(f::Filters.CTFilterOrFunc; kwargs...) = x -> iradon(x, f; kwargs...)
 
 
-struct FBP{Geometry <: AbstractGeometry,Filter <: AbstractCTFilter} <: AbstractIRadonAlgorithm
+struct FBP{
+    Geometry <: AbstractGeometry,
+    Filter <: Filters.AbstractCTFilter,
+} <: AbstractIRadonAlgorithm
     geometry::Geometry
     filter::Filter
 end
@@ -385,7 +393,7 @@ alg_geometry(fbp::FBP) = fbp.geometry
 alg_params(::FBP) = nothing
 
 
-FBP(g::AbstractGeometry) = FBP(g, RamLak())
+FBP(g::AbstractGeometry) = FBP(g, Filters.RamLak())
 FBP(g::AbstractGeometry, f::Function) = FBP(g, CTFilter(f))
 
 

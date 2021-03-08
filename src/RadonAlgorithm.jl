@@ -4,10 +4,8 @@ Base.Experimental.@optlevel 3
 
 export AbstractIRadonAlgorithm, FBP, Radon
 
-
 using ..Applicative
 using ..Monads
-using ..Filters
 using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
@@ -25,7 +23,8 @@ using FFTW, ProgressMeter, IntervalSets
 
 abstract type AbstractIRadonAlgorithm <: AbstractReconstructionAlgorithm end
 
-
+include("Filters.jl")
+import .Filters
 include("radon/radon.jl")
 include("iradon/fbp.jl")
 

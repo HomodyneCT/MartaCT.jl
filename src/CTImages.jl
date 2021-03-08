@@ -21,7 +21,7 @@ function ctsinogram end
 function cttomogram end
 
 
-abstract type AbstractCTImage{M <: AbstractArray{<:Number}} <: Monad end
+abstract type AbstractCTImage{M <: AbstractArray} <: Monad end
 
 size(img::AbstractCTImage) = mbind(size, img)
 size(img::AbstractCTImage, dim::Integer) = mbind(x -> size(x, dim), img)

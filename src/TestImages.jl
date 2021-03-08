@@ -20,8 +20,7 @@ using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
 using ..AbstractAlgorithms: AbstractProjectionAlgorithm
-import ..Marta: datatype
-import ..CTIO: yaml_repr, struct2dict
+import ..Marta: datatype, yaml_repr, struct2dict
 import ..Info: CTInfo
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
