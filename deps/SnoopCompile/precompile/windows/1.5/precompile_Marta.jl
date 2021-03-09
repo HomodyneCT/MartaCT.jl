@@ -70,7 +70,6 @@ function _precompile_()
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float32,2}},CTSinogram{Array{Float32,2}}})
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float32,2}},CTTomogram{Array{Float32,2}}})
     Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float64,2}},CTSinogram{Array{Float64,2}}})
-    Base.precompile(Tuple{typeof(similar),Marta.CTData.GrayScaleData{Array{Float64,2}},CTTomogram{Array{Float64,2}}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#2#3")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#2#3")),Array{Float32,2}})
     isdefined(Marta.AbstractAlgorithms, Symbol("#2#3")) && Base.precompile(Tuple{getfield(Marta.AbstractAlgorithms, Symbol("#2#3")),Array{Float64,2}})
 end
