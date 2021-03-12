@@ -5,15 +5,14 @@ export polar2cart
 export AbstractCTImage, CTImage, CTSinogram, CTTomogram, CTImageOrTomog
 export ctimage, ctsinogram, cttomogram
 
-using IntervalSets
+using IntervalSets, SimpleTraits
 using ..Marta: linspace
-using ..Monads, ..Applicative, ..Interpolation
-using ..Geometry: AbstractParallelBeamGeometry, AbstractFanBeamGeometry,
-    ParallelBeamGeometry
-import ..Monads:mbind
-import ..Marta:_atype
-import Base: size, map, convert, length, similar, iterate, axes, copyto!
-import Base: getindex, setindex!, firstindex, lastindex
+using ..Applicative, ..Monads, ..Interpolation
+using ..Geometry:
+    AbstractParallelBeamGeometry, AbstractFanBeamGeometry, ParallelBeamGeometry
+import ..Monads: mbind
+import ..Marta: _atype
+import Base: size, convert, similar, eltype, getindex, setindex!
 
 
 function ctimage end
@@ -21,32 +20,21 @@ function ctsinogram end
 function cttomogram end
 
 
-abstract type AbstractCTImage{M <: AbstractArray} <: Monad end
+abstract type AbstractCTImage{M<:AbstractMatrix} <: AbstractMatrix{eltype(M)} end
 
+@traitimpl Monad{AbstractCTImage}
+
+@traitfn mbind(f::F, img::AbstractCTImage) where {F; Callable{F}} = f(img.data)
+
+eltype(::Type{M}) where {M<:AbstractCTImage{A}} where A = eltype(A)
 size(img::AbstractCTImage) = mbind(size, img)
-size(img::AbstractCTImage, dim::Integer) = mbind(x -> size(x, dim), img)
-length(img::AbstractCTImage) = mbind(length, img)
-axes(img::AbstractCTImage) = mbind(axes, img)
-iterate(img::AbstractCTImage) = mbind(iterate, img)
-iterate(img::AbstractCTImage, state) = mbind(x->iterate(x, state), img)
-getindex(img::AbstractCTImage, inds...) = mbind(x->getindex(x, inds...), img)
-setindex!(img::AbstractCTImage, v, inds...) = mbind(x->setindex!(x, v, inds...), img)
-firstindex(img::AbstractCTImage) = mbind(firstindex, img)
-lastindex(img::AbstractCTImage) = mbind(lastindex, img)
-map(f::Function, img::AbstractCTImage) = mmap(fmap(f), img)
-
-_atype(::Type{<:AbstractCTImage{M}}) where M = M
-_atype(img::AbstractCTImage) = _atype(typeof(img))
-
-Base.broadcastable(img::AbstractCTImage) = mjoin(img)
-Base.BroadcastStyle(::Type{T}) where {T<:AbstractCTImage} = Base.Broadcast.Style{T}()
-function similar(bc::Base.Broadcast.Broadcasted{S}, ::Type{T}) where {S<:Base.Broadcast.Style{M},T} where {M<:AbstractCTImage}
-    @info axes(bc)
-    similar(M, T, axes(bc))
-end
-function copyto!(img::AbstractCTImage, bc::Base.Broadcast.Broadcasted)
-    mmap(x->copyto!(x, bc), img)
-end
+size(img::AbstractCTImage, dim::Int) = size(mjoin(img), dim)
+getindex(img::AbstractCTImage, i::Int) = getindex(mjoin(img), i)
+getindex(img::AbstractCTImage, I::Vararg{Int,N}) where N =
+    getindex(mjoin(img), I...)
+setindex!(img::AbstractCTImage, v, i::Int) = setindex!(mjoin(img), v, i)
+setindex!(img::AbstractCTImage, v, I::Vararg{Int,N}) where N =
+    setindex!(mjoin(img), v, I...)
 
 
 const ctnames = (image = :CTImage, sinog = :CTSinogram, tomog = :CTTomogram)
@@ -58,10 +46,11 @@ for nm in ctnames
         struct $nm{M} <: AbstractCTImage{M}
             data::M
         end
-        mbind(f::Union{Function,Type}, m::$nm) = f(m.data)
-        $nm{M}(img::$nm) where {M} = mreturn($nm{M}, img ↣ x -> convert(M, x))
-        convert(::Type{T}, img::$nm) where {T<:$nm} = mreturn(T, img)
-        similar(::Type{T}, args...) where {T<:$nm} = mreturn(T, similar(_atype(T), args...))
+        _atype(::Type{$nm{M}}) where M = M
+        $nm{M}(img::$nm) where {M} = mreturn($nm{M}, convert(M, mjoin(img)))
+        convert(::Type{M}, img::$nm) where {M<:$nm} = mreturn(M, img)
+        similar(::Type{M}, args...) where {M<:$nm} =
+            mreturn(M, similar(_atype(T), args...))
     end
 end
 
@@ -89,19 +78,22 @@ function rotate(
     α::Real;
     rows::Optional{<:Integer} = nothing,
     cols::Optional{<:Integer} = nothing,
+    background::Optional{<:Real} = nothing,
     interpolation::Optional{<:Interp} = nothing,
-) where {T <: Real,Interp <: Union{Function,AbstractInterp2DOrNone}}
+) where {T <: Real,Interp <: AbstractInterp2DOrNone}
     orows, ocols = size(mat)
     rows = maybe(orows, rows)
     cols = maybe(ocols, cols)
     sϕ, cϕ = sincos(deg2rad(α))
-    rmat = zeros(T, rows, cols)
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mat)
     x₀::T = T(cols + 1) / 2
     y₀::T = T(rows + 1) / 2
     x′₀::T = T(ocols + 1) / 2
     y′₀::T = T(orows + 1) / 2
+    z::T = maybe(zero(T), background)
+    rmat = similar(mat, rows, cols)
+    fill!(rmat, z)
     for ix ∈ 1:rows, iy ∈ 1:cols
         x::T = T(ix) - x₀
         y::T = T(iy) - y₀
@@ -251,14 +243,11 @@ function polar2cart(
     mp::AbstractMatrix{T};
     rows::Optional{<:Integer} = nothing,
     cols::Optional{<:Integer} = nothing,
-    interpolation::Optional{Interp} = nothing,
     background::Optional{<:Real} = nothing,
     ν::Real = 1,
     transposed::Bool = false,
-) where {
-    T <: Real,
-    Interp <: Union{Function,AbstractInterp2DOrNone},
-}
+    interpolation::Optional{Interp} = nothing,
+) where {T <: Real,Interp <: AbstractInterp2DOrNone}
     mp = transposed ? permutedims(mp) : mp
     nϕ, nr = size(mp)
     rows = isnothing(rows) ? maybe(2nr, cols) : rows
@@ -270,7 +259,7 @@ function polar2cart(
     Δϕ::T = (nϕ - 1) / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
-    compute_radius = (x, y) -> begin
+    compute_radius = (x::T, y::T) -> begin
         x == 0 && return abs(y)
         y == 0 && return abs(x)
         return √(x^2 + y^2)
@@ -282,35 +271,39 @@ function polar2cart(
         indices[k] = (k - 1) ÷ rows + 1, (k - 1) % rows + 1
     end
     z::T = maybe(zero(T), background)
-    mc = fill(z, rows, cols)
+    mc = similar(mp, rows, cols)
+    fill!(mc, z)
     Threads.@threads for k ∈ eachindex(indices)
         @inbounds ix, iy = indices[k]
         @inbounds x, y = xs[ix], ys[iy]
-        @fastmath r::T = compute_radius(x, y)
-        @fastmath ϕ::T = mod2pi(atan(y, x))
-        R::T = r * Δr + 1
-        Θ::T = ϕ * Δϕ + 1
+        r = compute_radius(x, y)
+        ϕ = mod2pi(atan(y, x))
+        R = r * Δr + 1
+        Θ = ϕ * Δϕ + 1
         if R ∈ 1..nr && Θ ∈ 1..nϕ
-            @fastmath @inbounds mc[iy,ix] = interp(Θ, R)
+            @inbounds mc[iy,ix] = interp(Θ, R)
         end
     end
     mc
 end
 
 
-polar2cart(; kwargs...) = x -> polar2cart(x; kwargs...)
-polar2cart(g::AbstractParallelBeamGeometry; kwargs...) = x -> polar2cart(x, g; kwargs...)
-
-polar2cart(image::AbstractMatrix, geometry::AbstractParallelBeamGeometry; kwargs...) =
+function polar2cart(
+    image::AbstractMatrix,
+    geometry::AbstractParallelBeamGeometry;
+    kwargs...
+)
     polar2cart(image; geometry.rows, geometry.cols, kwargs...)
-
-polar2cart(image::CTImageOrTomog, geometry::AbstractParallelBeamGeometry; kwargs...) =
-    typeof(image)(image ↣ polar2cart(geometry; kwargs...))
-
-polar2cart(image::CTImageOrTomog; kwargs...) =
-    typeof(image)(image ↣ polar2cart(; kwargs...))
-
-polar2cart(image, geometry::AbstractFanBeamGeometry; kwargs...) =
+end
+function polar2cart(
+    image::AbstractMatrix,
+    geometry::AbstractFanBeamGeometry;
+    kwargs...
+)
     polar2cart(image, ParallelBeamGeometry(geometry); kwargs...)
+end
+polar2cart(; kwargs...) = x -> polar2cart(x; kwargs...)
+polar2cart(g::AbstractParallelBeamGeometry; kwargs...) =
+    x -> polar2cart(x, g; kwargs...)
 
 end # module

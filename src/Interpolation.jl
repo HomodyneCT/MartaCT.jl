@@ -18,6 +18,7 @@ abstract type AbstractInterpolation2D <: AbstractInterpolation end
 abstract type AbstractLinearInterpolation <: AbstractInterpolation1D end
 abstract type AbstractBilinearInterpolation <: AbstractInterpolation2D end
 
+
 struct NoInterpolation <: AbstractInterpolation end
 struct BilinearInterpolation <: AbstractBilinearInterpolation end
 struct LinearInterpolation <: AbstractLinearInterpolation end
