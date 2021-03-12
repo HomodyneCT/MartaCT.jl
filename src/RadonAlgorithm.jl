@@ -2,7 +2,8 @@ module RadonAlgorithm
 
 Base.Experimental.@optlevel 3
 
-export AbstractIRadonAlgorithm, FBP, Radon
+export Radon, RadonSquare
+export FBP
 
 using ..Applicative
 using ..Monads
@@ -11,21 +12,38 @@ using ..Geometry
 using ..FanBeam: fan2para, para2fan
 import ..Marta: datatype, linspace
 import ..AbstractAlgorithms:
-    radon, iradon, project_image, reconstruct_image, alg_geometry, alg_params
+    radon, iradon, project_image, reconstruct_image, @_alg_progress
 using ..AbstractAlgorithms
-using ..Interpolation: interpolate, AbstractInterp2DOrNone
+using ..Interpolation: AbstractInterp2DOrNone, BilinearInterpolation
 using FFTW, ProgressMeter, IntervalSets
 
 
-@inline _flip(x, y) = (-y, x)
-@inline _flip((x, y)) = _flip(x, y)
+macro defradonalgfn(A::Symbol, f::Symbol)
+    quote
+        $(esc(A))(image::AbstractMatrix; kwargs...) = $f(image; kwargs...)
+        function $(esc(A))(
+            image::AbstractMatrix,
+            ts::AbstractVector,
+            ϕs::AbstractVector;
+            kwargs...
+        )
+            $f(image, ts, ϕs; kwargs...)
+        end
+    end
+end
 
 
-abstract type AbstractIRadonAlgorithm <: AbstractReconstructionAlgorithm end
+macro radonprogress(n, p, dt=0.2)
+    :(@_alg_progress "Computing Radon transform..." $n $p $dt)
+end
+
+macro iradonprogress(n, p, dt=0.2)
+    :(@_alg_progress "Computing inverse Radon transform..." $n $p $dt)
+end
+
 
 include("Filters.jl")
-import .Filters
 include("radon/radon.jl")
-include("iradon/fbp.jl")
+include("iradon/iradon.jl")
 
 end # module

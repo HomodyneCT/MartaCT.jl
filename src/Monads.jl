@@ -4,58 +4,43 @@ export Monad, Maybe, Optional
 export mreturn, mjoin, mbind, mmap
 export maybe, ↣
 
+using SimpleTraits
+using ..Applicative: Callable
 import Base: something, isnothing, convert
+
+@traitdef Monad{T}
 
 function mbind end
 function mreturn end
 function mjoin end
 
-abstract type Monad end
-
-const Optional{T} = Union{Nothing,T}
-const Maybe{T} = Optional{Some{T}}
-const MonadOrMaybe = Union{Monad,Maybe}
-const FuncOrType = Union{Function,Type}
-
-
-mreturn(::Type{M}, x) where {M<:MonadOrMaybe} = M(x)
-mjoin(m::MonadOrMaybe) = mbind(identity, m)
-function mmap(f::FuncOrType, m::M) where {M<:MonadOrMaybe}
+@traitfn mreturn(::Type{M}, x) where {M; Monad{M}} = M(x)
+@traitfn mjoin(m::M) where {M; Monad{M}} = mbind(identity, m)
+@traitfn mbind(f::F, m::M) where {F,M; Callable{F},Monad{M}} = f(mjoin(m))
+@traitfn function mmap(f::F, m::M) where {F,M; Callable{F},Monad{M}}
     mbind(m) do x
         mreturn(M, f(x))
     end
 end
-↣(m::MonadOrMaybe, f::FuncOrType) = mbind(f, m)
+@traitfn ↣(m::M, f::F) where {M,F; Monad{M},Callable{F}} = mbind(f, m)
 
+const Optional{T} = Union{Nothing,T}
+const Maybe{T} = Optional{Some{T}}
 
-# struct Maybe{T} <: Monad
-#     value::Optional{Some{T}}
-#     Maybe{T}(::Nothing) where {T} = new(nothing)
-#     Maybe{T}(s::Some{T}) where {T} = new(s)
-#     Maybe{T}(x::T) where {T} = Maybe{T}(Some(x))
-# end
+@traitimpl Monad{Maybe}
 
 Maybe{T}(x::T) where {T} = Some(x)
 Maybe{T}(::Nothing) where {T} = nothing
-#Maybe{T}(::Maybe{Nothing}) where {T} = Maybe{T}(nothing)
-#Maybe(::Nothing) = Maybe{Nothing}(nothing)
 Maybe(::Nothing) = nothing
-#Maybe(x::T) where {T} = Maybe{T}(Some(x))
 Maybe(x::T) where {T} = Maybe{T}(x)
 Maybe(m::Maybe) = m
 
-# We cannot export this method, otherwise bad things happen to other's code.
-#convert(::Type{<:Maybe{T}}, s::S) where {T,S} = Maybe(convert(T,s))
-
-#something(m::Maybe) = something(m.value)
-#isnothing(m::Maybe) = isnothing(m.value)
-
-mbind(f::FuncOrType, m::Maybe) =
+@traitfn mbind(f::F, m::Maybe) where {F; Callable{F}} =
     isnothing(m) ? nothing : f(something(m))
 
 maybe(b, m::Optional) = isnothing(m) ? b : m
 maybe(b) = m::Optional -> maybe(b, m)
-maybe(f::Function, b, m::Optional) = maybe(b, Maybe(m) ↣ f)
-#maybe(f::Function, b) = maybe(b) ∘ f
+@traitfn maybe(f::F, b, m::Optional) where {F; Callable{F}} =
+    maybe(b, Maybe(m) ↣ f)
 
 end # module
