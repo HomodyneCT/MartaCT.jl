@@ -1,6 +1,6 @@
 struct RadonSquare <: AbstractProjectionAlgorithm end
 
-@defradonalgfn(RadonSquare, radon_square)
+@defradonalgfn RadonSquare radon_square
 
 
 """radon_square(

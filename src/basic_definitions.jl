@@ -36,7 +36,6 @@ end
     linspace(T, a, b, len)
 end
 
-
 yaml_repr(obj) = obj
 yaml_repr(ntup::NamedTuple) = struct2dict(ntup)
 

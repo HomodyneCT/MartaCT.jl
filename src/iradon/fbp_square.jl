@@ -1,38 +1,43 @@
-function iradon_fast_threaded_alt(
-    sinog::AbstractMatrix{T};
-    rows::Optional{Integer} = nothing,
-    cols::Optional{Integer} = nothing,
+struct FBPFFTSquare{F<:AbstractCTFilter} <: AbstractFBP
+    filter::F
+end
+
+FBPFFTSquare() = FBPFFTSquare(RamLak())
+FBPFFTSquare(f::Function) = FBPFFTSquare(CTFilter(f))
+
+@defiradonalgfn FBPFFTSquare fbp_fft_square
+
+
+function fbp_fft_square(
+    sinog::AbstractMatrix{T},
+    xs::AbstractVector{U1},
+    ys::AbstractVector{U2},
+    ϕs::ClosedInterval = 0..2π;
+    background::Optional{U3} = nothing,
     filter::Optional{F} = nothing,
-    α::Real = 360,
-    α₀::Real = 0,
-    ν::Real = 1,
-    background::Optional{<:Real} = nothing,
     interpolation::Optional{Interp} = nothing,
     progress::Bool = true,
 ) where {
     T <: Real,
-    F <: Filters.CTFilterOrFunc,
-    Interp <: Union{Function,AbstractInterp2DOrNone}
+    U1 <: Real,
+    U2 <: Real,
+    U3 <: Real,
+    F <: AbstractCTFilter,
+    Interp <: AbstractInterp2DOrNone,
 }
-    M = typeof(sinog)
     nd, nϕ = size(sinog)
-    rows = maybe(cols, rows)
-    rows = maybe(round(Int, nd), rows)
-    cols = maybe(rows, cols)
-    l = min(rows, cols)
+    cols = length(xs)
+    rows = length(ys)
     filtered = apply(maybe(Filters.RamLak(), filter)) do f
         filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
         ifft(filter_freq, 1) |> real
     end
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(filtered)
-    Δϕ::T = deg2rad(α) / nϕ
-    ϕ₀::T = deg2rad(α₀)
     t₀::T = T(nd + 1) / 2
+    l = min(rows, cols)
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
-    scϕs = map(sincos, range(ϕ₀; step = Δϕ, length = nϕ))
-    xs = linspace(-t₀..t₀, l) / ν
-    ys = linspace(-t₀..t₀, l) / ν
+    scϕs = sincos.(_make_ϕs(T, ϕs, nϕ))
     indices = Vector{NTuple{2,Int}}(undef, l^2)
     xys = Vector{NTuple{2,T}}(undef, l^2)
     @inbounds @simd for k ∈ eachindex(xys)
@@ -43,12 +48,7 @@ function iradon_fast_threaded_alt(
     z::T = maybe(zero(T), background)
     temp_images = fill(fill(z, rows, cols), 1)
     Threads.resize_nthreads!(temp_images)
-    p = Progress(
-        nϕ;
-        dt=0.2,
-        desc="Computing inverse Radon transform...",
-        enabled=progress,
-    )
+    p = @iradonprogress nϕ progress
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
         id = Threads.threadid()
@@ -59,10 +59,15 @@ function iradon_fast_threaded_alt(
             # To be consistent with our conventions should be '+'.
             t::T = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                img[iy,ix] += interp(t, T(iϕ))
+                img[iy,ix] += interp(t, iϕ)
             end
         end
         next!(p)
     end
-    temp_images |> sum |> CTTomogram{M}
+    image = similar(sinog, rows, cols)
+    CTTomogram(sum!(image, temp_images))
 end
+
+
+@defsquarekwfn fbp_fft_square
+@defiradonfngeom fbp_fft_square
