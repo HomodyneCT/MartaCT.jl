@@ -5,7 +5,7 @@ export AbstractCTData, CTData
 using ..Monads
 using ..CTImages
 import ..CTImages: ctimage, ctsinogram, cttomogram
-import ..Marta: _atype
+import ...Marta: _atype
 import Base: similar, eltype
 
 
@@ -116,3 +116,5 @@ end
 
 
 similar(gsd::AbstractCTData, imgs::AbstractCTImage...) = typeof(gsd)(gsd, imgs...)
+
+end # module

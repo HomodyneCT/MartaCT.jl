@@ -26,7 +26,6 @@ import ..Marta: datatype, _atype
 using ..RadonAlgorithm
 import ..CTImages: ctimage, ctsinogram, cttomogram
 using ..CTImages
-using ..CTData
 import ..FanBeam: para2fan, fan2para
 import ..CalibrationBase: calibrate_image, calibrate_tomogram
 using ..Calibration
@@ -69,9 +68,6 @@ similar(gst::AbstractCTScanner, img::AbstractCTImage...) = similar(gst, CTData(i
 # )
 #     similar(gst, g, CTData(img...))
 # end
-function similar(gst::AbstractCTScanner, img::AbstractCTImage...)
-    similar(gst, CTData(img...))
-end
 
 
 for (nm, ctf) ∈ pairs(CTImages.ctfn)
@@ -183,7 +179,7 @@ function FBPScanner(
     data::CTData{M} = CTData(T);
     name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
-) where {G<:AbstractGeometry,M<:AbstractArray}
+) where {T,G<:AbstractGeometry,M<:AbstractArray{T}}
     FBPScanner{M}(FBP(), data; name, study_id)
 end
 
