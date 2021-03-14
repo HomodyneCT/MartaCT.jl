@@ -20,9 +20,9 @@ function radon(
     alg(image, ts, ϕs; kwargs...)
 end
 
-function radon(
+@inline function radon(
     image::AbstractMatrix,
-    geometry::AbstractParallelBeamGeometry
+    geometry::AbstractParallelBeamGeometry,
     alg::AbstractProjectionAlgorithm = Radon();
     kwargs...
 )
@@ -33,7 +33,7 @@ function radon(
     radon(image, alg; nd, nϕ, α, α₀, kwargs...)
 end
 
-function radon(
+@inline function radon(
     image::AbstractMatrix,
     geometry::AbstractFanBeamGeometry,
     alg::AbstractProjectionAlgorithm = Radon();

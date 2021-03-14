@@ -1,6 +1,6 @@
 struct Radon <: AbstractProjectionAlgorithm end
 
-@defradonalgfn(Radon, radon_default)
+@defradonalgfn Radon radon_default
 
 
 """radon_default(image::AbstractMatrix; <keyword arguments>)
