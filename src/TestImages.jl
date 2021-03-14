@@ -115,13 +115,12 @@ struct ImageParams{T<:Real} <: AbstractImageParams
             "Requested image size is too small: " *
             "rows($rows) ≥ $srows && columns($cols) ≥ $scols"
         )
-        minv, maxv = endpoints(gray_scale)
-        background = maybe(minv, background)
+        background = maybe(leftendpoint(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
-            (minv + maxv) / 2 : calibration_value
+            mean(gray_scale) : calibration_value
 
-        if calibration_value ∉ background..maxv
-            midpoint = (minv + maxv) / 2
+        if calibration_value ∉ background..rightendpoint(gray_scale)
+            midpoint = mean(gray_scale)
             @warn(
                 "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
             )
@@ -215,13 +214,12 @@ struct CircleParams{T <: Real} <: AbstractImageParams
         calibration_value::Optional{<:Real} = nothing,
         background::Optional{<:Real} = nothing,
     ) where {T<:Real}
-        minv, maxv = endpoints(gray_scale)
-        background = maybe(minv, background)
+        background = maybe(leftendpoint(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
-            (minv + maxv) / 2 : calibration_value
+            mean(gray_scale) : calibration_value
 
-        if calibration_value ∉ background..maxv
-            midpoint = (minv + maxv) / 2
+        if calibration_value ∉ background..rightendpoint(gray_scale)
+            midpoint = mean(gray_scale)
             @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
             calibration_value = midpoint
         end
@@ -424,9 +422,9 @@ function gray_scale_image(
     rows = maybe(rows, sheight)
     cols = maybe(cols, swidth)
     minv, maxv = endpoints(gray_scale) .|> T
-    background = isnothing(background) ? minv : T(background)
+    background = maybe(infimum(gray_scale), background)
     val_range = minv == maxv ? minv : range(minv, maxv, length = cols)
-    image = fill(background, rows, cols)
+    image = fill(T(background), rows, cols)
     image[1:rows,1:cols] .= val_range'
     image
 end
