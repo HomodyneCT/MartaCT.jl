@@ -87,7 +87,7 @@ end
 
 
 @inline function lerp(q1::Q, q2::Q, t::T)::Q where {Q <: Number,T <: Number}
-    (one(T) - t) * q1 + t * q2
+    (one(Q) - t) * q1 + t * q2
 end
 
 @inline function lerp(f::Function, x1::X, x2::X, x::T) where {X <: Number,T <: Number}
@@ -102,7 +102,7 @@ end
     @inbounds lerp(v[x1], v[x2], x)
 end
 
-@inline function blerp(q11::Q, q12::Q, q21::Q, q22::Q, t1::T, t2::T)::Q where {Q <: Number,T <: Number}
+@inline function blerp(q11::Q, q12::Q, q21::Q, q22::Q, t1::T1, t2::T2)::Q where {Q <: Number,T1 <: Number, T2 <: Number}
     lerp(lerp(q11, q21, t1), lerp(q12, q22, t1), t2)
 end
 
