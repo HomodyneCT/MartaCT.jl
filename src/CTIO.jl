@@ -12,7 +12,7 @@ export load_tomogram, write_tomogram
 import YAML, Mmap
 using IterTools: imap
 using ..CTImages
-using ..Marta: yaml_repr
+using ..Utils: yaml_repr
 using ..TypeDict: standardize_type
 
 

@@ -84,9 +84,9 @@ function calibrate_image(
 end
 
 
-function calibrate_image(img::AbstractCTImage; kwargs...)
-    mmap(calibrate_image(; kwargs...), img)
-end
+# function calibrate_image(img::AbstractCTImage; kwargs...)
+#     mmap(calibrate_image(; kwargs...), img)
+# end
 
 
 """
@@ -114,13 +114,13 @@ function calibrate_image(
 end
 
 
-function calibrate_image(
-    img::AbstractCTImage,
-    imp::AbstractImageParams;
-    kwargs...
-)
-    mmap(calibrate_image(imp; kwargs...), img)
-end
+# function calibrate_image(
+#     img::AbstractCTImage,
+#     imp::AbstractImageParams;
+#     kwargs...
+# )
+#     mmap(calibrate_image(imp; kwargs...), img)
+# end
 
 
 """
@@ -138,13 +138,13 @@ function calibrate_tomogram(
 end
 
 
-function calibrate_tomogram(
-    img::CTTomogram,
-    imp::AbstractImageParams;
-    kwargs...
-)
-    mmap(calibrate_tomogram(imp; kwargs...), img)
-end
+# function calibrate_tomogram(
+#     img::CTTomogram,
+#     imp::AbstractImageParams;
+#     kwargs...
+# )
+#     mmap(calibrate_tomogram(imp; kwargs...), img)
+# end
 
 
 """
@@ -169,8 +169,8 @@ function calibrate_tomogram(
 end
 
 
-function calibrate_tomogram(img::CTTomogram; kwargs...)
-    mmap(calibrate_tomogram(; kwargs...), img)
-end
+# function calibrate_tomogram(img::CTTomogram; kwargs...)
+#     mmap(calibrate_tomogram(; kwargs...), img)
+# end
 
 end # module

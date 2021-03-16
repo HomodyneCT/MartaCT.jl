@@ -3,7 +3,7 @@ module CTScan
 Base.Experimental.@optlevel 0
 
 export AbstractCTScanner, CTScanner, FBPScanner
-export rename, transform_data
+export rename, rename!, transform_data, transform_data!
 export compute_gray_scale
 export make_phantom, create_image!
 export project_image!, reconstruct_image!
@@ -17,12 +17,12 @@ import Base: show, copy, similar, getproperty
 using IntervalSets
 import Statistics; const Stat = Statistics
 import CurveFit; const Fit = CurveFit
+import ..Utils: _atype
 using ..Applicative
 using ..Monads
 using ..Geometry
 import ..AbstractAlgorithms: reconstruct_image, project_image
 using ..AbstractAlgorithms
-import ..Marta: datatype, _atype
 using ..RadonAlgorithm
 import ..CTImages: ctimage, ctsinogram, cttomogram
 using ..CTImages
@@ -52,6 +52,10 @@ function rename(gst::AbstractCTScanner, name::AbstractString)
     typeof(gst)(gst.geometry, gst.data; name)
 end
 
+function rename!(gst::AbstractCTScanner, name::AbstractString)
+    gst.name = name
+end
+
 _atype(gst::AbstractCTScanner) = _atype(gst.data)
 
 ctimage(gst::AbstractCTScanner) = ctimage(gst.data)
@@ -59,15 +63,16 @@ ctsinogram(gst::AbstractCTScanner) = ctsinogram(gst.data)
 cttomogram(gst::AbstractCTScanner) = cttomogram(gst.data)
 
 
-similar(gst::AbstractCTScanner, img::AbstractCTImage...) = similar(gst, CTData(img...))
+similar(gst::AbstractCTScanner, img::AbstractCTImage...) =
+    similar(gst, CTData(img...))
 
-# function similar(
-#     gst::AbstractCTScanner,
-#     g::AbstractGeometry,
-#     img::AbstractCTImage...,
-# )
-#     similar(gst, g, CTData(img...))
-# end
+function similar(
+    gst::AbstractCTScanner,
+    g::AbstractGeometry,
+    img::AbstractCTImage...,
+)
+    similar(gst, g, CTData(img...))
+end
 
 
 for (nm, ctf) ∈ pairs(CTImages.ctfn)
@@ -80,69 +85,83 @@ for (nm, ctf) ∈ pairs(CTImages.ctfn)
                 similar(gst, newdata)
             end
         end
+        function transform_data!(f::Function, gst::AbstractCTScanner, ::$v)
+            mbind($ctf(gst)) do img
+                newdata = similar(gst.data, map(f, something(img)))
+                gst.data = newdata
+            end
+        end
         transform_data(f::Function, gst::AbstractCTScanner, ::Type{t}) =
             transform_data(f, gst, $v())
+        transform_data!(f::Function, gst::AbstractCTScanner, ::Type{t}) =
+            transform_data!(f, gst, $v())
     end
 end
 
 
 transform_data(f::Function, gst::AbstractCTScanner, s::Symbol) =
     transform_data(f, gst, Val(s))
+transform_data!(f::Function, gst::AbstractCTScanner, s::Symbol) =
+    transform_data!(f, gst, Val(s))
 
 struct CTScanner{
-    Alg <: AbstractReconstructionAlgorithm,
+    AInfo <: AlgorithmInfo,
     M <: AbstractArray{<:Real},
 } <: AbstractCTScanner
     name::CTScannerNameType
     study_id::String
-    algorithm::Alg
+    ainfo::AInfo
     data::CTData{M}
 
     """
     CTScanner{A,M}(
-        alg::A[, data::CTData];
-        name::Optional{Union{Symbol,String}} = A,
+        ainfo::A[, data::CTData];
+        name::Optional{Union{Symbol,String}} = nothing,
         study_id::Optional{String} = "Unknown"
-    ) where {A<:AbstractReconstructionAlgorithm,M<:AbstractArray}
+    ) where {A <: AlgorithmInfo, M <: AbstractArray}
 
     Construct `CTScanner` from an algorithm.
     """
     function CTScanner{A,M}(
-        alg::A,
+        ainfo::AlgorithmInfo,
         data::CTData{M} = CTData(M);
         name::Optional{CTScannerNameType} = nothing,
         study_id::Optional{String} = nothing,
-    ) where {A <: AbstractReconstructionAlgorithm,M <: AbstractArray{<:Real}}
-        new(maybe(nameof(A), name), maybe("Unknown", study_id), alg, data)
+    ) where {A <: AlgorithmInfo,M <: AbstractArray{<:Real}}
+        new(
+            maybe(alg_name(ainfo), name),
+            maybe("Unknown", study_id),
+            ainfo,
+            data
+        )
     end
 end
 
 
-const FBPScanner{M} = CTScanner{FBP,M}
+const FBPScanner{G,M} = CTScanner{FBPInfo{G},M}
 
 
-# @inline function getproperty(ct::CTScanner, s::Symbol)
-#     s ≡ :geometry && return ct.algorithm.geometry
-#     if s ≡ :params
-#         ct isa FBPScanner && return nothing
-#     end
-#     getfield(ct, s)
-# end
+@inline function getproperty(ct::CTScanner, s::Symbol)
+    s ≡ :geometry && return ct.ainfo.geometry
+    s ≡ :params && return ct.ainfo.params
+    s ≡ :algorithm && return ct.ainfo.algorithm
+    getfield(ct, s)
+end
 
 
-function CTScanner(alg::AbstractReconstructionAlgorithm, data::CTData; kwargs...)
+function CTScanner(alg::AlgorithmInfo, data::CTData; kwargs...)
     CTScanner{typeof(alg), _atype(data)}(alg, data; kwargs...)
 end
 
 
-function CTScanner(alg::AbstractReconstructionAlgorithm, gst::AbstractCTScanner; kwargs...)
+function CTScanner(alg::AlgorithmInfo, gst::AbstractCTScanner; kwargs...)
     CTScanner(alg, gst.data; kwargs...)
 end
 
 
-function similar(gst::CTScanner, data::Optional{<:CTData} = nothing)
+function similar(gst::CTScanner, data::Optional{CTData} = nothing)
     CTScanner(
-        gst.algorithm,
+        gst.ainfo,
         maybe(CTData(_atype(gst)), data);
         gst.name,
         gst.study_id,
@@ -150,61 +169,49 @@ function similar(gst::CTScanner, data::Optional{<:CTData} = nothing)
 end
 
 
-# """
-#     FBPScanner(
-#         geometry::AbstractGeometry,
-#         data::CTData;
-#         name::Optional{String},
-#         study_id::Optional{String}
-#     )
-
-# Construct a `FBPScanner` object.
-# """
-# function FBPScanner(
-#     geometry::G,
-#     data::CTData{M} = CTData(datatype(G));
-#     name::Optional{CTScannerNameType} = nothing,
-#     study_id::Optional{String} = nothing,
-# ) where {G<:AbstractGeometry,M<:AbstractArray}
-#     FBPScanner{M}(FBP(geometry), data; name, study_id)
-# end
-
 """
-    FBPScanner(data::CTData; name::Optional{String}, study_id::Optional{String})
+    FBPScanner(
+        geometry::AbstractGeometry,
+        data::CTData;
+        name::Optional{String},
+        study_id::Optional{String}
+    )
 
 Construct a `FBPScanner` object.
 """
 function FBPScanner(
-    ::Type{T} = Float32,
-    data::CTData{M} = CTData(T);
+    geometry::G,
+    data::CTData{M} = CTData(eltype(G));
     name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
-) where {T,G<:AbstractGeometry,M<:AbstractArray{T}}
-    FBPScanner{M}(FBP(), data; name, study_id)
+) where {G <: AbstractGeometry,M <: AbstractArray}
+    FBPScanner{G,M}(FBPInfo(geometry), data; name, study_id)
 end
 
 
-# """
-#     FBPScanner(
-#         geometry::AbstractGeometry,
-#         image::AbstractGrayScale;
-#         name::Optional{String},
-#         study_id::Optional{String}
-#     )
-
-# Construct a `FBPScanner` object.
-# """
-# function FBPScanner(
-#     geometry::AbstractGeometry,
-#     gs::AbstractTestImage;
-#     name::Optional{CTScannerNameType} = nothing,
-#     study_id::Optional{String} = nothing,
-# )
-#     FBPScanner(geometry, gs.image; name, study_id)
-# end
 """
     FBPScanner(
-        image::AbstractGrayScale;
+        geometry::AbstractGeometry,
+        image::AbstractTestImage;
+        name::Optional{String},
+        study_id::Optional{String}
+    )
+
+Construct a `FBPScanner` object.
+"""
+function FBPScanner(
+    geometry::AbstractGeometry,
+    gs::AbstractTestImage;
+    name::Optional{CTScannerNameType} = nothing,
+    study_id::Optional{String} = nothing,
+)
+    FBPScanner(geometry, gs.image; name, study_id)
+end
+
+
+"""
+    FBPScanner(
+        image::AbstractTestImage;
         name::Optional{String},
         study_id::Optional{String}
     )
@@ -216,26 +223,8 @@ function FBPScanner(
     name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
 )
-    FBPScanner(gs.image; name, study_id)
+    FBPScanner(ParallelBeamGeometry(gs), gs; name, study_id)
 end
-
-
-# """
-#     FBPScanner(
-#         image::AbstractGrayScale;
-#         name::Optional{String},
-#         study_id::Optional{String}
-#     )
-
-# Construct a `FBPScanner` object.
-# """
-# function FBPScanner(
-#     gs::AbstractTestImage;
-#     name::Optional{CTScannerNameType} = nothing,
-#     study_id::Optional{String} = nothing,
-# )
-#     FBPScanner(ParallelBeamGeometry(gs), gs; name, study_id)
-# end
 
 
 """
@@ -251,41 +240,31 @@ function FBPScanner(
     data = CTData(ctimage(gst), ctsinogram(gst), nothing)
     name = maybe(gst.name, name)
     study_id = maybe(gst.study_id, study_id)
-    #FBPScanner(gst.geometry, data; name, study_id)
-    FBPScanner(eltype(data), data; name, study_id)
+    FBPScanner(gst.ainfo, data; name, study_id)
 end
 
 
-# function FBPScanner(g::AbstractGeometry, img::AbstractCTImage...; kwargs...)
-#     FBPScanner(g, CTData(img...); kwargs...)
-# end
-function FBPScanner(img::AbstractCTImage...; kwargs...)
-    FBPScanner(CTData(img...); kwargs...)
+function FBPScanner(g::AbstractGeometry, img::AbstractCTImage...; kwargs...)
+    FBPScanner(g, CTData(img...); kwargs...)
 end
 
 
-# function copy(gst::FBPScanner)
-#     FBPScanner(gst.geometry, copy(gst.data); gst.name, gst.study_id)
-# end
 function copy(gst::FBPScanner)
-    FBPScanner(copy(gst.data); gst.name, gst.study_id)
+    FBPScanner(gst.geometry, copy(gst.data); gst.name, gst.study_id)
 end
 
 
-# function similar(
-#     gst::FBPScanner,
-#     g::AbstractGeometry,
-#     data::Optional{CTData} = nothing,
-# )
-#     FBPScanner(
-#         g,
-#         maybe(gst.data, data);
-#         gst.name,
-#         gst.study_id,
-#     )
-# end
-function similar(gst::FBPScanner, data::Optional{CTData} = nothing)
-    FBPScanner(maybe(gst.data, data); gst.name, gst.study_id)
+function similar(
+    gst::FBPScanner,
+    g::AbstractGeometry,
+    data::Optional{CTData} = nothing,
+)
+    FBPScanner(
+        g,
+        maybe(gst.data, data);
+        gst.name,
+        gst.study_id,
+    )
 end
 
 
@@ -310,31 +289,8 @@ function create_image!(gst::AbstractCTScanner, par::ImageParams)
 end
 
 
-# """
-#     project_image(gst::AbstractCTScanner, alg::Optional{A}; <keyword arguments>)
-#         where {A <: AbstractProjectionAlgorithm}
-
-# Compute sinogram for the test `gst`.
-
-# Keyword arguments depend on the algorithm employed, please see the relative
-# documentation.
-# """
-# function project_image(
-#     gst::AbstractCTScanner,
-#     alg::Optional{A} = nothing;
-#     kwargs...
-# ) where {A <: AbstractProjectionAlgorithm}
-#     sinog = project_image(
-#         ctimage(gst),
-#         isnothing(alg) ? Radon(gst.geometry) : alg;
-#         kwargs...
-#     )
-#     similar(gst, similar(gst.data, sinog))
-# end
-
 """
-project_image(gst::AbstractCTScanner, g::AbstractGeometry,
-alg::Optional{A}; <keyword arguments>)
+    project_image(gst::AbstractCTScanner, alg::Optional{A}; <keyword arguments>)
         where {A <: AbstractProjectionAlgorithm}
 
 Compute sinogram for the test `gst`.
@@ -344,102 +300,75 @@ documentation.
 """
 function project_image(
     gst::AbstractCTScanner,
-    g::AbstractGeometry,
     alg::Optional{A} = nothing;
     kwargs...
 ) where {A <: AbstractProjectionAlgorithm}
-    sinog = project_image(
-        ctimage(gst),
-        g,
-        isnothing(alg) ? Radon() : alg;
-        kwargs...
-    )
+    alg = isnothing(alg) ? Radon() : alg
+    sinog = project_image(ctimage(gst), RadonInfo(gst.geometry, alg); kwargs...)
     similar(gst, similar(gst.data, sinog))
 end
 
+
 function project_image!(
     gst::AbstractCTScanner,
-    g::AbstractGeometry,
     alg::Optional{A} = nothing;
     kwargs...
 ) where {A <: AbstractProjectionAlgorithm}
-    sinog = project_image(
-        ctimage(gst),
-        g,
-        isnothing(alg) ? Radon() : alg;
-        kwargs...
-    )
+    alg = isnothing(alg) ? Radon() : alg
+    sinog = project_image(ctimage(gst), gst.geometry, alg; kwargs...)
     gst.data.sinog = sinog
     gst
 end
 
 
-# function para2fan(gst::AbstractCTScanner; kwargs...)
-#     fbg, sinog_fan = ctsinogram(gst) ↣ para2fan(gst.geometry; kwargs...)
-#     similar(gst, fbg, similar(gst.data, sinog_fan))
-# end
-function para2fan(gst::AbstractCTScanner, g::AbstractGeometry; kwargs...)
-    fbg, sinog_fan = ctsinogram(gst) ↣ para2fan(g; kwargs...)
+function para2fan(gst::AbstractCTScanner; kwargs...)
+    fbg, sinog_fan = ctsinogram(gst) ↣ para2fan(gst.geometry; kwargs...)
     similar(gst, fbg, similar(gst.data, sinog_fan))
 end
 
-function para2fan!(gst::AbstractCTScanner, g::AbstractGeometry; kwargs...)
-    fbg, sinog_fan = ctsinogram(gst) ↣ para2fan(g; kwargs...)
+function para2fan!(gst::AbstractCTScanner; kwargs...)
+    fbg, sinog_fan = ctsinogram(gst) ↣ para2fan(gst.geometry; kwargs...)
     gst.data.sinog = sinog_fan
     gst
 end
 
 
-# function para2fan(gst::AbstractCTScanner, fbg::FanBeamGeometry; kwargs...)
-#     fbg, sinog_fan = ctsinogram(gst) ↣ para2fan(fbg; kwargs...)
-#     similar(gst, fbg, similar(gst.data, sinog_fan))
-# end
+function para2fan(gst::AbstractCTScanner, fbg::FanBeamGeometry; kwargs...)
+    fbg, sinog_fan = ctsinogram(gst) ↣ para2fan(fbg; kwargs...)
+    similar(gst, fbg, similar(gst.data, sinog_fan))
+end
 
 
-# function fan2para(gst::AbstractCTScanner; kwargs...)
-#     pbg, sinog_para = ctsinogram(gst) ↣ fan2para(gst.geometry; kwargs...)
-#     similar(gst, pbg, similar(gst.data, sinog_para))
-# end
 function fan2para(gst::AbstractCTScanner; kwargs...)
     pbg, sinog_para = ctsinogram(gst) ↣ fan2para(gst.geometry; kwargs...)
     similar(gst, pbg, similar(gst.data, sinog_para))
 end
 
-function fan2para!(gst::AbstractCTScanner, g::AbstractGeometry; kwargs...)
-    pbg, sinog_para = ctsinogram(gst) ↣ fan2para(g; kwargs...)
+function fan2para!(gst::AbstractCTScanner; kwargs...)
+    pbg, sinog_para = ctsinogram(gst) ↣ fan2para(gst.geometry; kwargs...)
     gst.data.sinog = sinog_para
     gst
 end
 
 
-# """
-#     reconstruct_image(gst::AbstractCTScanner; <keyword arguments>)
-
-# Reconstruct CT image from test `gst`.
-
-# Keyword arguments depend on the specific algorithm used, please see the relative
-# documentation.
-# """
-# function reconstruct_image(gst::AbstractCTScanner; kwargs...)
-#     tomog = reconstruct_image(ctsinogram(gst), gst.algorithm; kwargs...)
-#     similar(gst, similar(gst.data, tomog))
-# end
-
 """
-    reconstruct_image(gst::AbstractCTScanner, g::AbstractGeometry; <keyword arguments>)
+    reconstruct_image(gst::AbstractCTScanner; <keyword arguments>)
 
 Reconstruct CT image from test `gst`.
 
 Keyword arguments depend on the specific algorithm used, please see the relative
 documentation.
 """
-function reconstruct_image(gst::AbstractCTScanner, g::AbstractGeometry; kwargs...)
-    tomog = reconstruct_image(ctsinogram(gst), g, gst.algorithm; kwargs...)
+function reconstruct_image(gst::AbstractCTScanner; kwargs...)
+    tomog = reconstruct_image(
+        ctsinogram(gst), gst.ainfo; kwargs...)
     similar(gst, similar(gst.data, tomog))
 end
 
-function reconstruct_image!(gst::AbstractCTScanner, g::AbstractGeometry; kwargs...)
-    tomog = reconstruct_image(ctsinogram(gst), g, gst.algorithm; kwargs...)
+
+function reconstruct_image!(gst::AbstractCTScanner; kwargs...)
+    tomog = reconstruct_image(
+        ctsinogram(gst), gst.ainfo; kwargs...)
     gst.data.tomog = tomog
     gst
 end
@@ -451,12 +380,12 @@ end
 Load sinogram from stream `io`.
 """
 function load_sinogram(io::IO, gst::AbstractCTScanner)
-    sinog = load_sinogram(io; gst.geometry.ns, gst.geometry.nϕ)
+    sinog = load_sinogram(io; gst.geometry.nd, gst.geometry.nϕ)
     similar(gst, similar(gst.data, sinog))
 end
 
 function load_sinogram!(io::IO, gst::AbstractCTScanner)
-    sinog = load_sinogram(io; gst.geometry.ns, gst.geometry.nϕ)
+    sinog = load_sinogram(io; gst.geometry.nd, gst.geometry.nϕ)
     gst.data.sinog = sinog
     gst
 end

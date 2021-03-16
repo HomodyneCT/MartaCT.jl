@@ -6,11 +6,11 @@ export AbstractCTImage, CTImage, CTSinogram, CTTomogram, CTImageOrTomog
 export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
-using ..Marta: linspace
+using ..Utils: linspace
 using ..Applicative, ..Monads, ..Interpolation
 using ..Geometry:
     AbstractParallelBeamGeometry, AbstractFanBeamGeometry, ParallelBeamGeometry
-import ..Monads: mbind
+import ..Monads: mjoin
 import ..Marta: _atype
 import Base: size, convert, similar, eltype, getindex, setindex!
 
@@ -24,8 +24,9 @@ abstract type AbstractCTImage{M<:AbstractMatrix} <: AbstractMatrix{eltype(M)} en
 
 @traitimpl Monad{AbstractCTImage}
 
-@traitfn mbind(f::F, img::AbstractCTImage) where {F; Callable{F}} = f(img.data)
+mjoin(img::AbstractCTImage) = img.data
 
+_atype(img::M) where {M <: AbstractCTImage} = _atype(M)
 eltype(::Type{M}) where {M<:AbstractCTImage{A}} where A = eltype(A)
 size(img::AbstractCTImage) = mbind(size, img)
 size(img::AbstractCTImage, dim::Int) = size(mjoin(img), dim)

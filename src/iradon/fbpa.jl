@@ -39,7 +39,7 @@ function fbpa_fft(
     @inbounds @simd for k ∈ eachindex(xys)
         xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
     end
-    scϕs = sincos.(_make_ϕs(T, ϕs, nϕ))
+    scϕs = sincos.(linspace(T, ORI(ϕs), nϕ))
     z::T = maybe(zero(T), background)
     image = similar(sinog, rows, cols)
     fill!(image, z)

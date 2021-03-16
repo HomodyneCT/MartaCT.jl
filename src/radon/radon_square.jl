@@ -84,7 +84,10 @@ end
     t₀::T = (l - 1) / 2 * ν
     ts = linspace(-t₀..t₀, nd)
     ϕ₀::T = deg2rad(α₀)
-    Δϕ::T = deg2rad(α) / nϕ
-    ϕs = range(ϕ₀; step = Δϕ, length = nϕ)
+    ϕ₁::T = ϕ₀ + deg2rad(α)
+    ϕs = linspace(ORI(ϕ₀..ϕ₁), nϕ)
     radon_square(image, ts, ϕs; kwargs...)
 end
+
+
+@defradonfngeom radon_square

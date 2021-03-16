@@ -5,15 +5,17 @@ Base.Experimental.@optlevel 3
 export Radon, RadonSquare
 export AbstractFBP
 export FBP, FBPFFTSquare, FBPAFFT, FBPAFFTSquare
+export RadonInfo, FBPInfo
 
 using ..Applicative
 using ..Monads
 using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
-import ..Marta: datatype, linspace
+import ..Utils: linspace
 import ..AbstractAlgorithms:
-    radon, iradon, project_image, reconstruct_image, @_alg_progress
+    radon, iradon, project_image,
+    reconstruct_image, @_alg_progress, alg_name
 using ..AbstractAlgorithms
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
 using FFTW, ProgressMeter, IntervalSets
@@ -29,6 +31,23 @@ macro defradonalgfn(A::Symbol, f::Symbol)
             kwargs...
         )
             $f(image, ts, ϕs; kwargs...)
+        end
+    end
+end
+
+
+macro defradonfngeom(f::Symbol)
+    quote
+        @inline function $f(
+            image::AbstractMatrix,
+            g::AbstractParallelBeamGeometry;
+            kwargs...
+        )
+            nd = geometry.nd
+            nϕ = geometry.nϕ
+            α = geometry.α
+            α₀ = geometry.α₀
+            $f(image; nd, nϕ, α, α₀, kwargs...)
         end
     end
 end
@@ -91,5 +110,21 @@ abstract type AbstractFBP <: AbstractIRadonAlgorithm end
 include("Filters.jl")
 include("radon/radon.jl")
 include("iradon/iradon.jl")
+
+
+struct RadonInfo{G <: AbstractGeometry,A <: AbstractProjectionAlgorithm} <: AlgorithmInfo{A}
+    geometry::G
+    algorithm::A
+end
+
+RadonInfo(g::AbstractGeometry) = RadonInfo(g, Radon())
+
+
+struct FBPInfo{G <: AbstractGeometry,A <: AbstractFBP} <: AlgorithmInfo{A}
+    geometry::G
+    algorithm::A
+end
+
+FBPInfo(g::AbstractGeometry) = FBPInfo(g, FBP())
 
 end # module

@@ -11,15 +11,13 @@ export scan_angle, start_angle, center_channel
 export num_rows, num_cols, tomograph, channel_spacing
 
 using ..Monads
-import ..Marta: datatype, yaml_repr, struct2dict
-import Base: show, getproperty
+import ..Utils: yaml_repr, struct2dict
+import Base: show, getproperty, eltype
 
 
 const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry)
 
 abstract type AbstractGeometry  end
-
-datatype(x::AbstractGeometry) = datatype(typeof(x))
 
 function getproperty(g::AbstractGeometry, s::Symbol)
     s ≡ :width && return g.cols
@@ -46,7 +44,7 @@ struct ParallelBeamGeometry{T <: Real,CT <: AbstractTomograph} <: AbstractParall
     center::T
 end
 
-datatype(::Type{<:ParallelBeamGeometry{T}}) where {T} = T
+eltype(::Type{G}) where {G <: ParallelBeamGeometry{T}} where {T} = T
 
 yaml_repr(g::ParallelBeamGeometry) = struct2dict(g)
 
@@ -148,7 +146,7 @@ struct FanBeamGeometry{T,CT <: AbstractTomograph} <:
 end
 
 
-datatype(::Type{<:FanBeamGeometry{T}}) where {T} = T
+eltype(::Type{G}) where {G <: FanBeamGeometry{T}} where {T} = T
 
 yaml_repr(g::FanBeamGeometry) = struct2dict(g)
 
@@ -261,7 +259,7 @@ show(io::IO, g::AbstractFanBeamGeometry) = print(
 
 function ParallelBeamGeometry(fbg::AbstractFanBeamGeometry)
     ParallelBeamGeometry(
-        datatype(fbg),
+        eltype(fbg),
         fbg.ct;
         fbg.nϕ,
         fbg.nd,
@@ -280,7 +278,7 @@ function FanBeamGeometry(
     kwargs...,
 )
     FanBeamGeometry(
-        datatype(pbg),
+        eltype(pbg),
         ct;
         pbg.nϕ,
         pbg.nd,

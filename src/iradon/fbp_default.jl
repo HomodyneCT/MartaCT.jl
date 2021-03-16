@@ -35,7 +35,7 @@ function fbp_fft(
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(filtered)
     t₀::T = (nd + 1) / 2
-    scϕs = sincos.(_make_ϕs(T, ϕs, nϕ))
+    scϕs = sincos.(linspace(T, ORI(ϕs), nϕ))
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
     @inbounds @simd for k ∈ eachindex(xys)
         xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]

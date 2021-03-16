@@ -46,9 +46,9 @@ version = "1.0.5"
 
 [[ColorTypes]]
 deps = ["FixedPointNumbers", "Random"]
-git-tree-sha1 = "5e9769a17f17b587c951d57ba4319782b40c3513"
+git-tree-sha1 = "32a2b8af383f11cbb65803883837a149d10dfe8a"
 uuid = "3da002f7-5984-5a60-b8a6-cbb66c0b333f"
-version = "0.10.10"
+version = "0.10.12"
 
 [[Colors]]
 deps = ["ColorTypes", "FixedPointNumbers", "InteractiveUtils", "Reexport"]
@@ -146,9 +146,9 @@ version = "3.3.9+7"
 
 [[FileIO]]
 deps = ["Pkg", "Requires", "UUIDs"]
-git-tree-sha1 = "8800ec70aee7292931a3d3c10a3be3445b9c6141"
+git-tree-sha1 = "9cdfbf5c0ed88ad0dcdb02544416c8e5a73addef"
 uuid = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
-version = "1.6.2"
+version = "1.6.4"
 
 [[FillArrays]]
 deps = ["LinearAlgebra", "Random", "SparseArrays"]
@@ -208,9 +208,9 @@ uuid = "b77e0a4c-d291-57a0-90e8-8db25a27a240"
 
 [[IntervalSets]]
 deps = ["Dates", "EllipsisNotation", "Statistics"]
-git-tree-sha1 = "93a6d78525feb0d3ee2a2ae83a7d04db1db5663f"
+git-tree-sha1 = "3cc368af3f110a767ac786560045dceddfc16758"
 uuid = "8197267c-284f-5f27-9208-e0e47529a953"
-version = "0.5.2"
+version = "0.5.3"
 
 [[Intervals]]
 deps = ["Dates", "Printf", "RecipesBase", "Serialization", "TimeZones"]
@@ -386,10 +386,10 @@ uuid = "79098fc4-a85e-5d69-aa6a-4863f24498fa"
 version = "0.6.1"
 
 [[Rmath_jll]]
-deps = ["Libdl", "Pkg"]
-git-tree-sha1 = "d76185aa1f421306dec73c057aa384bad74188f0"
+deps = ["Artifacts", "JLLWrappers", "Libdl", "Pkg"]
+git-tree-sha1 = "1b7bf41258f6c5c9c31df8c1ba34c1fc88674957"
 uuid = "f50d1b31-88e8-58de-be2c-1cc44531875f"
-version = "0.2.2+1"
+version = "0.2.2+2"
 
 [[SHA]]
 uuid = "ea8e919c-243c-51af-8825-aaa63cd721ce"

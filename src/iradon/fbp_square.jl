@@ -37,7 +37,7 @@ function fbp_fft_square(
     t₀::T = T(nd + 1) / 2
     l = min(rows, cols)
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
-    scϕs = sincos.(_make_ϕs(T, ϕs, nϕ))
+    scϕs = sincos.(linspace(T, ORI(ϕs), nϕ))
     indices = Vector{NTuple{2,Int}}(undef, l^2)
     xys = Vector{NTuple{2,T}}(undef, l^2)
     @inbounds @simd for k ∈ eachindex(xys)

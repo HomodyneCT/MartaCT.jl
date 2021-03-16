@@ -12,7 +12,7 @@ using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn
 using ..CTImages: ctimage, ctsinogram, cttomogram
 using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
-using ..Marta: linspace
+using ..Utils: linspace
 using IntervalSets
 
 function __init__()

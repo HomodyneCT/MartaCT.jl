@@ -44,7 +44,7 @@ function fbpa_fft_square(
         indices[k] = x₀ + ix, y₀ + iy
         xys[k] = xs[ix], ys[iy]
     end
-    scϕs = sincos.(_make_ϕs(T, ϕs, nϕ))
+    scϕs = sincos.(linspace(T, ORI(ϕs), nϕ))
     z::T = maybe(zero(T), background)
     image = similar(sinog, rows, cols)
     fill!(image, z)

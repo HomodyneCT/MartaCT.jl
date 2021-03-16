@@ -66,9 +66,9 @@ end
 
 
 @inline function radon_default(
-    image::AbstractMatrix{T},
+    image::AbstractMatrix{T};
     nd::Optional{I1} = nothing,
-    nϕ::Optional{I2} = nothing;
+    nϕ::Optional{I2} = nothing,
     α::Real = 360,
     α₀::Real = 0,
     ν::Real = 1,
@@ -87,7 +87,10 @@ end
     t₀ = h / 2
     ts = linspace(-t₀..t₀, nd) * ν
     ϕ₀::T = deg2rad(α₀)
-    Δϕ::T = deg2rad(α) / nϕ
-    scϕs = range(ϕ₀; step = Δϕ, length = nϕ)
+    ϕ₁::T = ϕ₀ + deg2rad(α)
+    ϕs = linspace(ORI(ϕ₀..ϕ₁), nϕ)
     radon_default(image, ts, ϕs; kwargs...)
 end
+
+
+@defradonfngeom radon_default

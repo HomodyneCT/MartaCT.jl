@@ -1,8 +1,21 @@
-export datatype, linspace
-export yaml_repr, struct2dict
+module Utils
 
-function datatype end
+Base.Experimental.@optlevel 3
+
+
+export linspace
+export yaml_repr, struct2dict
+export ORI
+
+using IntervalSets
+
+
+const ORI{T} = Interval{:closed,:open,T}
+ORI(i::Interval) = ORI{eltype(i)}(i)
+
+
 function _atype end
+
 
 @inline function linspace(start::T, stop::U, len::Integer) where {
     T <: Number,
@@ -20,20 +33,33 @@ end
 end
 
 @inline function linspace(
-    i::IntervalSets.ClosedInterval{T},
+    i::ClosedInterval{T},
     len::Integer,
 ) where {T <: Number}
-    a, b = IntervalSets.endpoints(i)
-    linspace(a, b, len)
+    range(i, len)
 end
 
 @inline function linspace(
     ::Type{T},
-    i::IntervalSets.ClosedInterval{U},
-    len::Integer
+    i::ClosedInterval{U},
+    len::Integer,
 ) where {T <: Number,U <: Number}
-    a, b = IntervalSets.endpoints(i)
-    linspace(T, a, b, len)
+    range(convert(ClosedInterval{T}, i), len)
+end
+
+@inline function linspace(
+    i::ORI{T},
+    len::Integer,
+) where {T <: Number}
+    range(i, len)
+end
+
+@inline function linspace(
+    ::Type{T},
+    i::ORI{U},
+    len::Integer,
+) where {T <: Number,U <: Number}
+    range(convert(ORI{T}, i), len)
 end
 
 yaml_repr(obj) = obj
@@ -45,3 +71,5 @@ function struct2dict(obj)
         p => yaml_repr(field)
     end)
 end
+
+end # module

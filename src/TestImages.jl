@@ -12,7 +12,9 @@ export AbstractTestImage, AbstractGrayScale
 export GrayScaleLine, GrayScalePyramid, CircleImage, WhiteRect
 
 
-using IntervalSets
+using IntervalSets, SimpleTraits
+using Statistics: mean
+import ..Monads: mjoin, mreturn
 using ..Monads
 using ..CTImages: CTImage, polar2cart
 import ..CTImages: rescale, rescale!
@@ -20,15 +22,17 @@ using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
 using ..AbstractAlgorithms: AbstractProjectionAlgorithm
-import ..Marta: datatype, yaml_repr, struct2dict
+import ..Utils: _atype, yaml_repr, struct2dict
 import ..Info: CTInfo
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
-import Base: getproperty, size, show
+import Base: getproperty, size, show, getindex, setindex!, IndexStyle, eltype
 
 
-abstract type AbstractImageParams end
+abstract type AbstractImageParams{T<:Real} end
 
+eltype(::Type{P}) where {P<:AbstractImageParams{T}} where T = T
+eltype(imp::AbstractImageParams) = eltype(typeof(imp))
 size(p::AbstractImageParams) = p.rows, p.cols
 function size(p::AbstractImageParams, dim::Integer)
     dim == 1 && return p.rows
@@ -91,7 +95,7 @@ const _default_gray_scale_params = Dict(
 
 Hold information to construct the input test image.
 """
-struct ImageParams{T<:Real} <: AbstractImageParams
+struct ImageParams{T} <: AbstractImageParams{T}
     rows::Int # Test image rows
     cols::Int # Test image cols
     gray_scale::ClosedInterval{T} # Gray scale interval.
@@ -137,9 +141,6 @@ struct ImageParams{T<:Real} <: AbstractImageParams
         )
     end
 end
-
-
-datatype(imp::ImageParams{T}) where T = T
 
 
 function getproperty(p::ImageParams, s::Symbol)
@@ -198,7 +199,7 @@ show(io::IO, p::AbstractImageParams) = print(
 )
 
 
-struct CircleParams{T <: Real} <: AbstractImageParams
+struct CircleParams{T} <: AbstractImageParams{T}
     radius::Int # Calibration circle radius
     rows::Int # Test image rows
     cols::Int # Test image cols
@@ -235,8 +236,6 @@ struct CircleParams{T <: Real} <: AbstractImageParams
     end
 end
 
-
-datatype(imp::CircleParams{T}) where T = T
 
 function getproperty(p::CircleParams, s::Symbol)
     s ≡ :width && return p.cols
@@ -367,7 +366,7 @@ function circle_image end
 
 function circle_image(imp::ImageParams; kwargs...)
     circle_image(
-        datatype(imp);
+        eltype(imp);
         imp.radius,
         imp.calibration_value,
         imp.background,
@@ -378,7 +377,7 @@ end
 
 function circle_image(imp::CircleParams; kwargs...)
     circle_image(
-        datatype(imp);
+        eltype(imp);
         imp.radius,
         imp.calibration_value,
         imp.background,
@@ -611,14 +610,23 @@ function create_pyramid_image(par::ImageParams; plateau::Real = 0)
 end
 
 
-abstract type AbstractTestImage end
-abstract type AbstractGrayScale <: AbstractTestImage end
+abstract type AbstractTestImage{T<:Real} <: AbstractMatrix{T} end
+abstract type AbstractGrayScale{T} <: AbstractTestImage{T} end
 
+
+eltype(::Type{A}) where {A <: AbstractTestImage{T}} where T = T
 size(gs::AbstractTestImage) = size(gs.image)
 size(gs::AbstractTestImage, d::Integer) = size(gs.image, d)
+getindex(gs::AbstractTestImage, i::Int) = getindex(gs.image, i)
+getindex(gs::AbstractTestImage, I::Vararg{Int,N}) where N =
+    getindex(gs.image, I...)
+setindex!(gs::AbstractTestImage, v, i::Int) = setindex!(gs.image, v, i)
+setindex!(gs::AbstractTestImage, v, I::Vararg{Int,N}) where N =
+    setindex!(gs.image, v, I...)
+IndexStyle(::Type{T}) where {T<:AbstractTestImage} = IndexStyle(Matrix)
 
 
-struct CircleImage{T<:Real} <: AbstractTestImage
+struct CircleImage{T<:Real} <: AbstractTestImage{T}
     params::CircleParams{T}
     image::CTImage{Matrix{T}}
 end
@@ -645,7 +653,7 @@ end
 
 function CircleImage(imp::ImageParams; kwargs...)
     CircleImage(
-        datatype(imp);
+        eltype(imp);
         imp.radius,
         imp.rows,
         imp.cols,
@@ -658,10 +666,10 @@ end
 
 
 function CircleImage(pbg::AbstractParallelBeamGeometry; kwargs...)
-    CircleImage(datatype(pbg); pbg.width, pbg.height, kwargs...)
+    CircleImage(eltype(pbg); pbg.width, pbg.height, kwargs...)
 end
 
-struct GrayScaleLine{T<:Real} <: AbstractGrayScale
+struct GrayScaleLine{T} <: AbstractGrayScale{T}
     params::ImageParams{T}
     image::CTImage{Matrix{T}}
 end
@@ -724,7 +732,7 @@ end
 
 function GrayScaleLine(geometry::AbstractParallelBeamGeometry; kwargs...)
     GrayScaleLine(
-        datatype(geometry);
+        eltype(geometry);
         geometry.width,
         geometry.height,
         kwargs...
@@ -732,7 +740,7 @@ function GrayScaleLine(geometry::AbstractParallelBeamGeometry; kwargs...)
 end
 
 
-struct GrayScalePyramid{T<:Real} <: AbstractGrayScale
+struct GrayScalePyramid{T} <: AbstractGrayScale{T}
     params::ImageParams{T}
     plateau::T
     image::CTImage{Matrix{T}}
@@ -799,7 +807,7 @@ end
 
 function GrayScalePyramid(geometry::AbstractParallelBeamGeometry; kwargs...)
     GrayScalePyramid(
-        datatype(geometry);
+        eltype(geometry);
         geometry.width,
         geometry.height,
         kwargs...
@@ -876,20 +884,15 @@ function square_image(
     background::Real = -1000
 ) where {T<:Real}
     matrix = fill(T(background), r, c)
-
     if isnothing(l)
         l = min(r, c)
     end
-
     @assert l <= min(r, c)
-
     rin = r ÷ 2 - l ÷ 2 + 1
     rfi = rin + l - 1
     cin = c ÷ 2 - l ÷ 2 + 1
     cfi = cin + l - 1
-
     matrix[rin:rfi, cin:cfi] .= calibration_value
-
     matrix
 end
 
@@ -897,7 +900,7 @@ end
 square_image(r, c; kwargs...) = square_image(Float32, r, c; kwargs...)
 
 
-struct WhiteRect{T<:Real} <: AbstractGrayScale
+struct WhiteRect{T} <: AbstractGrayScale{T}
     params::ImageParams{T}
     image::CTImage{Matrix{T}}
 end
@@ -962,7 +965,7 @@ end
 
 function WhiteRect(geometry::AbstractParallelBeamGeometry; kwargs...)
     WhiteRect(
-        datatype(geometry);
+        eltype(geometry);
         geometry.width,
         geometry.height,
         kwargs...
@@ -970,19 +973,12 @@ function WhiteRect(geometry::AbstractParallelBeamGeometry; kwargs...)
 end
 
 
-const _gs_images = (:GrayScaleLine, :GrayScalePyramid, :WhiteRect, :CircleImage)
-
-for nm ∈ _gs_images
-    @eval datatype(gs::$nm{T}) where T = T
-end
-
-
 for nm ∈ Geometry._geometry_names
     @eval begin
         $nm(imp::ImageParams; kwargs...) =
-            $nm(datatype(imp); imp.width, imp.height, kwargs...)
+            $nm(eltype(imp); imp.width, imp.height, kwargs...)
         $nm(gs::AbstractTestImage; kwargs...) =
-            $nm(datatype(gs); gs.width, gs.height, kwargs...)
+            $nm(eltype(gs); gs.width, gs.height, kwargs...)
     end
 end
 
@@ -990,25 +986,10 @@ end
 plateau_length(grsc::GrayScalePyramid) = round(Int, grsc.swidth * grsc.plateau)
 
 
-project_image(image::AbstractTestImage, alg::AbstractProjectionAlgorithm; kwargs...) =
-    project_image(image.image, alg; kwargs...)
-
-
 for nm ∈ (:calibrate_image, :calibrate_tomogram)
     @eval begin
-        $nm(imp::AbstractImageParams; kwargs...) =
-            x -> $nm(x, imp; kwargs...)
-        $nm(x, grsc::AbstractTestImage; kwargs...) =
-            $nm(x, grsc.params; kwargs...)
-        $nm(grsc::AbstractTestImage; kwargs...) =
-            $nm(grsc.params; kwargs...)
-        function $nm(
-            m::Maybe,
-            x::M;
-            kwargs...
-        ) where {M <: Union{AbstractImageParams,AbstractTestImage}}
-            m ↣ $nm(x; kwargs...)
-        end
+        $nm(imp::AbstractImageParams; kwargs...) = x -> $nm(x, imp; kwargs...)
+        $nm(x, gs::AbstractTestImage; kwargs...) = $nm(x, gs.params; kwargs...)
     end
 end
 
@@ -1020,13 +1001,16 @@ function calibration_data(imp::AbstractImageParams)
 end
 
 
-function rescale!(img::AbstractTestImage, args...; kwargs...)
-    rescale!(img.image, args...; kwargs...)
-end
+# function rescale!(img::AbstractTestImage, args...; kwargs...)
+#     rescale!(img.image, args...; kwargs...)
+# end
 
 
-function rescale(img::AbstractTestImage, args...; kwargs...)
-    rescale(img.image, args...; kwargs...)
-end
+# function rescale(img::AbstractTestImage, args...; kwargs...)
+#     rescale(img.image, args...; kwargs...)
+# end
+
+const _gs_images =
+    (:CircleImage, :WhiteRect, :GrayScaleLine, :GrayScalePyramid)
 
 end # module

@@ -2,10 +2,10 @@ module CTImageData
 
 export AbstractCTData, CTData
 
-using ..Monads
-using ..CTImages
-import ..CTImages: ctimage, ctsinogram, cttomogram
-import ...Marta: _atype
+using ...Monads
+using ...CTImages
+import ...CTImages: ctimage, ctsinogram, cttomogram
+import ...Utils: _atype
 import Base: similar, eltype
 
 
