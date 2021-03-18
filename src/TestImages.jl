@@ -16,8 +16,8 @@ using IntervalSets, SimpleTraits
 using Statistics: mean
 import ..Monads: mjoin, mreturn
 using ..Monads
-using ..CTImages: CTImage, polar2cart
 import ..CTImages: rescale, rescale!
+using ..CTImages
 using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
@@ -27,6 +27,7 @@ import ..Info: CTInfo
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
 import Base: getproperty, size, show, getindex, setindex!, IndexStyle, eltype
+using Base: @propagate_inbounds
 
 
 abstract type AbstractImageParams{T<:Real} end
@@ -615,20 +616,36 @@ abstract type AbstractGrayScale{T} <: AbstractTestImage{T} end
 
 
 eltype(::Type{A}) where {A <: AbstractTestImage{T}} where T = T
-size(gs::AbstractTestImage) = size(gs.image)
-size(gs::AbstractTestImage, d::Integer) = size(gs.image, d)
-getindex(gs::AbstractTestImage, i::Int) = getindex(gs.image, i)
-getindex(gs::AbstractTestImage, I::Vararg{Int,N}) where N =
-    getindex(gs.image, I...)
-setindex!(gs::AbstractTestImage, v, i::Int) = setindex!(gs.image, v, i)
-setindex!(gs::AbstractTestImage, v, I::Vararg{Int,N}) where N =
-    setindex!(gs.image, v, I...)
-IndexStyle(::Type{T}) where {T<:AbstractTestImage} = IndexStyle(Matrix)
+@inline _get_image(gs::AbstractTestImage) = getfield(gs, :image)
+_atype(gs::AbstractTestImage) = _atype(_get_image(gs))
+size(gs::AbstractTestImage) = size(_get_image(gs))
+size(gs::AbstractTestImage, d::Integer) = size(_get_image(gs), d)
+@propagate_inbounds function getindex(gs::AbstractTestImage, i::Int)
+    @boundscheck checkbounds(_get_image(gs), i)
+    @inbounds getindex(_get_image(gs), i)
+end
+@propagate_inbounds function getindex(
+    gs::AbstractTestImage, I::Vararg{Int,N}
+) where N
+    @boundscheck checkbounds(_get_image(gs), I...)
+    @inbounds getindex(_get_image(gs), I...)
+end
+@propagate_inbounds function setindex!(gs::AbstractTestImage, v, i::Int)
+    @boundscheck checkbounds(_get_image(gs), i)
+    @inbounds setindex!(_get_image(gs), v, i)
+end
+@propagate_inbounds function setindex!(
+    gs::AbstractTestImage, v, I::Vararg{Int,N}
+) where N
+    @boundscheck checkbounds(_get_image(gs), I...)
+    @inbounds setindex!(_get_image(gs), v, I...)
+end
+IndexStyle(::Type{T}) where {T<:AbstractTestImage} = IndexLinear()
 
 
 struct CircleImage{T<:Real} <: AbstractTestImage{T}
     params::CircleParams{T}
-    image::CTImage{Matrix{T}}
+    image::CTImageMat{T}
 end
 
 
@@ -671,7 +688,7 @@ end
 
 struct GrayScaleLine{T} <: AbstractGrayScale{T}
     params::ImageParams{T}
-    image::CTImage{Matrix{T}}
+    image::CTImageMat{T}
 end
 
 
@@ -743,7 +760,7 @@ end
 struct GrayScalePyramid{T} <: AbstractGrayScale{T}
     params::ImageParams{T}
     plateau::T
-    image::CTImage{Matrix{T}}
+    image::CTImageMat{T}
 end
 
 
@@ -902,7 +919,7 @@ square_image(r, c; kwargs...) = square_image(Float32, r, c; kwargs...)
 
 struct WhiteRect{T} <: AbstractGrayScale{T}
     params::ImageParams{T}
-    image::CTImage{Matrix{T}}
+    image::CTImageMat{T}
 end
 
 
