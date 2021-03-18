@@ -28,6 +28,14 @@ end
 
 abstract type AbstractTomograph end
 
+function getproperty(ct::AbstractTomograph, s::Symbol)
+    s ∈ fieldnames(typeof(ct)) && return getfield(ct, s)
+    nothing
+end
+
+show(io::IO, ::T) where T <: AbstractTomograph = print(io, "$(nameof(T))")
+
+
 struct DefaultTomograph <: AbstractTomograph end
 
 
@@ -238,22 +246,23 @@ FanBeamGeometry(ct::AbstractTomograph; kwargs...) =
     FanBeamGeometry(Float32, ct; kwargs...)
 
 
-show(io::IO, g::AbstractFanBeamGeometry) = print(
+function show(io::IO, g::AbstractFanBeamGeometry)
+    print(
     io,
     """Fan beam geometry:
-- tomograph:
-    $(tomograph(g))
-- number of angles: $(num_proj(g))
-- number of detectors: $(num_det(g))
-- tomogram size (W×H): $(num_cols(g)) × $(num_rows(g))
-- focal spot to ISO: $(f2iso(g)) mm
-- fan beam angle: $(rad2deg(fan_angle(g)))°
-- cell size: $(cell_size(g)) mm
-- scan angle: $(scan_angle(g))°
-- scan starting angle: $(start_angle(g))°
-- channel spacing: $(channel_spacing(g))°
-- center channel: $(center_channel(g))""",
-)
+    - tomograph: $(tomograph(g))
+    - number of angles: $(num_proj(g))
+    - number of detectors: $(num_det(g))
+    - tomogram size (W×H): $(num_cols(g)) × $(num_rows(g))
+    - focal spot to ISO: $(f2iso(g)) mm
+    - fan beam angle: $(rad2deg(fan_angle(g)))°
+    - cell size: $(cell_size(g)) mm
+    - scan angle: $(scan_angle(g))°
+    - scan starting angle: $(start_angle(g))°
+    - channel spacing: $(maybe(x -> "$x°", "N/A", channel_spacing(g)))
+    - center channel: $(center_channel(g))""",
+    )
+end
 
 
 
