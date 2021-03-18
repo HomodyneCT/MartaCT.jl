@@ -36,7 +36,7 @@ import ..CTIO: load_tomogram, write_tomogram
 
 
 include("CTImageData.jl")
-using .CTImageData: CTData
+using .CTImageData: AbstractCTData, CTData
 
 
 """
@@ -104,30 +104,27 @@ transform_data(f::Function, gst::AbstractCTScanner, s::Symbol) =
 transform_data!(f::Function, gst::AbstractCTScanner, s::Symbol) =
     transform_data!(f, gst, Val(s))
 
-struct CTScanner{
-    AInfo <: AlgorithmInfo,
-    M <: AbstractArray{<:Real},
-} <: AbstractCTScanner
+struct CTScanner{A<:AlgorithmInfo,D<:AbstractCTData} <: AbstractCTScanner
     name::CTScannerNameType
     study_id::String
-    ainfo::AInfo
-    data::CTData{M}
+    ainfo::A
+    data::D
 
     """
-    CTScanner{A,M}(
-        ainfo::A[, data::CTData];
+    CTScanner{A,D}(
+        ainfo::A[, data::D];
         name::Optional{Union{Symbol,String}} = nothing,
         study_id::Optional{String} = "Unknown"
-    ) where {A <: AlgorithmInfo, M <: AbstractArray}
+    ) where {A <: AlgorithmInfo, D <: AbstractCTData}
 
     Construct `CTScanner` from an algorithm.
     """
-    function CTScanner{A,M}(
-        ainfo::AlgorithmInfo,
-        data::CTData{M} = CTData(M);
+    function CTScanner{A,D}(
+        ainfo::A,
+        data::D = CTData();
         name::Optional{CTScannerNameType} = nothing,
         study_id::Optional{String} = nothing,
-    ) where {A <: AlgorithmInfo,M <: AbstractArray{<:Real}}
+    ) where {A <: AlgorithmInfo,D <: AbstractCTData}
         new(
             maybe(alg_name(ainfo), name),
             maybe("Unknown", study_id),
@@ -138,9 +135,6 @@ struct CTScanner{
 end
 
 
-const FBPScanner{G,M} = CTScanner{FBPInfo{G},M}
-
-
 @inline function getproperty(ct::CTScanner, s::Symbol)
     s ≡ :geometry && return ct.ainfo.geometry
     s ≡ :params && return ct.ainfo.params
@@ -149,8 +143,18 @@ const FBPScanner{G,M} = CTScanner{FBPInfo{G},M}
 end
 
 
-function CTScanner(alg::AlgorithmInfo, data::CTData; kwargs...)
-    CTScanner{typeof(alg), _atype(data)}(alg, data; kwargs...)
+function CTScanner(alg::AlgorithmInfo, data::AbstractCTData; kwargs...)
+    CTScanner{typeof(alg), typeof(data)}(alg, data; kwargs...)
+end
+
+
+function CTScanner(
+    alg::AlgorithmInfo,
+    imgs::T...;
+    kwargs...
+) where {T<:AbstractCTImage}
+    CTScanner{typeof(alg), CTData{eltype(T),_atype(T)}}(
+        alg, CTData(imgs...); kwargs...)
 end
 
 
@@ -159,20 +163,23 @@ function CTScanner(alg::AlgorithmInfo, gst::AbstractCTScanner; kwargs...)
 end
 
 
-function similar(gst::CTScanner, data::Optional{CTData} = nothing)
+function similar(gst::CTScanner, data::Optional{AbstractCTData} = nothing)
     CTScanner(
         gst.ainfo,
-        maybe(CTData(_atype(gst)), data);
+        maybe(similar(gst.data), data);
         gst.name,
         gst.study_id,
     )
 end
 
 
+const FBPScanner{G,D} = CTScanner{FBPInfo{G},D}
+
+
 """
     FBPScanner(
         geometry::AbstractGeometry,
-        data::CTData;
+        data::AbstractCTData;
         name::Optional{String},
         study_id::Optional{String}
     )
@@ -181,11 +188,11 @@ Construct a `FBPScanner` object.
 """
 function FBPScanner(
     geometry::G,
-    data::CTData{M} = CTData(eltype(G));
+    data::D = CTData(eltype(G));
     name::Optional{CTScannerNameType} = nothing,
     study_id::Optional{String} = nothing,
-) where {G <: AbstractGeometry,M <: AbstractArray}
-    FBPScanner{G,M}(FBPInfo(geometry), data; name, study_id)
+) where {G <: AbstractGeometry, D <: AbstractCTData}
+    FBPScanner{G,D}(FBPInfo(geometry), data; name, study_id)
 end
 
 
@@ -244,8 +251,8 @@ function FBPScanner(
 end
 
 
-function FBPScanner(g::AbstractGeometry, img::AbstractCTImage...; kwargs...)
-    FBPScanner(g, CTData(img...); kwargs...)
+function FBPScanner(g::AbstractGeometry, imgs::AbstractCTImage...; kwargs...)
+    FBPScanner(g, CTData(imgs...); kwargs...)
 end
 
 
@@ -585,7 +592,9 @@ function calibrate_image(
         interval,
         window,
     )
-    similar(gst, similar(gst.data, cimg))
+    similar(gst, maybe(gst.data, cimg) do x
+        similar(gst.data, x)
+    end)
 end
 
 function calibrate_image!(
@@ -624,7 +633,9 @@ function calibrate_image(
         max_pos,
         window,
     )
-    similar(gst, similar(gst.data, cimg))
+    similar(gst, maybe(gst.data, cimg) do x
+        similar(gst.data, x)
+    end)
 end
 
 function calibrate_image!(
@@ -663,7 +674,9 @@ function calibrate_tomogram(
         interval,
         window,
     )
-    similar(gst, similar(gst.data, cimg))
+    similar(gst, maybe(gst.data, cimg) do x
+        similar(gst.data, x)
+    end)
 end
 
 function calibrate_tomogram!(
@@ -702,7 +715,9 @@ function calibrate_tomogram(
         interval,
         window,
     )
-    similar(gst, similar(gst.data, cimg))
+    similar(gst, maybe(gst.data, cimg) do x
+        similar(gst.data, x)
+    end)
 end
 
 function calibrate_tomogram!(
