@@ -53,14 +53,15 @@ end
 end
 
 @propagate_inbounds function (::LinearInterpolation)(
-    v::AbstractVector{T}, x::U) where {T <: Number,U <: Number}
+    v::AbstractVector{T}, x::U
+) where {T <: Number,U <: Number}
     x1 = floor(Int, x)
     x2 = ceil(Int, x)
     lerp(v, x1, x2, x)
 end
 
 
-@inline function interpolate(
+@propagate_inbounds function interpolate(
     a::AbstractArray{T},
     interp::AbstractInterpolation,
 ) where {T <: Number}
@@ -69,7 +70,7 @@ end
         "Interpolation of arrays with dimensions higher than 2 " *
         "is not currently supported"
     )
-    @inline function (xs::U...) where {U <: Number}
+    @propagate_inbounds function (xs::U...) where {U <: Number}
         interp(a, xs...)
     end
 end
@@ -86,27 +87,35 @@ for nm ∈ _interpolation_types
 end
 
 
-@inline function lerp(q1::Q, q2::Q, t::T)::Q where {Q <: Number,T <: Number}
+@inline function lerp(q1::Q, q2::Q, t::T) where {Q <: Number,T <: Number}
     (one(Q) - t) * q1 + t * q2
 end
 
-@inline function lerp(f::Function, x1::X, x2::X, x::T) where {X <: Number,T <: Number}
+@inline function lerp(
+    f::Function, x1::X, x2::X, x::T
+) where {X <: Number,T <: Number}
     x1 == x2 && return f(x1)
     lerp(f(x1), f(x2), (x - x1) / (x2 - x1))
 end
 
-@propagate_inbounds function lerp(v::AbstractVector{T}, x1::X, x2::X, x::U)::T where {X <: Integer,T <: Number,U<:Number}
+@propagate_inbounds function lerp(
+    v::AbstractVector{T}, x1::X, x2::X, x::U
+) where {T <: Number,X <: Integer,U<:Number}
     @boundscheck checkbounds(v, x1)
     x1 == x2 && return @inbounds v[x1]
     @boundscheck checkbounds(v, x2)
     @inbounds lerp(v[x1], v[x2], x)
 end
 
-@inline function blerp(q11::Q, q12::Q, q21::Q, q22::Q, t1::T1, t2::T2)::Q where {Q <: Number,T1 <: Number, T2 <: Number}
+@inline function blerp(
+    q11::Q, q12::Q, q21::Q, q22::Q, t1::T1, t2::T2
+) where {Q <: Number,T1 <: Number, T2 <: Number}
     lerp(lerp(q11, q21, t1), lerp(q12, q22, t1), t2)
 end
 
-@propagate_inbounds function blerp(mat::AbstractMatrix{T}, q1::Q, q2::Q, p1::P, p2::P, q::U, p::U)::T where {Q <: Integer,P <: Integer,T <: Number,U <: Number}
+@propagate_inbounds function blerp(
+    mat::AbstractMatrix{T}, q1::Q, q2::Q, p1::P, p2::P, q::U, p::U
+) where {Q <: Integer,P <: Integer,T <: Number,U <: Number}
     @boundscheck checkbounds(mat, q1, p1)
     @boundscheck checkbounds(mat, q1, p2)
     @boundscheck checkbounds(mat, q2, p1)
