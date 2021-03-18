@@ -2,17 +2,19 @@ module CTImages
 
 export rescale!, rescale, rotate
 export polar2cart
-export AbstractCTImage, CTImage, CTSinogram, CTTomogram, CTImageOrTomog
+export AbstractCTImage, CTImage, CTSinogram, CTTomogram
+export CTImageOrTomog, CTImageMat, CTSinogMat, CTTomogMat
 export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
+import ..Monads: mjoin
 using ..Utils: linspace
+import ..Utils: _atype
 using ..Applicative, ..Monads, ..Interpolation
 using ..Geometry:
     AbstractParallelBeamGeometry, AbstractFanBeamGeometry, ParallelBeamGeometry
-import ..Monads: mjoin
-import ..Marta: _atype
-import Base: size, convert, similar, eltype, getindex, setindex!
+import Base: size, convert, similar, eltype, getindex, setindex!, IndexStyle
+using Base: @propagate_inbounds
 
 
 function ctimage end
@@ -20,22 +22,36 @@ function ctsinogram end
 function cttomogram end
 
 
-abstract type AbstractCTImage{M<:AbstractMatrix} <: AbstractMatrix{eltype(M)} end
+abstract type AbstractCTImage{T<:Number} <: AbstractMatrix{T} end
 
 @traitimpl Monad{AbstractCTImage}
 
 mjoin(img::AbstractCTImage) = img.data
 
 _atype(img::M) where {M <: AbstractCTImage} = _atype(M)
-eltype(::Type{M}) where {M<:AbstractCTImage{A}} where A = eltype(A)
+eltype(::Type{M}) where {M<:AbstractCTImage{T}} where T = T
 size(img::AbstractCTImage) = mbind(size, img)
 size(img::AbstractCTImage, dim::Int) = size(mjoin(img), dim)
-getindex(img::AbstractCTImage, i::Int) = getindex(mjoin(img), i)
-getindex(img::AbstractCTImage, I::Vararg{Int,N}) where N =
-    getindex(mjoin(img), I...)
-setindex!(img::AbstractCTImage, v, i::Int) = setindex!(mjoin(img), v, i)
-setindex!(img::AbstractCTImage, v, I::Vararg{Int,N}) where N =
-    setindex!(mjoin(img), v, I...)
+@propagate_inbounds function getindex(img::AbstractCTImage, i::Int)
+    @boundscheck checkbounds(img, i)
+    @inbounds getindex(mjoin(img), i)
+end
+@propagate_inbounds function getindex(
+    img::AbstractCTImage, I::Vararg{Int,N}
+) where N
+    @boundscheck checkbounds(img, I...)
+    @inbounds getindex(mjoin(img), I...)
+end
+@propagate_inbounds function setindex!(img::AbstractCTImage, v, i::Int)
+    @boundscheck checkbounds(img, i)
+    @inbounds setindex!(mjoin(img), v, i)
+end
+@propagate_inbounds function setindex!(
+    img::AbstractCTImage, v, I::Vararg{Int,N}
+) where N
+    @boundscheck checkbounds(img, I...)
+    @inbounds setindex!(mjoin(img), v, I...)
+end
 
 
 const ctnames = (image = :CTImage, sinog = :CTSinogram, tomog = :CTTomogram)
@@ -44,23 +60,50 @@ const ctfn = (image = :ctimage, sinog = :ctsinogram, tomog = :cttomogram)
 
 for nm in ctnames
     @eval begin
-        struct $nm{M} <: AbstractCTImage{M}
+        struct $nm{T,M<:AbstractMatrix{T}} <: AbstractCTImage{T}
             data::M
         end
-        _atype(::Type{$nm{M}}) where M = M
-        $nm{M}(img::$nm) where {M} = mreturn($nm{M}, convert(M, mjoin(img)))
-        convert(::Type{M}, img::$nm) where {M<:$nm} = mreturn(M, img)
-        similar(::Type{M}, args...) where {M<:$nm} =
-            mreturn(M, similar(_atype(T), args...))
+        @inline _atype(::Type{$nm{T,M}}) where {T,M} = M
+        IndexStyle(::Type{T}) where T<:$nm = IndexStyle(_atype(T))
+        @inline function $nm{T,M}(
+            ::UndefInitializer,
+            dims::Vararg{Union{Integer,AbstractUnitRange}}
+        ) where {T,M}
+            $nm(M(undef, dims...))
+        end
+        @inline $nm{T,M}(img::$nm) where {T,M} = $nm{T,M}(mjoin(img))
+        @inline $nm(img::$nm) = img
+        @inline convert(::Type{M}, img::$nm) where {M<:$nm} =
+            mreturn(M, convert(_atype(M), mjoin(img)))
+        @inline function similar(
+            ::Type{M},
+            dims::Vararg{Union{Integer,AbstractUnitRange},N},
+            ) where {M<:$nm,N}
+            mreturn(M, similar(_atype(M), dims...))
+        end
+        @inline function similar(
+            ::M,
+            dims::Vararg{Union{Integer,AbstractUnitRange},N},
+        ) where {M<:$nm,N}
+            similar(M, dims...)
+        end
     end
 end
 
+CTImage(::Union{CTSinogram,CTTomogram}) =
+    @error "Cannot construct a CT image from a sinogram or a tomogram"
+CTSinogram(::Union{CTImage,CTTomogram}) =
+    @error "Cannot construct a CT sinogram from an image or a tomogram"
+CTTomogram(::Union{CTImage,CTSinogram}) =
+    @error "Cannot construct a CT tomogram from an image or a sinogram"
 
-const CTImageOrTomog{M} = Union{CTImage{M},CTTomogram{M}}
-
+const CTImageOrTomog{T,M} = Union{CTImage{T,M},CTTomogram{T,M}}
+const CTImageMat{T} = CTImage{T,Matrix{T}}
+const CTSinogMat{T} = CTSinogram{T,Matrix{T}}
+const CTTomogMat{T} = CTTomogram{T,Matrix{T}}
 
 """
-    rotate(mat::AbstractMatrix{T}, α::Real; <keyword arguments>) where {T <: Real}
+    rotate(mat::AbstractMatrix, α::Real; <keyword arguments>)
 
 Rotate matrix `mat` about the center of angle `α` given in degrees.
 If `rows` and `cols` are not given, the rotated matrix has the same
@@ -77,29 +120,29 @@ dimensions of the original matrix.
 function rotate(
     mat::AbstractMatrix{T},
     α::Real;
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
-    background::Optional{<:Real} = nothing,
-    interpolation::Optional{<:Interp} = nothing,
-) where {T <: Real,Interp <: AbstractInterp2DOrNone}
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    background::Optional{Real} = nothing,
+    interpolation::Optional{Interp} = nothing,
+) where {T <: Number,Interp <: AbstractInterp2DOrNone}
     orows, ocols = size(mat)
     rows = maybe(orows, rows)
     cols = maybe(ocols, cols)
     sϕ, cϕ = sincos(deg2rad(α))
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mat)
-    x₀::T = T(cols + 1) / 2
-    y₀::T = T(rows + 1) / 2
-    x′₀::T = T(ocols + 1) / 2
-    y′₀::T = T(orows + 1) / 2
+    x₀::T = (cols + 1) / 2
+    y₀::T = (rows + 1) / 2
+    x′₀::T = (ocols + 1) / 2
+    y′₀::T = (orows + 1) / 2
     z::T = maybe(zero(T), background)
     rmat = similar(mat, rows, cols)
     fill!(rmat, z)
     for ix ∈ 1:rows, iy ∈ 1:cols
-        x::T = T(ix) - x₀
-        y::T = T(iy) - y₀
-        x′::T = x * cϕ + y * sϕ + x′₀
-        y′::T = y * cϕ - x * sϕ + y′₀
+        x = T(ix) - x₀
+        y = T(iy) - y₀
+        x′ = x * cϕ + y * sϕ + x′₀
+        y′ = y * cϕ - x * sϕ + y′₀
         if x′ ∈ 1..ocols && y′ ∈ 1..orows
             rmat[iy, ix] = interp(y′, x′)
         end
@@ -109,7 +152,8 @@ end
 
 
 """
-    rescale!(x::AbstractArray{T,N}; interval=nothing, calibration=nothing, window=nothing) where {T,N}
+    rescale!(x::AbstractArray;
+        interval=nothing, calibration=nothing, window=nothing)
 
 Rescale array x to the interval specified by `interval`.
 
@@ -171,7 +215,7 @@ function rescale(
     res = @. image * slope + intercept
     isnothing(window) && return res
     a, b = T.(endpoints(window))
-    map(res) do x
+    map!(res, res) do x
         x < a && return a
         x > b && return b
         return x
@@ -196,7 +240,7 @@ function rescale!(
     @. img = slope * img + intercept
     isnothing(window) && return img
     a, b = T.(endpoints(window))
-    map(img) do x
+    map!(img, img) do x
         x < a && return a
         x > b && return b
         return x
@@ -207,7 +251,8 @@ end
 
 
 """
-    rescale(x::AbstractArray{T,N}; interval=nothing, calibration=nothing, window=nothing) where {T,N}
+    rescale(x::AbstractArray;
+        interval=nothing, calibration=nothing, window=nothing)
 
 Rescale array x to the interval specified by `interval`.
 
@@ -228,23 +273,11 @@ function rescale(
 end
 
 
-for nm ∈ (:rescale, :rescale!)
-    @eval begin
-        $nm(img::AbstractCTImage, args...) = mmap(img) do x
-            $nm(x, args...)
-        end
-        $nm(img::AbstractCTImage; kwargs...) = mmap(img) do x
-            $nm(x; kwargs...)
-        end
-    end
-end
-
-
 function polar2cart(
     mp::AbstractMatrix{T};
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
-    background::Optional{<:Real} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    background::Optional{Real} = nothing,
     ν::Real = 1,
     transposed::Bool = false,
     interpolation::Optional{Interp} = nothing,
