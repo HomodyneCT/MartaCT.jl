@@ -31,6 +31,7 @@ include("CTPlots.jl")
     .Geometry,
     .CTIO,
     .CTImages,
+    .FanBeam,
     .AbstractAlgorithms,
     .RadonAlgorithm,
     .TestImages,
