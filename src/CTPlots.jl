@@ -8,7 +8,7 @@ export plot_gray_scale
 using RecipesBase: plot, plot!
 using RecipesBase
 using ..Monads
-using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn
+using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn, CTImageOrTomog
 using ..CTImages: ctimage, ctsinogram, cttomogram
 using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
@@ -64,7 +64,9 @@ end
 
 # TODO: Check lims for plot again!
 
-@recipe function f(xs, ys, image::CTImage)
+@recipe function f(
+    xs::AbstractVector, ys::AbstractVector, image::CTImageOrTomog
+)
     rows, cols = size(image)
     proj = get(plotattributes, :projection, nothing)
     seriescolor --> :grays
@@ -85,9 +87,9 @@ end
 
 
 @recipe function f(
-    image::CTImage,
-    α::Optional{<:Real} = nothing,
-    β::Optional{<:Real} = nothing,
+    image::CTImageOrTomog,
+    α::Optional{Real} = nothing,
+    β::Optional{Real} = nothing,
 )
     rows, cols = size(image)
     proj = get(plotattributes, :projection, nothing)
@@ -134,13 +136,20 @@ const _sinog_xticks = [45i for i in 0:8]
 end
 
 
-@recipe function f(::Type{<:CTTomogram}, tomog::CTTomogram)
-    tomog ↣ CTImage
+@recipe function f(
+    xs::AbstractVector,
+    ys::AbstractVector,
+    gs::AbstractTestImage
+)
+    xs, ys, gs.image
 end
 
-
-@recipe function f(::Type{T}, grsc::T) where {T <: AbstractTestImage}
-    grsc.image
+@recipe function f(
+    gs::AbstractTestImage,
+    α::Optional{Real} = nothing,
+    β::Optional{Real} = nothing
+)
+    gs.image, α, β
 end
 
 
