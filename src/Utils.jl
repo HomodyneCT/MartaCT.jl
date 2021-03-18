@@ -16,6 +16,8 @@ ORI(i::Interval) = ORI{eltype(i)}(i)
 
 function _atype end
 
+_atype(::Type{T}) where {T <: AbstractArray} = T
+_atype(a::AbstractArray) = typeof(a)
 
 @inline function linspace(start::T, stop::U, len::Integer) where {
     T <: Number,

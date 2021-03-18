@@ -14,6 +14,18 @@ export alg_name, alg_params
 
 using SimpleTraits
 using ..Monads
+using ..Geometry: AbstractGeometry
+
+
+@inline function _alg_progress(
+    ::Type{T},
+    desc::AbstractString,
+    n::Integer,
+    enabled::Bool,
+    dt::Real=0.2
+) where T
+    T(n; dt, desc, enabled)
+end
 
 
 abstract type AbstractCTAlgorithm end
@@ -48,18 +60,22 @@ const _algfn_map = (;
 for (T, fns) ∈ pairs(_algfn_map)
     for nm ∈ fns
         @eval begin
-            $nm(; kwargs...) = x -> $nm(x; kwargs...)
-            $nm(alg::$T; kwargs...) = x -> $nm(x, alg; kwargs...)
-            @traitfn function $nm(x::M, alg::$T; kwargs...) where {M; Monad{M}}
+            @inline $nm(; kwargs...) = x -> $nm(x; kwargs...)
+            @inline $nm(alg::$T; kwargs...) = x -> $nm(x, alg; kwargs...)
+            @traitfn @inline function $nm(
+                x::M, alg::$T; kwargs...
+            ) where {M; Monad{M}}
                 x ↣ $nm(alg; kwargs...)
             end
-            @traitfn function $nm(x::M; kwargs...) where {M; Monad{M}}
+            @traitfn @inline function $nm(x::M; kwargs...) where {M; Monad{M}}
                 x ↣ $nm(; kwargs...)
             end
-            function $nm(ainfo::AlgorithmInfo{A}; kwargs...) where {A<:$T}
+            @inline function $nm(
+                ainfo::AlgorithmInfo{A}; kwargs...
+            ) where {A<:$T}
                 x -> $nm(x, ainfo; kwargs...)
             end
-            function $nm(
+            @inline function $nm(
                 x::AbstractMatrix,
                 ainfo::AlgorithmInfo{A};
                 kwargs...
@@ -67,10 +83,10 @@ for (T, fns) ∈ pairs(_algfn_map)
                 g = ainfo.geometry
                 p = alg_params(ainfo)
                 a = ainfo.algorithm
-                isnothing(p) && return a(x, g; kwargs...)
-                a(x, g, something(p); kwargs...)
+                isnothing(p) && return $nm(x, g, a; kwargs...)
+                $nm(x, g, something(p), a; kwargs...)
             end
-            @traitfn function $nm(
+            @traitfn @inline function $nm(
                 x::M,
                 ainfo::AlgorithmInfo{A};
                 kwargs...
@@ -82,8 +98,37 @@ for (T, fns) ∈ pairs(_algfn_map)
 end
 
 
-macro _alg_progress(desc, n, p, dt=0.2, T=:Progress)
-    :($T($n; dt=$dt, desc=$desc, enabled=$p))
+macro _defapi(f::Symbol, g::Symbol, A::Symbol)
+    esc(quote
+        @inline function $f(
+            image::AbstractMatrix,
+            alg::$A;
+            kwargs...
+        )
+            $g(image, alg; kwargs...)
+        end
+        @inline function $f(
+            image::AbstractMatrix,
+            geometry::AbstractGeometry,
+            alg::$A;
+            kwargs...
+        )
+            $g(image, geometry, alg; kwargs...)
+        end
+        @inline function $f(
+            image::AbstractMatrix,
+            geometry::AbstractGeometry,
+            params::AbstractParams,
+            alg::$A;
+            kwargs...
+        )
+            $g(image, geometry, params, alg; kwargs...)
+        end
+    end)
 end
+
+
+@_defapi project_image radon AbstractProjectionAlgorithm
+@_defapi reconstruct_image iradon AbstractReconstructionAlgorithm
 
 end # module

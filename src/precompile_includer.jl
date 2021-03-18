@@ -1,4 +1,4 @@
-should_precompile =  false
+should_precompile =   true
 
 
 # Don't edit the following! Instead change the script for `snoop_bot`.

@@ -9,11 +9,10 @@ import ...Utils: _atype
 import Base: similar, eltype
 
 
-abstract type AbstractCTData{M<:AbstractArray{<:Number}} end
+abstract type AbstractCTData end
 
 
 # Container type of CTData
-_atype(::Type{T}) where {T<:AbstractCTData{M}} where {M} = M
 _atype(x::AbstractCTData) = _atype(typeof(x))
 
 eltype(::Type{T}) where {T<:AbstractCTData} = eltype(_atype(T))
@@ -31,24 +30,27 @@ Hold data for reconstruction.
 `Matrix{Float32}` or `AFMatrix{Float64}`.
 By default, the library will use CPU objects rather than GPU ones.
 """
-mutable struct CTData{M} <: AbstractCTData{M}
-    image::Maybe{CTImage{M}}
-    sinog::Maybe{CTSinogram{M}}
-    tomog::Maybe{CTTomogram{M}}
+mutable struct CTData{T<:Number,M<:AbstractMatrix{T}} <: AbstractCTData
+    image::Maybe{CTImage{T,M}}
+    sinog::Maybe{CTSinogram{T,M}}
+    tomog::Maybe{CTTomogram{T,M}}
 end
 
 
-function CTData{M}(gsd::AbstractCTData) where {M<:AbstractArray{<:Number}}
-    CTData{M}(
-        mmap(CTImage{M}, gsd.image),
-        mmap(CTSinogram{M}, gsd.sinog),
-        mmap(CTTomogram{M}, gsd.tomog),
+_atype(::Type{CTData{T,M}}) where {T,M} = M
+
+
+function CTData{T,M}(gsd::AbstractCTData) where {T,M<:AbstractArray{T}}
+    CTData{T,M}(
+        mmap(CTImage{T,M}, gsd.image),
+        mmap(CTSinogram{T,M}, gsd.sinog),
+        mmap(CTTomogram{T,M}, gsd.tomog),
     )
 end
 
 
-CTData{M}() where {M<:AbstractArray{<:Number}} =
-    CTData{M}(nothing, nothing, nothing)
+CTData{T,M}() where {T,M<:AbstractArray{T}} =
+    CTData{T,M}(nothing, nothing, nothing)
 
 
 """
@@ -56,8 +58,7 @@ CTData{M}() where {M<:AbstractArray{<:Number}} =
 
 Construct an empty `CTData` object.
 """
-CTData(::Type{M}) where {M<:AbstractArray{<:Number}} =
-    CTData{M}()
+CTData(::Type{M}) where {M<:AbstractArray{<:Number}} = CTData{eltype(M),M}()
 
 
 """
@@ -65,22 +66,24 @@ CTData(::Type{M}) where {M<:AbstractArray{<:Number}} =
 
 Construct an empty `CTData` object with eltype `T`.
 """
-CTData(::Type{T} = Float32) where {T<:Number} =
-    CTData(Matrix{T})
+CTData(::Type{T} = Float32) where {T<:Number} = CTData(T,Matrix{T})
 
 
 """
-    CTData(::AbstractCTImage{M}) where {M<:AbstractArray{<:Number}}
+    CTData(::AbstractCTImage)
 
 Construct a `CTData` object from its constituents.
 """
-CTData(img::CTImage) = CTData{_atype(img)}(Some(img), nothing, nothing)
-CTData(img::CTSinogram) = CTData{_atype(img)}(nothing, Some(img), nothing)
-CTData(img::CTTomogram) = CTData{_atype(img)}(nothing, nothing, Some(img))
+CTData(img::CTImage) =
+    CTData{eltype(img),_atype(img)}(Some(img), nothing, nothing)
+CTData(img::CTSinogram) =
+    CTData{eltype(img),_atype(img)}(nothing, Some(img), nothing)
+CTData(img::CTTomogram) =
+    CTData{eltype(img),_atype(img)}(nothing, nothing, Some(img))
 
 
-function CTData{M}(gsd::AbstractCTData, img::CTImage) where {M}
-    CTData{M}(
+function CTData{T,M}(gsd::AbstractCTData, img::CTImage) where {T,M}
+    CTData{T,M}(
         Some(img),
         gsd.sinog,
         gsd.tomog,
@@ -88,33 +91,40 @@ function CTData{M}(gsd::AbstractCTData, img::CTImage) where {M}
 end
 
 
-CTData{M}(gsd::AbstractCTData, img::CTSinogram) where {M} =
-    CTData{M}(
+CTData{T,M}(gsd::AbstractCTData, img::CTSinogram) where {T,M} =
+    CTData{T,M}(
         gsd.image,
         Some(img),
         gsd.tomog,
     )
 
 
-CTData{M}(gsd::AbstractCTData, img::CTTomogram) where {M} =
-    CTData{M}(
+CTData{T,M}(gsd::AbstractCTData, img::CTTomogram) where {T,M} =
+    CTData{T,M}(
         gsd.image,
         gsd.sinog,
         Some(img),
     )
 
 
-CTData{M}(gsd::AbstractCTData, img::AbstractCTImage, rest::AbstractCTImage...) where {M} =
-    CTData{M}(CTData{M}(gsd, img), rest...)
+function CTData{T,M}(
+    gsd::AbstractCTData,
+    img::AbstractCTImage,
+    rest::AbstractCTImage...
+) where {T,M}
+    CTData{T,M}(CTData{T,M}(gsd, img), rest...)
+end
 
 CTData(gsd::AbstractCTData, imgs::AbstractCTImage...) =
-    CTData{_atype(gsd)}(gsd, imgs...)
+    CTData{eltype(gsd),_atype(gsd)}(gsd, imgs...)
 
 function CTData(img::AbstractCTImage, imgs::AbstractCTImage...)
-    CTData{_atype(img)}(CTData(img), imgs...)
+    CTData{eltype(img),_atype(img)}(CTData(img), imgs...)
 end
 
 
-similar(gsd::AbstractCTData, imgs::AbstractCTImage...) = typeof(gsd)(gsd, imgs...)
+similar(gsd::AbstractCTData, img::AbstractCTImage, rest::AbstractCTImage...) =
+    typeof(gsd)(gsd, img, rest...)
+similar(gsd::AbstractCTData) = typeof(gsd)()
 
 end # module

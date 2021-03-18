@@ -1,6 +1,7 @@
 struct RadonSquare <: AbstractProjectionAlgorithm end
 
-@defradonalgfn RadonSquare radon_square
+_alg_method(::RadonSquare) = IsRadonSquare()
+@_defradonalgfn RadonSquare radon_square
 
 
 """radon_square(
@@ -16,37 +17,15 @@ dimensions of `image`.
 
 See also: [`radon_default`](@ref)
 """
-function radon_square(
-    image::AbstractMatrix{T},
-    ts::AbstractVector{U1},
-    ϕs::AbstractVector{U2};
-    background::Optional{U3} = nothing,
-    rescaled::Bool = true,
-    interpolation::Optional{Interp} = nothing,
-    progress::Bool = true,
-) where {
-    T <: Real,
-    U1 <: Real,
-    U2 <: Real,
-    U3 <: Real,
-    Interp <: AbstractInterp2DOrNone,
-}
-    rows, cols = size(image)
+function radon_square end
+
+@_defradonfn radon_square begin
     l = min(rows, cols)
-    nd = length(ts)
     nt = min(l, nd)
-    nϕ = length(ϕs)
     x′₀ = (nd - nt) ÷ 2
     x₀::T = (cols + 1) / 2
     y₀::T = (rows + 1) / 2
-    scϕs = sincos.(ϕs)
-    rimage = rescaled ? rescale(image) : image
-    interp = isnothing(interpolation) ?
-        interpolate(rimage) : interpolation(rimage)
-    z::T = maybe(zero(T), background)
-    rmat = similar(image, nd, nϕ)
-    fill!(rmat, z)
-    p = @radonprogress nϕ progress
+    p = _radon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ 1:nϕ
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for it ∈ 1:nt
@@ -58,36 +37,63 @@ function radon_square(
                 x = prex - z * s
                 y = prey + z * c
                 if x ∈ 1..cols && y ∈ 1..rows
-                    rmat[j,iϕ] += interp(y,x)
+                    sinog[j,iϕ] += interp(y, x)
                 end
             end
         end
         next!(p)
     end
-    CTSinogram(rmat)
+    sinog
 end
 
 
-@inline function radon_square(
-    image::AbstractMatrix{T};
-    nd::Optional{<:Integer} = nothing,
-    nϕ::Optional{<:Integer} = nothing,
-    α::Real = 360,
-    α₀::Real = 0,
-    ν::Real = 1,
-    kwargs...
-) where {T <: Real}
-    rows, cols = size(image)
-    l = min(rows, cols)
-    nd = maybe(l, nd)
-    nϕ = isnothing(nϕ) ? 2 * ((rows + 1) * (cols + 1) ÷ (2nd)) + 1 : nϕ
-    t₀::T = (l - 1) / 2 * ν
-    ts = linspace(-t₀..t₀, nd)
-    ϕ₀::T = deg2rad(α₀)
-    ϕ₁::T = ϕ₀ + deg2rad(α)
-    ϕs = linspace(ORI(ϕ₀..ϕ₁), nϕ)
-    radon_square(image, ts, ϕs; kwargs...)
-end
-
-
-@defradonfngeom radon_square
+# function radon_square(
+#     image::AbstractMatrix{T},
+#     ts::AbstractVector{X},
+#     ϕs::AbstractVector{Y};
+#     background::Optional{Z} = nothing,
+#     rescaled::Bool = true,
+#     interpolation::Optional{Interp} = nothing,
+#     progress::Bool = true,
+# ) where {
+#     T <: Real,
+#     X <: Real,
+#     Y <: Real,
+#     Z <: Real,
+#     Interp <: AbstractInterp2DOrNone,
+# }
+#     rows, cols = size(image)
+#     l = min(rows, cols)
+#     nd = length(ts)
+#     nt = min(l, nd)
+#     nϕ = length(ϕs)
+#     x′₀ = (nd - nt) ÷ 2
+#     x₀::T = (cols + 1) / 2
+#     y₀::T = (rows + 1) / 2
+#     scϕs = sincos.(ϕs)
+#     rimage = rescaled ? rescale(image) : image
+#     interp = isnothing(interpolation) ?
+#         interpolate(rimage) : interpolation(rimage)
+#     z::T = maybe(zero(T), background)
+#     rmat = similar(image, nd, nϕ)
+#     fill!(rmat, z)
+#     p = _radon_progress(nϕ, progress)
+#     Threads.@threads for iϕ ∈ 1:nϕ
+#         @inbounds s, c = scϕs[iϕ]
+#         @inbounds @simd for it ∈ 1:nt
+#             j = it + x′₀
+#             t = ts[j]
+#             prex = t * c + x₀
+#             prey = t * s + y₀
+#             for z ∈ ts
+#                 x = prex - z * s
+#                 y = prey + z * c
+#                 if x ∈ 1..cols && y ∈ 1..rows
+#                     rmat[j,iϕ] += interp(y,x)
+#                 end
+#             end
+#         end
+#         next!(p)
+#     end
+#     CTSinogram(rmat)
+# end
