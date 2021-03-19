@@ -94,7 +94,7 @@ function ParallelBeamGeometry(
     height::Optional{Int} = nothing,
     α::Real = 360,
     α₀::Real = 0,
-    center::Optional{<:Real} = nothing,
+    center::Optional{Real} = nothing,
 ) where {T <: Real}
     height = maybe(width, height)
     width = maybe(height, width)
@@ -203,8 +203,8 @@ function FanBeamGeometry(
     ct::AbstractTomograph = DefaultTomograph();
     nϕ::Optional{Int} = nothing,
     D::Real = 500,
-    D′::Optional{<:Real} = nothing,
-    γ::Optional{<:Real} = nothing,
+    D′::Optional{Real} = nothing,
+    γ::Optional{Real} = nothing,
     nd::Optional{Int} = nothing,
     rows::Optional{Int} = nothing,
     cols::Optional{Int} = nothing,
@@ -213,7 +213,7 @@ function FanBeamGeometry(
     δ::Real = one(T),
     α::Real = 360,
     α₀::Real = zero(T),
-    center::Optional{<:Real} = nothing,
+    center::Optional{Real} = nothing,
 ) where {T <: Real}
     height = maybe(width, height)
     width = maybe(height, width)
