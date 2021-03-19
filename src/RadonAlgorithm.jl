@@ -14,8 +14,11 @@ using ..Geometry
 using ..FanBeam: fan2para, para2fan
 import ..Utils: ORI, linspace, _atype
 import ..AbstractAlgorithms:
-    radon, iradon, project_image,
-    reconstruct_image, _alg_progress
+    radon,
+    iradon,
+    project_image,
+    reconstruct_image,
+    _alg_progress
 using ..AbstractAlgorithms
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
 using FFTW, ProgressMeter, IntervalSets
