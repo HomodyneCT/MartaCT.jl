@@ -15,6 +15,7 @@ export alg_name, alg_params
 using SimpleTraits
 using ..Monads
 using ..Geometry: AbstractGeometry
+using FanBeam: fan2para
 
 
 @inline function _alg_progress(
@@ -130,5 +131,81 @@ end
 
 @_defapi project_image radon AbstractProjectionAlgorithm
 @_defapi reconstruct_image iradon AbstractReconstructionAlgorithm
+
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    alg::AbstractReconstructionAlgorithm;
+    kwargs...
+)
+    alg(sinog; kwargs...)
+end
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    xs::AbstractVector,
+    ys::AbstractVector,
+    alg::AbstractReconstructionAlgorithm;
+    kwargs...
+)
+    alg(sinog, xs, ys; kwargs...)
+end
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractParallelBeamGeometry,
+    alg::AbstractReconstructionAlgorithm;
+    kwargs...
+)
+    rows = geometry.rows
+    cols = geometry.cols
+    α = geometry.α
+    α₀ = geometry.α₀
+    iradon(sinog, alg; rows, cols, α, α₀, kwargs...)
+end
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractFanBeamGeometry,
+    alg::AbstractReconstructionAlgorithm;
+    kwargs...
+)
+    g′, para_sinog = fan2para(sinog, geometry)
+    iradon(para_sinog, g′, alg; kwargs...)
+end
+
+@inline function iradon(
+    g::AbstractGeometry,
+    alg::AbstractReconstructionAlgorithm;
+    kwargs...
+)
+    x -> iradon(x, g, alg; kwargs...)
+end
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractParallelBeamGeometry,
+    params::AbstractParams,
+    alg::AbstractReconstructionAlgorithm;
+    kwargs...
+)
+    rows = geometry.rows
+    cols = geometry.cols
+    α = geometry.α
+    α₀ = geometry.α₀
+    alg(sinog, params; rows, cols, α, α₀, kwargs...)
+end
+
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractFanBeamGeometry,
+    params::AbstractParams,
+    alg::AbstractReconstructionAlgorithm;
+    kwargs...
+)
+    g′, para_sinog = fan2para(sinog, geometry)
+    iradon(sinog, g′, params, alg; kwargs...)
+end
 
 end # module

@@ -32,9 +32,10 @@ include("fbpa_square.jl")
     cols = maybe(rows, cols)
     ϕ₀ = deg2rad(α₀)
     ϕ₁ = ϕ₀ + deg2rad(α)
-    t₀ = (nd + 1) / 2
+    #t₀ = (nd + 1) / 2
     sθ, cθ = sincos(atan(rows, cols))
-    x₀, y₀ = t₀ * cθ / ν, t₀ * sθ / ν
+    #x₀, y₀ = t₀ * cθ / ν, t₀ * sθ / ν
+    x₀, y₀ = cθ / ν, sθ / ν
     xs = linspace(eltype(sinog), -x₀..x₀, cols)
     ys = linspace(eltype(sinog), -y₀..y₀, rows)
     a(sinog, xs, ys, ϕ₀..ϕ₁; kwargs...)
@@ -64,58 +65,35 @@ end
     l = min(rows, cols)
     ϕ₀ = deg2rad(α₀)
     ϕ₁ = ϕ₀ + deg2rad(α)
-    t₀ = (nd + 1) / 2ν
-    xs = linspace(eltype(sinog), -t₀..t₀, l)
-    ys = linspace(eltype(sinog), -t₀..t₀, l)
+    #t₀ = (nd + 1) / 2ν
+    # xs = linspace(eltype(sinog), -t₀..t₀, l)
+    # ys = linspace(eltype(sinog), -t₀..t₀, l)
+    xs = linspace(eltype(sinog), -1/ν..1/ν, l)
+    ys = linspace(eltype(sinog), -1/ν..1/ν, l)
     a(sinog, xs, ys, ϕ₀..ϕ₁; kwargs...)
 end
 
-
-@inline function iradon(
-    sinog::AbstractMatrix,
-    alg::AbstractIRadonAlgorithm = FBP();
-    kwargs...
-)
-    alg(sinog; kwargs...)
+@inline function iradon(sinog::AbstractMatrix; kwargs...)
+    alg(sinog, FBP(); kwargs...)
 end
 
 @inline function iradon(
     sinog::AbstractMatrix,
     xs::AbstractVector,
-    ys::AbstractVector,
-    alg::AbstractIRadonAlgorithm = FBP();
+    ys::AbstractVector;
     kwargs...
 )
-    alg(sinog, xs, ys; kwargs...)
+    alg(sinog, xs, ys, FBP(); kwargs...)
 end
 
 @inline function iradon(
     sinog::AbstractMatrix,
-    geometry::AbstractParallelBeamGeometry,
-    alg::AbstractIRadonAlgorithm = FBP();
+    geometry::AbstractGeometry;
     kwargs...
 )
-    rows = geometry.rows
-    cols = geometry.cols
-    α = geometry.α
-    α₀ = geometry.α₀
-    iradon(sinog, alg; rows, cols, α, α₀, kwargs...)
+    iradon(sinog, geometry, FBP(); kwargs...)
 end
 
-@inline function iradon(
-    sinog::AbstractMatrix,
-    geometry::AbstractFanBeamGeometry,
-    alg::AbstractIRadonAlgorithm = FBP();
-    kwargs...
-)
-    g′, para_sinog = fan2para(sinog, geometry)
-    iradon(para_sinog, g′, alg; kwargs...)
-end
-
-@inline function iradon(
-    g::AbstractGeometry,
-    alg::AbstractIRadonAlgorithm = FBP();
-    kwargs...
-)
-    x -> iradon(x, g, alg; kwargs...)
+@inline function iradon(g::AbstractGeometry; kwargs...)
+    iradon(g, FBP(); kwargs...)
 end

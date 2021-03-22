@@ -25,7 +25,7 @@ function fbp_fft end
         @inbounds @simd for k ∈ eachindex(xys)
             x, y = xys[k]
             # To be consistent with our conventions should be '+'.
-            t = x * cϕ + y * sϕ + t₀
+            t = (x * cϕ + y * sϕ + 1) * t₀
             if t ∈ 1..nd
                 img[k] += interp(t, T(iϕ))
             end

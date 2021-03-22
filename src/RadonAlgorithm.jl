@@ -85,6 +85,7 @@ macro _defiradonfn(f::Symbol, body)
             xs::AbstractVector{U1},
             ys::AbstractVector{U2},
             ϕs::Optional{ClosedInterval} = nothing;
+            ν::Real = 1,
             background::Optional{U3} = nothing,
             filter::Optional{F} = nothing,
             interpolation::Optional{Interp} = nothing,

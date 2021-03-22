@@ -21,7 +21,7 @@ function fbpa_fft end
         @inbounds tomog[k] = sum(eachindex(scϕs)) do iϕ
             sϕ, cϕ = scϕs[iϕ]
             # To be consistent with our conventions should be '+'.
-            t = x * cϕ + y * sϕ + t₀
+            t = (x * cϕ + y * sϕ + 1) * t₀
             t ∈ 1..nd ? interp(t, T(iϕ)) : z
         end
         next!(p)

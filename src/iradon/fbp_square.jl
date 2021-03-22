@@ -31,7 +31,7 @@ function fbp_fft_square end
             ix, iy = indices[k]
             x, y = xys[k]
             # To be consistent with our conventions should be '+'.
-            t::T = x * cϕ + y * sϕ + t₀
+            t::T = (x * cϕ + y * sϕ + 1) * t₀
             if t ∈ 1..nd
                 img[iy,ix] += interp(t, T(iϕ))
             end
