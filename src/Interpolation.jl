@@ -88,7 +88,8 @@ end
 
 
 @inline function lerp(q1::Q, q2::Q, t::T) where {Q <: Number,T <: Number}
-    (one(Q) - t) * q1 + t * q2
+    t′::Q = t
+    (one(Q) - t′) * q1 + t′ * q2
 end
 
 @inline function lerp(
@@ -108,9 +109,11 @@ end
 end
 
 @inline function blerp(
-    q11::Q, q12::Q, q21::Q, q22::Q, t1::T1, t2::T2
+    q11::Q, q12::Q, q21::Q, q22::Q, t₁::T1, t₂::T2
 ) where {Q <: Number,T1 <: Number, T2 <: Number}
-    lerp(lerp(q11, q21, t1), lerp(q12, q22, t1), t2)
+    t̄₁::Q = t₁
+    t̄₂::Q = t₂
+    lerp(lerp(q11, q21, t̄₁), lerp(q12, q22, t̄₁), t̄₂)
 end
 
 @propagate_inbounds function blerp(
