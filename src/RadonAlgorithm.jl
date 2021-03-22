@@ -178,11 +178,11 @@ end
 RadonInfo(g::AbstractGeometry) = RadonInfo(g, Radon())
 
 
-struct FBPInfo{G <: AbstractGeometry,A <: AbstractFBP} <: AlgorithmInfo{A}
+struct FBPInfo{G <: AbstractGeometry} <: AlgorithmInfo{FBP}
     geometry::G
-    algorithm::A
-end
+    algorithm::FBP
 
-FBPInfo(g::AbstractGeometry) = FBPInfo(g, FBP())
+    FBPInfo{G}(g::G) where {G<:AbstractGeometry} = new(g, FBP())
+end
 
 end # module
