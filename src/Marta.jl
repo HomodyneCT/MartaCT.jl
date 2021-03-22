@@ -10,6 +10,7 @@ include("Monads.jl")
 include("TypeDict.jl")
 include("CalibrationBase.jl")
 include("Interpolation.jl")
+include("Coordinates.jl")
 include("Geometry.jl")
 include("CTImages.jl")
 include("FanBeam.jl")
@@ -28,6 +29,7 @@ include("CTPlots.jl")
     .Applicative,
     .Monads,
     .Info,
+    .Coordinates,
     .Geometry,
     .CTIO,
     .CTImages,
