@@ -9,7 +9,9 @@ test:
   script:
   - julia --project -e "using Pkg; Pkg.test(; coverage=true)"
   artifacts:
-  - ./
+      expire_in: 30 days
+      paths:
+      - ./
 pages:
   image: julia:1.5
   stage: deploy
