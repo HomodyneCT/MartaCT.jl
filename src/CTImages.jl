@@ -274,32 +274,20 @@ end
 
 
 function polar2cart(
-    mp::AbstractMatrix{T};
-    rows::Optional{Integer} = nothing,
-    cols::Optional{Integer} = nothing,
+    mp::AbstractMatrix{T},
+    xs::AbstractVector,
+    ys::AbstractVector;
     background::Optional{Real} = nothing,
-    ν::Real = 1,
     transposed::Bool = false,
     interpolation::Optional{Interp} = nothing,
 ) where {T <: Real,Interp <: AbstractInterp2DOrNone}
     mp = transposed ? permutedims(mp) : mp
-    nϕ, nr = size(mp)
-    rows = isnothing(rows) ? maybe(2nr, cols) : rows
-    cols = maybe(rows, cols)
-    ν = T(ν)
-    X::T, Y::T = cols, rows
-    y₀, x₀ = sincos(atan(Y, X))
-    Δr::T = (nr - 1) / ν
-    Δϕ::T = (nϕ - 1) / 2π
+    nθ, nr = size(mp)
+    Δr = nr - 1
+    Δθ = (nθ - 1) / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
-    compute_radius = (x::T, y::T) -> begin
-        x == 0 && return abs(y)
-        y == 0 && return abs(x)
-        return √(x^2 + y^2)
-    end
-    xs = linspace(-x₀, x₀, cols)
-    ys = linspace(-y₀, y₀, rows)
+    rows, cols = length(ys), length(xs)
     indices = Vector{NTuple{2,Int}}(undef, rows * cols)
     @inbounds for k ∈ eachindex(indices)
         indices[k] = (k - 1) ÷ rows + 1, (k - 1) % rows + 1
@@ -307,18 +295,41 @@ function polar2cart(
     z::T = maybe(zero(T), background)
     mc = similar(mp, rows, cols)
     fill!(mc, z)
+    @inline function _compute_radius(x, y)
+        x == 0 && return abs(y)
+        y == 0 && return abs(x)
+        return √(x^2 + y^2)
+    end
     Threads.@threads for k ∈ eachindex(indices)
         @inbounds ix, iy = indices[k]
         @inbounds x, y = xs[ix], ys[iy]
-        r = compute_radius(x, y)
-        ϕ = mod2pi(atan(y, x))
+        r = _compute_radius(x, y)
+        θ = mod2pi(atan(y, x))
         R = r * Δr + 1
-        Θ = ϕ * Δϕ + 1
-        if R ∈ 1..nr && Θ ∈ 1..nϕ
+        Θ = θ * Δθ + 1
+        if R ∈ 1..nr && Θ ∈ 1..nθ
             @inbounds mc[iy,ix] = interp(Θ, R)
         end
     end
     mc
+end
+
+
+@inline function polar2cart(
+    mp::AbstractMatrix{T};
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    ν::Real = 1,
+    kwargs...
+) where {T <: Real,Interp <: AbstractInterp2DOrNone}
+    rows = isnothing(rows) ? maybe(2 * size(mp, 2), cols) : rows
+    cols = maybe(rows, cols)
+    @assert ν > 0
+    sθ, cθ = sincos(atan(rows, cols))
+    x₀, y₀ = cθ / ν, sθ / ν
+    xs = linspace(T, -x₀..x₀, cols)
+    ys = linspace(T, -y₀..y₀, rows)
+    polar2cart(mp, xs, ys; kwargs...)
 end
 
 
@@ -329,6 +340,7 @@ function polar2cart(
 )
     polar2cart(image; geometry.rows, geometry.cols, kwargs...)
 end
+
 function polar2cart(
     image::AbstractMatrix,
     geometry::AbstractFanBeamGeometry;
@@ -336,6 +348,7 @@ function polar2cart(
 )
     polar2cart(image, ParallelBeamGeometry(geometry); kwargs...)
 end
+
 polar2cart(; kwargs...) = x -> polar2cart(x; kwargs...)
 polar2cart(g::AbstractParallelBeamGeometry; kwargs...) =
     x -> polar2cart(x, g; kwargs...)
