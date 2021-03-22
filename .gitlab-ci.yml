@@ -8,6 +8,8 @@ test:
   - julia -e "using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()"
   script:
   - julia --project -e "using Pkg; Pkg.test(; coverage=true)"
+  artifacts:
+  - ./
 pages:
   image: julia:1.5
   stage: deploy
