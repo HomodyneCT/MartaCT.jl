@@ -105,11 +105,11 @@ struct ImageParams{T} <: AbstractImageParams{T}
     kw::Dict{Symbol,Any}
 
     function ImageParams{T}(
-        rows::Optional{<:Integer} = nothing,
-        cols::Optional{<:Integer} = nothing,
+        rows::Optional{Integer} = nothing,
+        cols::Optional{Integer} = nothing,
         gray_scale::ClosedInterval = -1000..1000,
-        calibration_value::Optional{<:Real} = nothing,
-        background::Optional{<:Real} = nothing;
+        calibration_value::Optional{Real} = nothing,
+        background::Optional{Real} = nothing;
         kwargs...
     ) where {T<:Real}
         kw = isempty(kwargs) ? _default_gray_scale_params : Dict(kwargs)
@@ -168,13 +168,13 @@ Construct ImageParams object.
 """
 function ImageParams(
     ::Type{T} = Float32;
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
-    width::Optional{<:Integer} = nothing,
-    height::Optional{<:Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Optional{<:Real} = nothing,
-    background::Optional{<:Real} = nothing,
+    calibration_value::Optional{Real} = nothing,
+    background::Optional{Real} = nothing,
     kwargs...
 ) where {T<:Real}
     rows = maybe(rows, height)
@@ -213,8 +213,8 @@ struct CircleParams{T} <: AbstractImageParams{T}
         rows::Integer,
         cols::Integer,
         gray_scale::ClosedInterval = -1000..1000,
-        calibration_value::Optional{<:Real} = nothing,
-        background::Optional{<:Real} = nothing,
+        calibration_value::Optional{Real} = nothing,
+        background::Optional{Real} = nothing,
     ) where {T<:Real}
         background = maybe(leftendpoint(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
@@ -247,14 +247,14 @@ end
 
 function CircleParams(
     ::Type{T} = Float32;
-    radius::Optional{<:Integer} = nothing,
-    width::Optional{<:Integer} = nothing,
-    height::Optional{<:Integer} = nothing,
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
+    radius::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Optional{<:Real} = nothing,
-    background::Optional{<:Real} = nothing,
+    calibration_value::Optional{Real} = nothing,
+    background::Optional{Real} = nothing,
 ) where {T <: Real}
     factor = 31 / 50 # magic number!
     circ_zoom = 1.3 / 17
@@ -341,17 +341,24 @@ function circle_image(
     radius::Integer = 20,
     calibration_value::Real = zero(T),
     background::Real = -1000,
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
-    swidth::Optional{<:Integer} = nothing,
-    sheight::Optional{<:Integer} = nothing,
-    ν::Optional{<:Real} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    swidth::Optional{Integer} = nothing,
+    sheight::Optional{Integer} = nothing,
+    ν::Optional{Real} = nothing,
     kwargs...,
 ) where {T<:Real}
     rows = isnothing(sheight) ? maybe(2radius, rows) : sheight
     cols = isnothing(swidth) ? maybe(rows, cols) : swidth
     nr = min(rows, cols) ÷ 2
-    ν = isnothing(ν) ? min(rows,cols) / hypot(rows, cols) : ν
+    if isnothing(ν)
+        if rows != 0 && cols != 0
+            ν = min(rows, cols) / hypot(rows, cols)
+            ν = ν == 0 ? 1 : ν
+        else
+            ν = 1
+        end
+    end
     polar2cart(
         circle_polar_image(T; nr, radius, calibration_value, background);
         rows, cols, background, ν, kwargs...)
@@ -414,10 +421,10 @@ function gray_scale_image(
     ::Type{T} = Float32;
     rows::Integer = 200,
     cols::Integer = 40,
-    swidth::Optional{<:Integer} = nothing,
-    sheight::Optional{<:Integer} = nothing,
+    swidth::Optional{Integer} = nothing,
+    sheight::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
-    background::Optional{<:Real} = nothing,
+    background::Optional{Real} = nothing,
 ) where {T<:Real}
     rows = maybe(rows, sheight)
     cols = maybe(cols, swidth)
@@ -449,7 +456,7 @@ function pyramid_gray_scale_image(
     swidth::Integer = 200,
     sheight::Integer = 40,
     gray_scale::ClosedInterval = -1000..1000,
-    background::Optional{<:Real} = nothing,
+    background::Optional{Real} = nothing,
     plateau::Real = 0,
 ) where {T<:Real}
     @assert 0 ≤ plateau ≤ 1 "Plateau is a fraction of the gray scale width!"
@@ -705,11 +712,11 @@ end
 
 function GrayScaleLine(
     ::Type{T} = Float32;
-    radius::Optional{<:Integer} = nothing,
-    width::Optional{<:Integer} = nothing,
-    height::Optional{<:Integer} = nothing,
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
+    radius::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
     calibration_value::Real = zero(T),
     background::Real = -1000,
@@ -779,11 +786,11 @@ end
 
 function GrayScalePyramid(
     ::Type{T} = Float32;
-    radius::Optional{<:Integer} = nothing,
-    width::Optional{<:Integer} = nothing,
-    height::Optional{<:Integer} = nothing,
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
+    radius::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
     calibration_value::Real = zero(T),
     background::Real = -1000,
@@ -871,8 +878,8 @@ circle_polar_image(radius::Integer; kwargs...) =
 function circle_polar_image(
     ::Type{T} = Float32;
     radius::Integer = 60,
-    nr::Optional{<:Integer} = nothing,
-    nϕ::Optional{<:Integer} = nothing,
+    nr::Optional{Integer} = nothing,
+    nϕ::Optional{Integer} = nothing,
     kwargs...) where {T<:Real}
     nr = maybe(2radius, nr)
     nϕ = maybe(nr, nϕ)
@@ -896,7 +903,7 @@ function square_image(
     ::Type{T},
     r::Integer,
     c::Integer;
-    l::Optional{<:Integer} = nothing,
+    l::Optional{Integer} = nothing,
     calibration_value::Real = zero(T),
     background::Real = -1000
 ) where {T<:Real}
@@ -937,11 +944,11 @@ end
 
 function WhiteRect(
     ::Type{T} = Float32;
-    radius::Optional{<:Integer} = nothing,
-    width::Optional{<:Integer} = nothing,
-    height::Optional{<:Integer} = nothing,
-    rows::Optional{<:Integer} = nothing,
-    cols::Optional{<:Integer} = nothing,
+    radius::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
     gray_scale::Union{ClosedInterval,U} = 1000,
     calibration_value::Real = zero(T),
     background::Real = -1000,

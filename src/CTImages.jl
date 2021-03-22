@@ -283,8 +283,8 @@ function polar2cart(
 ) where {T <: Real,Interp <: AbstractInterp2DOrNone}
     mp = transposed ? permutedims(mp) : mp
     nθ, nr = size(mp)
-    Δr = nr - 1
-    Δθ = (nθ - 1) / 2π
+    Δr::T = nr - 1
+    Δθ::T = (nθ - 1) / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
     rows, cols = length(ys), length(xs)

@@ -170,7 +170,10 @@ include("radon/radon.jl")
 include("iradon/iradon.jl")
 
 
-struct RadonInfo{G <: AbstractGeometry,A <: AbstractProjectionAlgorithm} <: AlgorithmInfo{A}
+struct RadonInfo{
+    G <: AbstractGeometry,
+    A <: AbstractProjectionAlgorithm
+} <: AlgorithmInfo{A}
     geometry::G
     algorithm::A
 end
@@ -178,11 +181,11 @@ end
 RadonInfo(g::AbstractGeometry) = RadonInfo(g, Radon())
 
 
-struct FBPInfo{G <: AbstractGeometry} <: AlgorithmInfo{FBP}
+struct FBPInfo{G<:AbstractGeometry,A<:AbstractFBP} <: AlgorithmInfo{A}
     geometry::G
-    algorithm::FBP
-
-    FBPInfo{G}(g::G) where {G<:AbstractGeometry} = new(g, FBP())
+    algorithm::A
 end
+
+FBPInfo(g::AbstractGeometry) = FBPInfo(g, FBP())
 
 end # module

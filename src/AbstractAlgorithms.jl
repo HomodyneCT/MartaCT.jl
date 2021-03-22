@@ -14,8 +14,9 @@ export alg_name, alg_params
 
 using SimpleTraits
 using ..Monads
-using ..Geometry: AbstractGeometry
-using FanBeam: fan2para
+using ..Geometry:
+    AbstractGeometry, AbstractParallelBeamGeometry, AbstractFanBeamGeometry
+using ..FanBeam: fan2para
 
 
 @inline function _alg_progress(
