@@ -320,8 +320,10 @@ end
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
     ν::Real = 1,
+    transposed::Bool = false,
     kwargs...
 ) where {T <: Real,Interp <: AbstractInterp2DOrNone}
+    mp = transposed ? permutedims(mp) : mp
     rows = isnothing(rows) ? maybe(2 * size(mp, 2), cols) : rows
     cols = maybe(rows, cols)
     @assert ν > 0
