@@ -60,7 +60,7 @@ const ctfn = (image = :ctimage, sinog = :ctsinogram, tomog = :cttomogram)
 
 for nm in ctnames
     @eval begin
-        struct $nm{T,M<:AbstractMatrix{T}} <: AbstractCTImage{T}
+        struct $nm{T<:Number,M<:AbstractMatrix{T}} <: AbstractCTImage{T}
             data::M
         end
         @inline _atype(::Type{$nm{T,M}}) where {T,M} = M
@@ -72,14 +72,17 @@ for nm in ctnames
             $nm(M(undef, dims...))
         end
         @inline $nm{T,M}(img::$nm) where {T,M} = $nm{T,M}(mjoin(img))
+        @inline $nm{T}(img::M) where {T,M<:AbstractMatrix{T}} = $nm{T,M}(img)
         @inline $nm(img::$nm) = img
+        @inline convert(::Type{M}, img::AbstractMatrix) where {M<:$nm} =
+            mreturn(M, img)
         @inline convert(::Type{M}, img::$nm) where {M<:$nm} =
-            mreturn(M, convert(_atype(M), mjoin(img)))
+            mreturn($nm, convert(_atype(M), mjoin(img)))
         @inline function similar(
             ::Type{M},
             dims::Vararg{Union{Integer,AbstractUnitRange},N},
             ) where {M<:$nm,N}
-            mreturn(M, similar(_atype(M), dims...))
+            mreturn($nm, similar(_atype(M), dims...))
         end
         @inline function similar(
             ::M,
@@ -274,14 +277,22 @@ end
 
 
 function polar2cart(
-    mp::AbstractMatrix{T},
+    mp::M,
     xs::AbstractVector,
     ys::AbstractVector;
     background::Optional{Real} = nothing,
     transposed::Bool = false,
     interpolation::Optional{Interp} = nothing,
-) where {T <: Real,Interp <: AbstractInterp2DOrNone}
-    mp = transposed ? permutedims(mp) : mp
+)::M where {
+    M <: AbstractMatrix{T},
+    Interp <: AbstractInterp2DOrNone,
+} where {T <: Real}
+    if transposed
+        nr, nθ = size(mp)
+        mp′ = similar(mp, nθ, nr)
+        permutedims!(mp′, mp, (2,1))
+        return polar2cart(mp′, xs, ys; background, interpolation)
+    end
     nθ, nr = size(mp)
     Δr::T = nr - 1
     Δθ::T = (nθ - 1) / 2π
