@@ -32,9 +32,7 @@ include("fbpa_square.jl")
     cols = maybe(rows, cols)
     ϕ₀ = deg2rad(α₀)
     ϕ₁ = ϕ₀ + deg2rad(α)
-    #t₀ = (nd + 1) / 2
     sθ, cθ = sincos(atan(rows, cols))
-    #x₀, y₀ = t₀ * cθ / ν, t₀ * sθ / ν
     x₀, y₀ = cθ / ν, sθ / ν
     xs = linspace(eltype(sinog), -x₀..x₀, cols)
     ys = linspace(eltype(sinog), -y₀..y₀, rows)
