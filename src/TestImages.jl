@@ -345,20 +345,12 @@ function circle_image(
     cols::Optional{Integer} = nothing,
     swidth::Optional{Integer} = nothing,
     sheight::Optional{Integer} = nothing,
-    ν::Optional{Real} = nothing,
+    ν::Real = 1,
     kwargs...,
 ) where {T<:Real}
     rows = isnothing(sheight) ? maybe(2radius, rows) : sheight
     cols = isnothing(swidth) ? maybe(rows, cols) : swidth
     nr = min(rows, cols) ÷ 2
-    if isnothing(ν)
-        if rows != 0 && cols != 0
-            ν = min(rows, cols) / hypot(rows, cols)
-            ν = ν == 0 ? 1 : ν
-        else
-            ν = 1
-        end
-    end
     polar2cart(
         circle_polar_image(T; nr, radius, calibration_value, background);
         rows, cols, background, ν, kwargs...)
@@ -428,10 +420,10 @@ function gray_scale_image(
 ) where {T<:Real}
     rows = maybe(rows, sheight)
     cols = maybe(cols, swidth)
-    minv, maxv = endpoints(gray_scale) .|> T
-    background = maybe(infimum(gray_scale), background)
-    val_range = minv == maxv ? minv : range(minv, maxv, length = cols)
-    image = fill(T(background), rows, cols)
+    minv, maxv = endpoints(gray_scale)
+    z::T = maybe(infimum(gray_scale), background)
+    val_range = minv == maxv ? minv : linspace(T, minv..maxv, cols)
+    image = fill(z, rows, cols)
     image[1:rows,1:cols] .= val_range'
     image
 end
@@ -460,18 +452,18 @@ function pyramid_gray_scale_image(
     plateau::Real = 0,
 ) where {T<:Real}
     @assert 0 ≤ plateau ≤ 1 "Plateau is a fraction of the gray scale width!"
-    minv, maxv = endpoints(gray_scale) .|> T
+    minv, maxv = endpoints(gray_scale)
     val_range = fill(maxv, swidth)
     plateau_len = round(Int, swidth * plateau)
     len = (swidth - plateau_len) ÷ 2
     if len ≠ 0
-        step = (maxv - minv) / (swidth - plateau_len - len - 1)
+        step::T = (maxv - minv) / (swidth - plateau_len - len - 1)
         half_scale = range(minv; step, length = len)
         val_range[1:len] .= half_scale
         val_range[end:-1:(swidth-len+1)] .= half_scale # Odd case included.
     end
-    background = maybe(minv, background)
-    image = fill(background, sheight, swidth)
+    z::T = maybe(minv, background)
+    image = fill(z, sheight, swidth)
     image .= val_range'
     image
 end

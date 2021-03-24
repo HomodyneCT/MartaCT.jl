@@ -280,6 +280,7 @@ function polar2cart(
     mp::M,
     xs::AbstractVector,
     ys::AbstractVector;
+    ν::Real = 1,
     background::Optional{Real} = nothing,
     transposed::Bool = false,
     interpolation::Optional{Interp} = nothing,
@@ -293,8 +294,10 @@ function polar2cart(
         permutedims!(mp′, mp, (2,1))
         return polar2cart(mp′, xs, ys; background, interpolation)
     end
+    @assert ν > 0
     nθ, nr = size(mp)
-    Δr::T = nr - 1
+    κ::T = min(last(xs), last(ys))
+    Δr::T = (nr - 1) / (κ * ν)
     Δθ::T = (nθ - 1) / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
@@ -330,16 +333,13 @@ end
     mp::AbstractMatrix{T};
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
-    ν::Real = 1,
     transposed::Bool = false,
     kwargs...
 ) where {T <: Real,Interp <: AbstractInterp2DOrNone}
     mp = transposed ? permutedims(mp) : mp
     rows = isnothing(rows) ? maybe(2 * size(mp, 2), cols) : rows
     cols = maybe(rows, cols)
-    @assert ν > 0
-    sθ, cθ = sincos(atan(rows, cols))
-    x₀, y₀ = cθ / ν, sθ / ν
+    y₀, x₀ = sincos(atan(rows, cols))
     xs = linspace(T, -x₀..x₀, cols)
     ys = linspace(T, -y₀..y₀, rows)
     polar2cart(mp, xs, ys; kwargs...)
