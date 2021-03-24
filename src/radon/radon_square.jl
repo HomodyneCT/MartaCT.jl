@@ -21,26 +21,20 @@ function radon_square end
 
 @_defradonfn radon_square begin
     @assert 0 ∈ first(ts)..last(ts)
-    x₀::T = (cols - 1) / 2
-    x̃₀ = x₀ + 1
-    y₀::T = (rows - 1) / 2
-    ỹ₀ = y₀ + 1
-    t₀::T = ν / last(ts)
-    ts = ts * t₀
-    zs = Vector{Tuple{T,T}}(undef, length(ts))
-    @inbounds for i ∈ eachindex(zs)
-        zs[i] = ts[i] * x₀, ts[i] * y₀
-    end
+    x₀ = (cols + 1) / 2
+    y₀ = (rows + 1) / 2
+    κ = ν / last(ts) * (min(x₀, y₀) - 1)
+    zs = T.(ts * κ)
     p = _radon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for j ∈ eachindex(zs)
-            tx, ty = zs[j]
-            prex = tx * c + x̃₀
-            prey = ty * s + ỹ₀
-            for (zx, zy) ∈ zs
-                x = prex - zx * s
-                y = prey + zy * c
+            t = zs[j]
+            prex = t * c + x₀
+            prey = t * s + y₀
+            for w ∈ zs
+                x = prex - w * s
+                y = prey + w * c
                 if x ∈ 1..cols && y ∈ 1..rows
                     sinog[j,iϕ] += interp(y, x)
                 end

@@ -48,7 +48,6 @@ end
     cols::Optional{J} = nothing,
     α::Real = 360,
     α₀::Real = 0,
-    ν::Real = 1,
     kwargs...
 ) where {
     A <: AbstractIRadonAlgorithm,
@@ -60,14 +59,12 @@ end
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd), rows)
     cols = maybe(rows, cols)
-    l = min(rows, cols)
     ϕ₀ = deg2rad(α₀)
     ϕ₁ = ϕ₀ + deg2rad(α)
-    #t₀ = (nd + 1) / 2ν
-    # xs = linspace(eltype(sinog), -t₀..t₀, l)
-    # ys = linspace(eltype(sinog), -t₀..t₀, l)
-    xs = linspace(eltype(sinog), -1/ν..1/ν, l)
-    ys = linspace(eltype(sinog), -1/ν..1/ν, l)
+    sθ, cθ = sincos(atan(rows, cols))
+    x₀, y₀ = cθ / ν, sθ / ν
+    xs = linspace(eltype(sinog), -x₀..x₀, cols)
+    ys = linspace(eltype(sinog), -y₀..y₀, rows)
     a(sinog, xs, ys, ϕ₀..ϕ₁; kwargs...)
 end
 
