@@ -14,11 +14,9 @@ function fbp_fft_square end
     l = min(rows, cols)
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
     indices = Vector{NTuple{2,Int}}(undef, l^2)
-    xys = Vector{NTuple{2,T}}(undef, l^2)
-    @inbounds @simd for k ∈ eachindex(xys)
+    @inbounds @simd for k ∈ eachindex(indices)
         ix, iy = (k - 1) ÷ l + 1, (k - 1) % l + 1
         indices[k] = x₀ + ix, y₀ + iy
-        xys[k] = xs[ix], ys[iy]
     end
     temp_images = fill(deepcopy(tomog), 1)
     Threads.resize_nthreads!(temp_images)
@@ -27,9 +25,9 @@ function fbp_fft_square end
         sϕ, cϕ = scϕs[iϕ]
         id = Threads.threadid()
         @inbounds img = temp_images[id]
-        @inbounds @simd for k ∈ eachindex(xys)
+        @inbounds @simd for k ∈ eachindex(indices)
             ix, iy = indices[k]
-            x, y = xys[k]
+            x, y = xs[ix], ys[iy]
             # To be consistent with our conventions should be '+'.
             t::T = (x * cϕ + y * sϕ + 1) * t₀
             if t ∈ 1..nd

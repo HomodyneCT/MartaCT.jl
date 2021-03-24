@@ -51,6 +51,7 @@ macro _defradonfn(f::Symbol, body)
             image::AbstractMatrix{T},
             ts::AbstractVector{X},
             ϕs::AbstractVector{Y};
+            ν::Real = 1,
             background::Optional{Z} = nothing,
             rescaled::Bool = true,
             interpolation::Optional{Interp} = nothing,
