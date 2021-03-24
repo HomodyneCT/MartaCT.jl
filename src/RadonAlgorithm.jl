@@ -19,7 +19,7 @@ import ..AbstractAlgorithms:
     project_image,
     reconstruct_image,
     _alg_progress
-using ..AbstractAlgorithms
+using ..AbstractAlgorithms, ..Coordinates
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
 using FFTW, ProgressMeter, IntervalSets
 
@@ -147,6 +147,33 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
             kwargs...
         )
             $f(sinog, xs, ys, ϕs; kwargs...)
+        end
+        @inline function (a::$A)(
+            sinog::AbstractMatrix,
+            xs::AbstractVector,
+            ϕs::Optional{ClosedInterval} = nothing;
+            kwargs...
+        )
+            $f(sinog, xs, xs, ϕs; kwargs...)
+        end
+        @inline function (a::$A)(
+            sinog::AbstractMatrix,
+            xs::AbstractVector,
+            ys::AbstractVector,
+            ϕs::Optional{ClosedInterval} = nothing,
+            ::Cartesian;
+            kwargs...
+        )
+            $f(sinog, xs, ys, ϕs; kwargs...)
+        end
+        @inline function (a::$A)(
+            sinog::AbstractMatrix,
+            xs::AbstractVector,
+            ϕs::Optional{ClosedInterval} = nothing,
+            ::Cartesian;
+            kwargs...
+        )
+            $f(sinog, xs, xs, ϕs; kwargs...)
         end
         @inline function (a::$A)(sinog::AbstractMatrix; kwargs...)
             _iradon(a, sinog; kwargs...)

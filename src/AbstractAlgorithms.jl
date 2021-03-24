@@ -17,6 +17,7 @@ using ..Monads
 using ..Geometry:
     AbstractGeometry, AbstractParallelBeamGeometry, AbstractFanBeamGeometry
 using ..FanBeam: fan2para
+using ..Coordinates
 
 
 @inline function _alg_progress(
@@ -146,10 +147,22 @@ end
     sinog::AbstractMatrix,
     xs::AbstractVector,
     ys::AbstractVector,
-    alg::AbstractReconstructionAlgorithm;
+    alg::AbstractReconstructionAlgorithm,
+    coo::AbstractCoordinates = Cartesian();
     kwargs...
 )
-    alg(sinog, xs, ys; kwargs...)
+    alg(sinog, xs, ys, coo; kwargs...)
+end
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    xs::AbstractVector,
+    ys::AbstractVector,
+    alg::AbstractReconstructionAlgorithm,
+    coo::AbstractCoordinates = Cartesian();
+    kwargs...
+)
+    alg(sinog, xs, coo; kwargs...)
 end
 
 @inline function iradon(
