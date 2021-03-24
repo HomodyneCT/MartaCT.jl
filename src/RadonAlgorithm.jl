@@ -160,8 +160,8 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
             sinog::AbstractMatrix,
             xs::AbstractVector,
             ys::AbstractVector,
-            ϕs::Optional{ClosedInterval} = nothing,
-            ::Cartesian;
+            ::Cartesian,
+            ϕs::Optional{ClosedInterval} = nothing;
             kwargs...
         )
             $f(sinog, xs, ys, ϕs; kwargs...)
@@ -169,8 +169,8 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
         @inline function (a::$A)(
             sinog::AbstractMatrix,
             xs::AbstractVector,
-            ϕs::Optional{ClosedInterval} = nothing,
-            ::Cartesian;
+            ::Cartesian,
+            ϕs::Optional{ClosedInterval} = nothing;
             kwargs...
         )
             $f(sinog, xs, xs, ϕs; kwargs...)

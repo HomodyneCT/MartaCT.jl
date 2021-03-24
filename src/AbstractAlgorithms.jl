@@ -157,7 +157,6 @@ end
 @inline function iradon(
     sinog::AbstractMatrix,
     xs::AbstractVector,
-    ys::AbstractVector,
     alg::AbstractReconstructionAlgorithm,
     coo::AbstractCoordinates = Cartesian();
     kwargs...
