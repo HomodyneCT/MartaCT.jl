@@ -15,30 +15,26 @@ See Also: [`radon_square`](@ref)
 function radon_default end
 
 @_defradonfn radon_default begin
+    @assert 0 ∈ first(ts)..last(ts)
     t₀::T = hypot(rows, cols) / 2
+    κ::T = t₀ / last(ts) * ν
     sθ, cθ = atan(rows, cols) |> sincos
     x₀::T = t₀ * cθ + 1
     y₀::T = t₀ * sθ + 1
-    indices = Vector{NTuple{2,Int}}(undef, length(sinog))
-    tϕs = similar(indices, NTuple{2,T})
-    foreach(eachindex(sinog)) do k
-        ix = (k - 1) % nd
-        iϕ = (k - 1) ÷ nd
-        @inbounds t = ts[ix + 1]
-        @inbounds s, c = scϕs[iϕ + 1]
-        @inbounds indices[k] = k, iϕ
-        @inbounds tϕs[k] = t * c, t * s
-    end
+    zs = ts * κ
     p = _radon_progress(length(sinog), progress)
-    Threads.@threads for (k, iϕ) ∈ indices
-        @inbounds tx, ty = tϕs[k]
-        prex, prey = tx + x₀, ty + y₀
-        o = iϕ * nd
-        @inbounds sinog[k] = sum(view(tϕs, o+1:o+nd)) do (ty, tx)
-            x, y = prex - tx, prey + ty
-            return x ∈ 1..cols && y ∈ 1..rows ? interp(y, x) : z
+    Threads.@threads for iϕ ∈ eachindex(scϕs)
+        @inbounds s, c = scϕs[iϕ]
+        @inbounds @simd for it ∈ eachindex(zs)
+            t = zs[it]
+            prex, prey = t * c + x₀, t * s + y₀
+            for z ∈ zs
+                x, y = prex - z * s, prey + z * c
+                if x ∈ 1..cols && y ∈ 1..rows
+                    sinog[it, iϕ] += interp(y, x)
+                end
+            end
         end
-        next!(p)
     end
     sinog
 end

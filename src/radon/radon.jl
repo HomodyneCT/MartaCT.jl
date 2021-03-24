@@ -14,7 +14,6 @@ include("radon_square.jl")
     nϕ::Optional{J} = nothing,
     α::Real = 360,
     α₀::Real = 0,
-    ν::Real = 1,
     kwargs...
 ) where {
     A <: AbstractProjectionAlgorithm,
@@ -26,8 +25,9 @@ include("radon_square.jl")
     h::T = hypot(rows, cols)
     nd = isnothing(nd) ? round(Int, h) : nd
     nϕ = isnothing(nϕ) ? 2 * ((rows + 1) * (cols + 1) ÷ (2nd)) + 1 : nϕ
-    t₀ = h / 2
-    ts = linspace(-t₀..t₀, nd) * ν
+    #t₀ = h / 2
+    #ts = linspace(-t₀..t₀, nd)
+    ts = linspace(T, -1..1, nd)
     ϕ₀::T = deg2rad(α₀)
     ϕ₁::T = ϕ₀ + deg2rad(α)
     ϕs = linspace(ORI(ϕ₀..ϕ₁), nϕ)
@@ -43,7 +43,6 @@ end
     nϕ::Optional{J} = nothing,
     α::Real = 360,
     α₀::Real = 0,
-    ν::Real = 1,
     kwargs...
 ) where {
     A <: AbstractProjectionAlgorithm,
@@ -55,8 +54,9 @@ end
     l = min(rows, cols)
     nd = maybe(l, nd)
     nϕ = isnothing(nϕ) ? 2 * ((rows + 1) * (cols + 1) ÷ (2nd)) + 1 : nϕ
-    t₀::T = (l - 1) / 2 * ν
-    ts = linspace(-t₀..t₀, nd)
+    #t₀::T = (l - 1) / 2 * ν
+    #ts = linspace(-t₀..t₀, nd)
+    ts = linspace(-1..1, nd)
     ϕ₀::T = deg2rad(α₀)
     ϕ₁::T = ϕ₀ + deg2rad(α)
     ϕs = linspace(ORI(ϕ₀..ϕ₁), nϕ)
