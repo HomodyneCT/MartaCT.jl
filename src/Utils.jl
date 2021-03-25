@@ -15,6 +15,10 @@ ORI(i::Interval) = ORI{eltype(i)}(i)
 
 
 function _atype end
+function _half end
+
+_half(xs::AbstractVector) = abs(last(xs) - first(xs)) / 2
+_half(i::Interval) = width(i) / 2
 
 _atype(::Type{T}) where {T <: AbstractArray} = T
 _atype(a::AbstractArray) = typeof(a)
