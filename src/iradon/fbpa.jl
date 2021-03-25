@@ -26,7 +26,7 @@ function fbpa_fft end
         end
         next!(p)
     end
-    tomog
+    tomog / nd
 end
 
 

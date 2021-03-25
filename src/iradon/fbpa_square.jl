@@ -32,7 +32,7 @@ function fbpa_fft_square end
         end
         next!(p)
     end
-    tomog
+    tomog / nd
 end
 
 
