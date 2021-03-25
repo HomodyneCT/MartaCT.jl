@@ -78,17 +78,11 @@ for nm in ctnames
             mreturn(M, img)
         @inline convert(::Type{M}, img::$nm) where {M<:$nm} =
             mreturn($nm, convert(_atype(M), mjoin(img)))
-        @inline function similar(
-            ::Type{M},
-            dims::Vararg{Union{Integer,AbstractUnitRange},N},
-            ) where {M<:$nm,N}
-            mreturn($nm, similar(_atype(M), dims...))
+        @inline function similar(img::M) where {M<:$nm}
+            mreturn(M, similar(mjoin(img)))
         end
-        @inline function similar(
-            ::M,
-            dims::Vararg{Union{Integer,AbstractUnitRange},N},
-        ) where {M<:$nm,N}
-            similar(M, dims...)
+        @inline function similar(img::M, ::Type{S}, dims::Dims) where {S,M<:$nm}
+            mreturn(M, similar(mjoin(img), S, dims))
         end
     end
 end
