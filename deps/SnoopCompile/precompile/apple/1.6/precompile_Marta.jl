@@ -66,7 +66,7 @@ end
 
 function _precompile_()
     ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
-    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},FanBeamGeometry{Float32, DefaultTomograph},CTImageMat{Float32}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},FanBeamGeometry{Float64, DefaultTomograph},CTImageMat{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},ParallelBeamGeometry{Float32, DefaultTomograph},CTImageMat{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},ParallelBeamGeometry{Float64, DefaultTomograph},CTImageMat{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,), Tuple{Int64}},Type{FanBeamGeometry},CircleImage{Float32}})
@@ -116,6 +116,11 @@ function _precompile_()
     let fbody = try __lookup_kwbody__(which(FBPScanner, (ParallelBeamGeometry{Float64, DefaultTomograph},CircleImage{Float64},))) catch missing end
         if !ismissing(fbody)
             precompile(fbody, (Nothing,Nothing,Type{FBPScanner{G, D} where {G, D}},ParallelBeamGeometry{Float64, DefaultTomograph},CircleImage{Float64},))
+        end
+    end
+    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBPInfo{ParallelBeamGeometry{Float64, DefaultTomograph}, FBP{Marta.RadonAlgorithm.Filters.RamLak}}, Marta.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},WhiteRect{Float64},))) catch missing end
+        if !ismissing(fbody)
+            precompile(fbody, (Base.Iterators.Pairs{Union{}, Union{}, Tuple{}, NamedTuple{(), Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float64, DefaultTomograph}, FBP{Marta.RadonAlgorithm.Filters.RamLak}}, Marta.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},WhiteRect{Float64},))
         end
     end
 end
