@@ -22,7 +22,7 @@ using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
 using ..AbstractAlgorithms: AbstractProjectionAlgorithm
-import ..Utils: _atype, yaml_repr, struct2dict
+import ..Utils: _atype, yaml_repr, struct2dict, linspace
 import ..Info: CTInfo
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
