@@ -8,7 +8,7 @@ export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
 import ..Monads: mjoin
-using ..Utils: linspace
+using ..Utils: linspace, _half
 import ..Utils: _atype
 using ..Applicative, ..Monads, ..Interpolation
 using ..Geometry:
@@ -281,6 +281,7 @@ function polar2cart(
     xs::AbstractVector,
     ys::AbstractVector;
     ν::Real = 1,
+    diag::Bool = false,
     background::Optional{Real} = nothing,
     transposed::Bool = false,
     interpolation::Optional{Interp} = nothing,
@@ -296,7 +297,11 @@ function polar2cart(
     end
     @assert ν > 0
     nθ, nr = size(mp)
-    κ::T = min(last(xs), last(ys))
+    x₀, y₀ = _half(xs), _half(ys)
+    κ::T = min(x₀, y₀)
+    if diag
+        ν *= hypot(x₀, y₀) / κ
+    end
     Δr::T = (nr - 1) / (κ * ν)
     Δθ::T = (nθ - 1) / 2π
     interpolation = maybe(interpolate, interpolation)
