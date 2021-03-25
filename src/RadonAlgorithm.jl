@@ -53,7 +53,7 @@ macro _defradonfn(f::Symbol, body)
             ϕs::AbstractVector{Y};
             ν::Real = 1,
             background::Optional{Z} = nothing,
-            rescaled::Bool = true,
+            rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
             progress::Bool = true,
         ) where {
