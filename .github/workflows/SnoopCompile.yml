@@ -2,7 +2,8 @@ name: SnoopCompile
 
 on:
   push:
-    tags: '*'
+    branches:
+#      - "master"
 
 defaults:
   run:

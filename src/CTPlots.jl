@@ -1,8 +1,6 @@
 module CTPlots
 
-Base.Experimental.@optlevel 0
-
-ENV["GKS_ENCODING"] = "utf-8"
+Base.Experimental.@optlevel 1
 
 export plot_image, plot_sinogram, plot_tomogram
 export plot_gray_scale
@@ -10,10 +8,16 @@ export plot_gray_scale
 using RecipesBase: plot, plot!
 using RecipesBase
 using ..Monads
-using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn
+using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn, CTImageOrTomog
 using ..CTImages: ctimage, ctsinogram, cttomogram
-using ..TestImages: AbstractGrayScale, ImageParams, gray_scale_indices
+using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
+using ..Utils: linspace
+using IntervalSets
+
+function __init__()
+    ENV["GKS_ENCODING"] = "utf-8"
+end
 
 
 """
@@ -58,47 +62,94 @@ function plot_sinogram(sinog::AbstractMatrix{T}; kwargs...) where {T}
     plot(CTSinogram(sinog); kwargs...)
 end
 
+# TODO: Check lims for plot again!
 
-@recipe function f(image::CTImage)
+@recipe function f(
+    xs::AbstractVector, ys::AbstractVector, image::CTImageOrTomog
+)
     rows, cols = size(image)
-    xs = (0:(cols - 1)) .- (cols - 1) / 2
-    ys = (0:(rows - 1)) .- (rows - 1) / 2
-    seriestype := :heatmap
+    proj = get(plotattributes, :projection, nothing)
     seriescolor --> :grays
-    tick_direction := :out
-    aspect_ratio := 1
-    xlims := ((xs[1], xs[end]) .+ (-0.5, 0.5))
-    ylims := ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    aspect_ratio --> :equal
+    seriestype --> :heatmap
+    _seriestype = get(plotattributes, :seriestype, nothing)
+    if proj === :polar
+        yaxis --> false
+    elseif _seriestype === :heatmap
+        tick_direction --> :out
+        # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5))
+        xlims --> (xs[1], xs[end])
+        # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+        ylims --> (ys[1], ys[end])
+    end
     xs, ys, mjoin(image)
+end
+
+
+@recipe function f(
+    image::CTImageOrTomog,
+    α::Optional{Real} = nothing,
+    β::Optional{Real} = nothing,
+)
+    rows, cols = size(image)
+    proj = get(plotattributes, :projection, nothing)
+    if proj === :polar
+        α = maybe(rows, α)
+        β = maybe(2π, β)
+        rs = linspace(0..α, rows+1)
+        ϕs = linspace(0..β, cols+1)
+        ϕs, rs, image
+    else
+        β = maybe(maybe((rows - 1) / 2, α), β)
+        α = maybe((cols - 1) / 2, α)
+        xs = linspace(-α..α, cols)
+        ys = linspace(-β..β, rows)
+        xs, ys, image
+    end
 end
 
 
 const _sinog_xticks = [45i for i in 0:8]
 
 
-@recipe function f(sinog::CTSinogram)
+@recipe function f(sinog::CTSinogram, α::Optional{Real} = nothing)
     nd, nϕ = size(sinog)
-    Δϕ = 360 / (nϕ - 1)
-    xs = (0:nϕ - 1) * Δϕ # Now we use midpoints and not edges to support more backends
-    ys = (0:nd - 1) .- (nd - 1) / 2
-    seriestype := :heatmap
+    #Δϕ = 360 / (nϕ - 1)
+    #xs = (0:nϕ - 1) * Δϕ # Now we use midpoints and not edges to support more backends
+    xs = linspace(0..360, nϕ)
+    #ys = (0:nd - 1) .- (nd - 1) / 2
+    α = maybe(nd - 1, α)
+    ys = linspace(-α..α, nd)
+    seriestype --> :heatmap
     seriescolor --> :grays
-    tick_direction := :out
-    xrotation --> -45
     xticks --> _sinog_xticks
-    xlims := ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
-    ylims := ((ys[1], ys[end]) .+ (-0.5, 0.5))
+    _seriestype = get(plotattributes, :seriestype, nothing)
+    if _seriestype === :heatmap
+        xrotation --> -45
+        tick_direction --> :out
+        # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
+        xlims --> (xs[1], xs[end])
+        # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
+        ylims --> (ys[1], ys[end])
+    end
     xs, ys, mjoin(sinog)
 end
 
 
-@recipe function f(::Type{<:CTTomogram}, tomog::CTTomogram)
-    mbind(CTImage, tomog)
+@recipe function f(
+    xs::AbstractVector,
+    ys::AbstractVector,
+    gs::AbstractTestImage
+)
+    xs, ys, gs.image
 end
 
-
-@recipe function f(::Type{T}, grsc::T) where {T <: AbstractGrayScale}
-    grsc.image
+@recipe function f(
+    gs::AbstractTestImage,
+    α::Optional{Real} = nothing,
+    β::Optional{Real} = nothing
+)
+    gs.image, α, β
 end
 
 

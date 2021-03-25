@@ -10,18 +10,14 @@ export num_proj, num_det, f2iso, f2det, fan_angle, cell_size
 export scan_angle, start_angle, center_channel
 export num_rows, num_cols, tomograph, channel_spacing
 
-import Base: show, getproperty
-
 using ..Monads
-import ..CTIO: yaml_repr, struct2dict
-import ..Marta: datatype
+import ..Utils: yaml_repr, struct2dict
+import Base: show, getproperty, eltype
 
 
 const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry)
 
 abstract type AbstractGeometry  end
-
-datatype(x::AbstractGeometry) = datatype(typeof(x))
 
 function getproperty(g::AbstractGeometry, s::Symbol)
     s ≡ :width && return g.cols
@@ -31,6 +27,14 @@ end
 
 
 abstract type AbstractTomograph end
+
+function getproperty(ct::AbstractTomograph, s::Symbol)
+    s ∈ fieldnames(typeof(ct)) && return getfield(ct, s)
+    nothing
+end
+
+show(io::IO, ::T) where T <: AbstractTomograph = print(io, "$(nameof(T))")
+
 
 struct DefaultTomograph <: AbstractTomograph end
 
@@ -48,7 +52,7 @@ struct ParallelBeamGeometry{T <: Real,CT <: AbstractTomograph} <: AbstractParall
     center::T
 end
 
-datatype(::Type{<:ParallelBeamGeometry{T}}) where {T} = T
+eltype(::Type{G}) where {G <: ParallelBeamGeometry{T}} where {T} = T
 
 yaml_repr(g::ParallelBeamGeometry) = struct2dict(g)
 
@@ -82,7 +86,7 @@ Construct geometry for the simulation.
 function ParallelBeamGeometry(
     ::Type{T} = Float32,
     ct::AbstractTomograph = DefaultTomograph();
-    nϕ::Int = 1024,
+    nϕ::Optional{Int} = nothing,
     nd::Optional{Int} = nothing,
     rows::Optional{Int} = nothing,
     cols::Optional{Int} = nothing,
@@ -90,11 +94,15 @@ function ParallelBeamGeometry(
     height::Optional{Int} = nothing,
     α::Real = 360,
     α₀::Real = 0,
-    center::Optional{<:Real} = nothing,
+    center::Optional{Real} = nothing,
 ) where {T <: Real}
-    nd = maybe(nϕ, nd)
-    rows = maybe(nd, maybe(rows, height))
-    cols = maybe(rows, maybe(cols, width))
+    height = maybe(width, height)
+    width = maybe(height, width)
+    rows = maybe(512, maybe(height, rows))
+    cols = maybe(rows, maybe(width, cols))
+    nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
+    nϕ = isnothing(nϕ) ?
+        2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
     center′::T = maybe((nd - 1) / 2, center)
     ParallelBeamGeometry{T,typeof(ct)}(
         ct,
@@ -146,7 +154,7 @@ struct FanBeamGeometry{T,CT <: AbstractTomograph} <:
 end
 
 
-datatype(::Type{<:FanBeamGeometry{T}}) where {T} = T
+eltype(::Type{G}) where {G <: FanBeamGeometry{T}} where {T} = T
 
 yaml_repr(g::FanBeamGeometry) = struct2dict(g)
 
@@ -193,30 +201,28 @@ not flat.
 function FanBeamGeometry(
     ::Type{T} = Float32,
     ct::AbstractTomograph = DefaultTomograph();
-    nϕ::Int = 1024,
+    nϕ::Optional{Int} = nothing,
     D::Real = 500,
-    D′::Optional{<:Real} = nothing,
-    γ::Optional{<:Real} = nothing,
+    D′::Optional{Real} = nothing,
+    γ::Optional{Real} = nothing,
     nd::Optional{Int} = nothing,
     rows::Optional{Int} = nothing,
     cols::Optional{Int} = nothing,
     width::Optional{Int} = nothing,
     height::Optional{Int} = nothing,
-    δ::Real = 1,
+    δ::Real = one(T),
     α::Real = 360,
-    α₀::Real = 0,
-    center::Optional{<:Real} = nothing,
+    α₀::Real = zero(T),
+    center::Optional{Real} = nothing,
 ) where {T <: Real}
-    nd = maybe(nϕ, nd)
-    rows = maybe(nd, maybe(rows, height))
-    cols = maybe(rows, maybe(cols, width))
-    γ′::T = maybe(
-        deg2rad,
-        maybe(1, D′) do x
-            nd * δ / x
-        end,
-        γ
-    )
+    height = maybe(width, height)
+    width = maybe(height, width)
+    rows = maybe(512, maybe(height, rows))
+    cols = maybe(rows, maybe(width, cols))
+    nd = isnothing(nd) ? round(Int, hypot(rows, cols)) : nd
+    nϕ = isnothing(nϕ) ?
+        2 * (round(Int, (rows + 1) * (cols + 1) / nd) ÷ 2) + 1 : nϕ
+    γ′::T = maybe(deg2rad, maybe(x->nd * δ / x, one(T), D′), γ)
     D′′::T = maybe(nd * δ / γ′, D′) # changed γ to γ′ here, should be tested
     center′::T = maybe((nd - 1) / 2, center)
     FanBeamGeometry{T,typeof(ct)}(
@@ -240,28 +246,29 @@ FanBeamGeometry(ct::AbstractTomograph; kwargs...) =
     FanBeamGeometry(Float32, ct; kwargs...)
 
 
-show(io::IO, g::AbstractFanBeamGeometry) = print(
+function show(io::IO, g::AbstractFanBeamGeometry)
+    print(
     io,
     """Fan beam geometry:
-- tomograph:
-    $(tomograph(g))
-- number of angles: $(num_proj(g))
-- number of detectors: $(num_det(g))
-- tomogram size (W×H): $(num_cols(g)) × $(num_rows(g))
-- focal spot to ISO: $(f2iso(g)) mm
-- fan beam angle: $(rad2deg(fan_angle(g)))°
-- cell size: $(cell_size(g)) mm
-- scan angle: $(scan_angle(g))°
-- scan starting angle: $(start_angle(g))°
-- channel spacing: $(channel_spacing(g))°
-- center channel: $(center_channel(g))""",
-)
+    - tomograph: $(tomograph(g))
+    - number of angles: $(num_proj(g))
+    - number of detectors: $(num_det(g))
+    - tomogram size (W×H): $(num_cols(g)) × $(num_rows(g))
+    - focal spot to ISO: $(f2iso(g)) mm
+    - fan beam angle: $(rad2deg(fan_angle(g)))°
+    - cell size: $(cell_size(g)) mm
+    - scan angle: $(scan_angle(g))°
+    - scan starting angle: $(start_angle(g))°
+    - channel spacing: $(maybe(x -> "$x°", "N/A", channel_spacing(g)))
+    - center channel: $(center_channel(g))""",
+    )
+end
 
 
 
 function ParallelBeamGeometry(fbg::AbstractFanBeamGeometry)
     ParallelBeamGeometry(
-        datatype(fbg),
+        eltype(fbg),
         fbg.ct;
         fbg.nϕ,
         fbg.nd,
@@ -280,7 +287,7 @@ function FanBeamGeometry(
     kwargs...,
 )
     FanBeamGeometry(
-        datatype(pbg),
+        eltype(pbg),
         ct;
         pbg.nϕ,
         pbg.nd,

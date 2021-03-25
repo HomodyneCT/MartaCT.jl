@@ -1,30 +1,52 @@
 module Marta
 
 using Reexport
+import
+    Measures,
+    Statistics,
+    LinearAlgebra,
+    IterTools,
+    YAML,
+    FFTW,
+    Distributions,
+    IntervalSets
 
-include("basic_definitions.jl")
+include("Utils.jl")
 include("Applicative.jl")
 include("Monads.jl")
 include("TypeDict.jl")
-include("CTIO.jl")
-include("Info.jl")
+include("CalibrationBase.jl")
 include("Interpolation.jl")
+include("Coordinates.jl")
 include("Geometry.jl")
 include("CTImages.jl")
-include("CTData.jl")
 include("FanBeam.jl")
-include("Filters.jl")
 include("AbstractAlgorithms.jl")
 include("RadonAlgorithm.jl")
-include("CalibrationBase.jl")
+include("Simulations.jl")
+include("CTIO.jl")
+include("Info.jl")
 include("TestImages.jl")
 include("Calibration.jl")
 include("CTScan.jl")
 include("CTPlots.jl")
 
-@reexport using .Applicative, .Monads, .Info, .Geometry, .CTIO, .CTImages
-@reexport using .AbstractAlgorithms, .RadonAlgorithm
-@reexport using .TestImages, .Calibration, .CTScan, .CTPlots
+@reexport using
+    .Utils,
+    .Applicative,
+    .Monads,
+    .Info,
+    .Coordinates,
+    .Geometry,
+    .CTIO,
+    .CTImages,
+    .FanBeam,
+    .AbstractAlgorithms,
+    .RadonAlgorithm,
+    .TestImages,
+    .Calibration,
+    .CTScan,
+    .CTPlots
 
 include("precompile_includer.jl")
 

@@ -3,18 +3,17 @@ module CTIO
 Base.Experimental.@optlevel 0
 
 export load_data, sinog_extract, sinog_load
-export load_yaml, write_yaml, struct2dict, yaml_repr
+export load_yaml, write_yaml
 export write_ct_image, read_ct_image
 export load_image, write_image
 export load_sinogram, write_sinogram
 export load_tomogram, write_tomogram
 
-import YAML
-using Mmap: mmap
+import YAML, Mmap
 using IterTools: imap
-
-include("TypeDict.jl")
-using .TypeDict: standardize_type
+using ..CTImages
+using ..Utils: yaml_repr
+using ..TypeDict: standardize_type
 
 
 struct DataFileHelper
@@ -53,7 +52,7 @@ function load_data(
     if header != 0
         seek(io, header)
     end
-    mmap(io, Vector{standardize_type(dtype)})
+    Mmap.mmap(io, Vector{standardize_type(dtype)})
 end
 
 
@@ -108,18 +107,6 @@ function load_yaml(f::AbstractString)
     open(f) do s
         load_yaml(s)
     end
-end
-
-
-yaml_repr(obj) = obj
-yaml_repr(ntup::NamedTuple) = struct2dict(ntup)
-
-
-function struct2dict(obj)
-    Dict(map(propertynames(obj)) do p
-        field = getproperty(obj, p)
-        p => yaml_repr(field)
-    end)
 end
 
 
@@ -286,7 +273,7 @@ function load_image(
         cols = cols,
         row_major = false,
         header_type = header_type,
-    )
+    ) |> CTImage
 end
 
 
@@ -391,7 +378,7 @@ function load_sinogram(
         cols = nϕ,
         row_major = false,
         header_type = header_type,
-    )
+    ) |> CTSinogram
 end
 
 
@@ -499,7 +486,7 @@ function load_tomogram(
         cols = cols,
         row_major = row_major,
         header_type = header_type,
-    )
+    ) |> CTTomogram
 end
 
 
@@ -561,6 +548,18 @@ function write_tomogram(
 ) where {T<:Real}
     open(f, "w") do s
         write_tomogram(s, tomog; kwargs...)
+    end
+end
+
+
+const _io_write_funcs = (:write_image, :write_sinogram, :write_tomogram)
+
+for nm ∈ _io_write_funcs
+    @eval begin
+        $nm(io::Union{IO,AbstractString}; kwargs...) =
+            x -> $nm(io, x; kwargs...)
+        $nm(io::Union{IO,AbstractString}, img::AbstractCTImage; kwargs...) =
+            img ↣ $nm(io; kwargs...)
     end
 end
 

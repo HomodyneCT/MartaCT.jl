@@ -2,7 +2,7 @@ module Info
 
 export AbstractCTInfo, CTInfo
 
-import ..CTIO: yaml_repr
+import ..Utils: yaml_repr
 
 
 abstract type AbstractCTInfo end

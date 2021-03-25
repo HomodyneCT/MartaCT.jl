@@ -1,9 +1,16 @@
 module Applicative
 
+export Callable
 export apply, <|
 export fimap, fmap, iflip, trpos, make_indices
 
+using SimpleTraits
 using IterTools: imap
+
+@traitdef Callable{F}
+
+@traitimpl Callable{Function}
+@traitimpl Callable{Type}
 
 apply(f, x) = f(x)
 <|(f, x) = f(x)
