@@ -54,7 +54,6 @@ macro _defradonfn(f::Symbol, body)
             ν::Real = 1,
             background::Optional{Z} = nothing,
             rescaled::Bool = false,
-            prob::Bool = false,
             interpolation::Optional{Interp} = nothing,
             progress::Bool = true,
         ) where {
