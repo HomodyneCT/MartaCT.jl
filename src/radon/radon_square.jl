@@ -25,7 +25,7 @@ function radon_square end
     y₀ = (rows + 1) / 2
     κ = ν / _half(ts) * (min(x₀, y₀) - 1)
     zs = T.(ts * κ)
-    p = _radon_progress(nϕ, progress)
+    p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for j ∈ eachindex(zs)
@@ -42,7 +42,7 @@ function radon_square end
         end
         next!(p)
     end
-    sinog / nd
+    sinog ./= κ^2
 end
 
 

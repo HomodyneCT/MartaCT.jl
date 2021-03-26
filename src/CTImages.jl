@@ -25,8 +25,12 @@ function cttomogram end
 abstract type AbstractCTImage{T<:Number} <: AbstractMatrix{T} end
 
 @traitimpl Monad{AbstractCTImage}
-
 mjoin(img::AbstractCTImage) = img.data
+
+# struct CTImageStyle <: Broadcast.AbstractArrayStyle{2} end
+# Base.BroadcastStyle(::Type{<:AbstractCTImage}) = CTImageStyle()
+# CTImageStyle(::Val{2}) = CTImageStyle()
+# CTImageStyle(::Val{N}) where N = Broadcast.DefaultArrayStyle{N}()
 
 _atype(img::M) where {M <: AbstractCTImage} = _atype(M)
 eltype(::Type{M}) where {M<:AbstractCTImage{T}} where T = T
@@ -37,8 +41,8 @@ size(img::AbstractCTImage, dim::Int) = size(mjoin(img), dim)
     @inbounds getindex(mjoin(img), i)
 end
 @propagate_inbounds function getindex(
-    img::AbstractCTImage, I::Vararg{Int,N}
-) where N
+    img::AbstractCTImage, I::Vararg{Int,2}
+)
     @boundscheck checkbounds(img, I...)
     @inbounds getindex(mjoin(img), I...)
 end
@@ -47,8 +51,8 @@ end
     @inbounds setindex!(mjoin(img), v, i)
 end
 @propagate_inbounds function setindex!(
-    img::AbstractCTImage, v, I::Vararg{Int,N}
-) where N
+    img::AbstractCTImage, v, I::Vararg{Int,2}
+)
     @boundscheck checkbounds(img, I...)
     @inbounds setindex!(mjoin(img), v, I...)
 end
@@ -67,7 +71,7 @@ for nm in ctnames
         IndexStyle(::Type{T}) where T<:$nm = IndexStyle(_atype(T))
         @inline function $nm{T,M}(
             ::UndefInitializer,
-            dims::Vararg{Union{Integer,AbstractUnitRange}}
+            dims::Vararg{Union{Integer,AbstractUnitRange},2}
         ) where {T,M}
             $nm(M(undef, dims...))
         end
@@ -81,7 +85,11 @@ for nm in ctnames
         @inline function similar(img::M) where {M<:$nm}
             mreturn(M, similar(mjoin(img)))
         end
-        @inline function similar(img::M, ::Type{S}, dims::Dims) where {S,M<:$nm}
+        @inline function similar(
+            img::M,
+            ::Type{S},
+            dims::Tuple{Vararg{Int,2}}
+        ) where {S,M<:$nm}
             mreturn(M, similar(mjoin(img), S, dims))
         end
     end

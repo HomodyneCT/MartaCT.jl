@@ -69,7 +69,7 @@ end
 end
 
 @inline function iradon(sinog::AbstractMatrix; kwargs...)
-    alg(sinog, FBP(); kwargs...)
+    iradon(sinog, FBP(); kwargs...)
 end
 
 @inline function iradon(
@@ -78,7 +78,7 @@ end
     ys::AbstractVector;
     kwargs...
 )
-    alg(sinog, xs, ys, FBP(); kwargs...)
+    iradon(sinog, xs, ys, FBP(); kwargs...)
 end
 
 @inline function iradon(

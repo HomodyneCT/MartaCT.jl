@@ -35,7 +35,7 @@ function fbp_fft_square end
     foreach(temp_images) do x
         tomog .+= x
     end
-    tomog / nd
+    tomog
 end
 
 
