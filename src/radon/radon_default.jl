@@ -23,7 +23,7 @@ function radon_default end
     y₀::T = t₀ * sθ + 1
     zs = ts * κ
     npoints = length(zs)
-    p = _radon_progress(length(sinog), progress)
+    p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for it ∈ eachindex(zs)
@@ -36,8 +36,9 @@ function radon_default end
                 end
             end
         end
+        next!(p)
     end
-    sinog / nd
+    sinog ./= κ^2
 end
 
 

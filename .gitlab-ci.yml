@@ -2,7 +2,7 @@ stages:
   - test
   - deploy
 test:
-  image: julia:1.5
+  image: julia:1.6
   stage: test
   before_script:
   - julia -e "using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()"

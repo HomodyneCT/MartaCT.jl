@@ -35,7 +35,7 @@ function fbp_fft end
     foreach(temp_images) do x
         tomog .+= x
     end
-    tomog / nd
+    tomog
 end
 
 

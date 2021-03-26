@@ -1,6 +1,58 @@
-using IterTools: repeatedly
+struct CTSimulation <: AbstractSimulation end
 
-@deprecate resample_sinogram sample_sinogram_external false
+@inline function Random.rand(
+    sinog::CTSinogram,
+    nphotons::Integer,
+    ::CTSimulation;
+    kwargs...
+)
+    sample_sinogram(sinog; kwargs...)
+end
+
+@inline function Random.rand(sinog::CTSinogram, ::CTSimulation; kwargs...)
+    rand(sinog, nphotons, CTSimulation(); kwargs...)
+end
+
+
+"""
+    StatsBase.sample(data::CTSinogram, xs::AbstractVector[; nsamples=1000, nblks=1, nbins=nothing])
+
+Compute `nsamples` from `xs` according to the distribution given by each column
+of `data`. Optionally, if `nblks > 1`, `nblks × nsamples` samples are computed.
+The sampled data are collected into a histogram of length `nbins` for each
+column in `data`. The resulting data have size `(nbins, size(data, 2), nblks)`.
+"""
+function StatsBase.sample(
+    data::CTSinogram,
+    xs::AbstractVector;
+    nsamples::Integer = 1000,
+    nblks::Integer = 1,
+    nbins::Optional{Integer} = nothing,
+)
+    nd, nϕ = size(data)
+    @assert length(xs) == nd "Dimension mismatch: `xs` vector should match first dimension of `data`"
+    Random.seed!()
+    nbins = maybe(nd+1, nbins)
+    ζ = _half(xs)
+    bins = linspace(-ζ..ζ, nbins+1)
+	sampled = similar(data, (nbins, nϕ, nblks))
+    pxs = fill(similar(sampled, nsamples), 1)
+    Threads.resize_nthreads!(pxs)
+	Threads.@threads for k ∈ axes(sampled, 3)
+        id = Threads.threadid()
+        px = pxs[id]
+        @inbounds for j ∈ axes(sampled, 2)
+            ws = StatsBase.weights(view(data, :, j))
+            StatsBase.sample!(xs, ws, px)
+            h = normalize(
+                StatsBase.fit(StatsBase.Histogram, px, bins);
+                mode = :probability,
+            )
+            sampled[:,j,k] .= h.weights
+        end
+    end
+	sampled
+end
 
 
 """generate_photons(n::Integer, nx::Integer, nϕ::Integer)
@@ -18,7 +70,7 @@ Return a `nd × nϕ` matrix with the generated photons.
     rngs_measure = [Random.MersenneTwister() for _ ∈ 1:Threads.nthreads()]
     photons = zeros(Int, nx, nϕ)
     p = Progress(nϕ, 0.2, "Generating photons: ")
-    Threads.@threads for i ∈ 1:nϕ
+    Threads.@threads for i ∈ axes(photons, 2)
         id = Threads.threadid()
         @inbounds g = rngs_gen[id]
         @inbounds m = rngs_measure[id]
@@ -33,7 +85,7 @@ Return a `nd × nϕ` matrix with the generated photons.
 end
 
 
-"""sample_sinogram(sinog::AbstractMatrix{T}; <keyword arguments>) where {T <: Real}
+"""simulate_ct(sinog::AbstractMatrix{T}; <keyword arguments>) where {T <: Real}
 
 Simulate a low dose CT scan. This samples `sinog` with ``⟨n⟩``
 random photons per projection angle.
@@ -46,25 +98,25 @@ random photons per projection angle.
   resampled intensities to obtain the corresponding
   sinogram.
 """
-function sample_sinogram(
+function simulate_ct(
     sinog::AbstractMatrix{T};
     nphotons::Integer = 10000,
     ϵ::Real = 1,
     take_log::Bool = true,
-) where {T<:Real}
+) where {T <: Real}
     nd, nϕ = size(sinog)
     photons = generate_photons(nphotons, nd, nϕ)
     rngs_absorp = [Random.MersenneTwister() for _ ∈ 1:Threads.nthreads()]
     rngs_clicks = [Random.MersenneTwister() for _ ∈ 1:Threads.nthreads()]
     measure = Distributions.Uniform()
     detector = Distributions.Uniform()
-    low_sample = similar(sinog, nd, nϕ)
+    low_sample = similar(sinog)
     p = Progress(length(low_sample), 0.2, "Tracking photons: ")
-    Threads.@threads for k ∈ eachindex(low_sample)
+    Threads.@threads for k ∈ LinearIndices(low_sample)
         id = Threads.threadid()
         @inbounds a = rngs_absorp[id]
         @inbounds c = rngs_clicks[id]
-        @inbounds u::T = exp(-sinog[k])
+        @inbounds u = exp(-sinog[k])
         @inbounds n = photons[k]
         @inbounds low_sample[k] = count(1:n) do _
             rand(a, measure) <= u && rand(c, detector) <= ϵ
@@ -78,20 +130,13 @@ function sample_sinogram(
     else
         @. low_sample = low_sample / max_photons
     end
-    CTSinogram(low_sample)
+    low_sample
 end
 
-sample_sinogram(nphotons::Integer; kwargs...) =
-    x -> sample_sinogram(x; nphotons, kwargs...)
-sample_sinogram(; kwargs...) = x -> sample_sinogram(x; kwargs...)
+simulate_ct(nphotons::Integer; kwargs...) =
+    x -> simulate_ct(x; nphotons, kwargs...)
+simulate_ct(; kwargs...) = x -> simulate_ct(x; kwargs...)
 
-function Random.rand(sinog::CTSinogram; kwargs...)
-    sinog ↣ sample_sinogram(; kwargs...)
-end
-
-function Random.rand(sinog::CTSinogram, nphotons::Integer; kwargs...)
-    rand(sinog; nphotons, kwargs...)
-end
 
 """
     sample_sinogram_external(sinog::AbstractMatrix{T}; <keyword arguments>) where {T <: Real}
@@ -145,3 +190,6 @@ function sample_sinogram_external(
     ))
     read_ct_image(resampled_path; rows = nd, cols = nϕ)
 end
+
+
+@deprecate resample_sinogram sample_sinogram_external false
