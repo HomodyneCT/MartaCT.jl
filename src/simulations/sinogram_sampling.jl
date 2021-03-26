@@ -14,28 +14,43 @@ end
 end
 
 
-"""StatsBase.sample(data::CTSinogram[; nsamples=1000, nblks=1, nbins=nothing])
+"""
+    StatsBase.sample(data::CTSinogram, xs::AbstractVector[; nsamples=1000, nblks=1, nbins=nothing])
+
+Compute `nsamples` from `xs` according to the distribution given by each column
+of `data`. Optionally, if `nblks > 1`, `nblks × nsamples` samples are computed.
+The sampled data are collected into a histogram of length `nbins` for each
+column in `data`. The resulting data have size `(nbins, size(data, 2), nblks)`.
 """
 function StatsBase.sample(
-    marg::CTSinogram;
-    nsamples::Integer=1000,
-    nblks::Integer=1
+    data::CTSinogram,
+    xs::AbstractVector;
+    nsamples::Integer = 1000,
+    nblks::Integer = 1,
     nbins::Optional{Integer} = nothing,
 )
-    nd, nϕ = size(marg)
-    nbins = maybe(nd, nbins)
-	dims = (nbins, nϕ, nblks)
-	sampled = similar(marg, dims)
-	@inbounds for k ∈ axes(sampled, 3), j ∈ axes(sampled, 2)
-		ws = StatsBase.weights(view(marg, :, j))
-		px = StatsBase.sample(ws, nsamples)
-		h = normalize(
-            StatsBase.fit(StatsBase.Histogram, px; nbins);
-            mode = :probability,
-        )
-		sampled[:,j,k] .= h.weights
-	end
-	nblks == 1 && return reshape(sampled, nbins, nϕ)
+    nd, nϕ = size(data)
+    @assert length(xs) == nd "Dimension mismatch: `xs` vector should match first dimension of `data`"
+    Random.seed!()
+    nbins = maybe(nd+1, nbins)
+    ζ = _half(xs)
+    bins = linspace(-ζ..ζ, nbins+1)
+	sampled = similar(data, (nbins, nϕ, nblks))
+    pxs = fill(similar(sampled, nsamples), 1)
+    Threads.resize_nthreads!(pxs)
+	Threads.@threads for k ∈ axes(sampled, 3)
+        id = Threads.threadid()
+        px = pxs[id]
+        @inbounds for j ∈ axes(sampled, 2)
+            ws = StatsBase.weights(view(data, :, j))
+            StatsBase.sample!(xs, ws, px)
+            h = normalize(
+                StatsBase.fit(StatsBase.Histogram, px, bins);
+                mode = :probability,
+            )
+            sampled[:,j,k] .= h.weights
+        end
+    end
 	sampled
 end
 

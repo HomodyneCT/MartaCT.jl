@@ -2,12 +2,9 @@ module Simulations
 
 using ..Monads
 using ..CTImages
-using ..Utils: linspace
-using ProgressMeter, LinearAlgebra
+using ..Utils: linspace, _half
+using ProgressMeter, LinearAlgebra, IntervalSets
 import Random, Distributions, StatsBase
-const Rnd = Random
-const Dist = Distributions
-const SB = StatsBase
 
 abstract type AbstractSimulation end
 
