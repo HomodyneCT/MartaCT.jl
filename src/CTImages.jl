@@ -304,8 +304,8 @@ function polar2cart(
     if diag
         ν *= hypot(x₀, y₀) / κ
     end
-    Δr::T = (nr - 1) / (κ * ν)
-    Δθ::T = (nθ - 1) / 2π
+    Δr::T = (nr-1) / (κ * ν)
+    Δθ::T = nθ / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
     rows, cols = length(ys), length(xs)
