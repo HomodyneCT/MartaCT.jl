@@ -63,3 +63,4 @@ docbuild.xml
 Makefile
 .tags
 .vscode/
+Manifest.toml
