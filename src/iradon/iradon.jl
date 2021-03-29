@@ -30,13 +30,12 @@ include("fbpa_square.jl")
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-    ϕ₀ = deg2rad(α₀)
-    ϕ₁ = ϕ₀ + deg2rad(α)
+    ϕs = deg2rad(α₀)..(deg2rad(α₀) + deg2rad(α))
     sθ, cθ = sincos(atan(rows, cols))
     x₀, y₀ = cθ / ν, sθ / ν
     xs = linspace(eltype(sinog), -x₀..x₀, cols)
     ys = linspace(eltype(sinog), -y₀..y₀, rows)
-    a(sinog, xs, ys, ϕ₀..ϕ₁; kwargs...)
+    a(sinog, xs, ys; ϕs, kwargs...)
 end
 
 
@@ -59,13 +58,12 @@ end
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd), rows)
     cols = maybe(rows, cols)
-    ϕ₀ = deg2rad(α₀)
-    ϕ₁ = ϕ₀ + deg2rad(α)
+    ϕs = deg2rad(α₀)..(deg2rad(α₀) + deg2rad(α))
     sθ, cθ = sincos(atan(rows, cols))
     x₀, y₀ = cθ / ν, sθ / ν
     xs = linspace(eltype(sinog), -x₀..x₀, cols)
     ys = linspace(eltype(sinog), -y₀..y₀, rows)
-    a(sinog, xs, ys, ϕ₀..ϕ₁; kwargs...)
+    a(sinog, xs, ys; ϕs, kwargs...)
 end
 
 @inline function iradon(sinog::AbstractMatrix; kwargs...)
@@ -75,7 +73,7 @@ end
 @inline function iradon(
     sinog::AbstractMatrix,
     xs::AbstractVector,
-    ys::AbstractVector;
+    ys::AbstractVector,
     kwargs...
 )
     iradon(sinog, xs, ys, FBP(); kwargs...)
