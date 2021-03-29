@@ -304,8 +304,8 @@ function polar2cart(
     if diag
         ν *= hypot(x₀, y₀) / κ
     end
-    Δr::T = (nr-1) / (κ * ν)
-    Δθ::T = nθ / 2π
+    δri::T = (nr-1) / (κ * ν)
+    δθi::T = nθ / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
     rows, cols = length(ys), length(xs)
@@ -326,8 +326,8 @@ function polar2cart(
         @inbounds x, y = xs[ix], ys[iy]
         r = _compute_radius(x, y)
         θ = mod2pi(atan(y, x))
-        R = r * Δr + 1
-        Θ = θ * Δθ + 1
+        R = r * δri + 1
+        Θ = θ * δθi + 1
         if R ∈ 1..nr && Θ ∈ 1..nθ
             @inbounds mc[iy,ix] = interp(Θ, R)
         end
