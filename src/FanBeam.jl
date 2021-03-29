@@ -6,6 +6,7 @@ using ..Monads
 using ..CTImages: CTSinogram
 using ..Geometry
 using ..Interpolation: interpolate, AbstractInterp2DOrNone
+using ..Utils: linspace, ORI
 using IntervalSets
 
 
@@ -50,9 +51,12 @@ function para2fan(
     @assert (nd, nϕ) == size(sinog_para) "Sinogram size $(size(sinog_para)) should match geometry ($nd,$nϕ)"
 
     D::T = f2iso(fbg)
-    Δβ::T = deg2rad(scan_angle(fbg)) / (nϕ-1) # This should be 2π / (nβ-1)?
+    #Δβ::T = deg2rad(scan_angle(fbg)) / (nϕ-1) # This should be 2π / (nβ-1)?
+    Δβ::T = deg2rad(scan_angle(fbg)) # This should be 2π?
+    βs = linspace(T, ORI(0..Δβ), nϕ)
     β₀::T = deg2rad(start_angle(fbg)) + 1
-    Δϕ::T = 2π / (nϕ-1) # This should be α / (nϕ-1)?
+    #Δϕ::T = 2π / (nϕ-1) # This should be α / (nϕ-1)?
+    Δϕ::T = 2π / nϕ
     γ::T = fan_angle(fbg)
     Δγ::T = γ / nd
     x′max::T = D * sin(γ/2)
@@ -82,11 +86,12 @@ function para2fan(
     end
 
     Threads.@threads for iγ ∈ 1:nd
-        γ′::T = (iγ - γ₀) * Δγ
-        x′::T = D * sin(γ′)
+        γ′ = (iγ - γ₀) * Δγ
+        x′ = D * sin(γ′)
         @inbounds @simd for iβ ∈ 1:nϕ
-            β::T = T(iβ - β₀) * Δβ
-            ϕ::T = β - γ′
+            #β::T = T(iβ - β₀) * Δβ
+            β = βs[iβ]
+            ϕ = β - γ′
             sinog_fan[iγ, iβ] = compute_value(x′, ϕ)
         end
     end
@@ -176,8 +181,11 @@ function fan2para(
 
     D::T = f2iso(fbg)
     γ::T = fan_angle(fbg)
-    Δϕ::T = deg2rad(scan_angle(fbg)) / (nϕ - 1)
-    Δβ::T = 2π / (nϕ - 1)
+    #Δϕ::T = deg2rad(scan_angle(fbg)) / (nϕ - 1)
+    Δϕ::T = deg2rad(scan_angle(fbg))
+    ϕs = linspace(T, ORI(0..Δϕ), nϕ)
+    #Δβ::T = 2π / (nϕ - 1)
+    Δβ::T = 2π / nϕ
     β₀::T = deg2rad(start_angle(fbg))
     Δγ::T = γ / nd
     x′max::T = D * sin(γ/2)
@@ -212,12 +220,13 @@ function fan2para(
     end
 
     Threads.@threads for ix ∈ 1:nd
-        x′::T = (ix - x′₀) * Δx′
-        γ′::T = asin(x′ / D)
+        x′ = (ix - x′₀) * Δx′
+        γ′ = asin(x′ / D)
         @inbounds @simd for iϕ ∈ 1:nϕ
-            ϕ::T = (iϕ - 1) * Δϕ
+            #ϕ::T = (iϕ - 1) * Δϕ
+            ϕ = ϕs[iϕ]
             #β::T = ϕ - γ′ + β₀ # Default tomograph geometry requires '-'
-            β::T = ϕ + γ′ + β₀ # It does not!
+            β = ϕ + γ′ + β₀ # It does not!
             sinog_para[ix, iϕ] = compute_value(γ′, β)
         end
     end
