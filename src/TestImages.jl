@@ -204,6 +204,7 @@ struct CircleParams{T} <: AbstractImageParams{T}
     radius::Int # Calibration circle radius
     rows::Int # Test image rows
     cols::Int # Test image cols
+    nϕ::Int # Number of angles to compute the circle
     gray_scale::ClosedInterval{T} # Gray scale interval.
     calibration_value::T # Value for algorithm calibration.
     background::T
@@ -212,6 +213,7 @@ struct CircleParams{T} <: AbstractImageParams{T}
         radius::Integer,
         rows::Integer,
         cols::Integer,
+        nϕ::Optional{Integer} = nothing,
         gray_scale::ClosedInterval = -1000..1000,
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
@@ -230,6 +232,7 @@ struct CircleParams{T} <: AbstractImageParams{T}
             radius,
             rows,
             cols,
+            maybe(max(rows,cols), nϕ),
             gray_scale,
             calibration_value,
             background,
@@ -252,6 +255,7 @@ function CircleParams(
     height::Optional{Integer} = nothing,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
+    nϕ::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
     calibration_value::Optional{Real} = nothing,
     background::Optional{Real} = nothing,
@@ -267,7 +271,7 @@ function CircleParams(
     height = isnothing(rows) ? round(Int, width * factor) : rows
     radius = isnothing(radius) ? round(Int, width * circ_zoom) : radius
     rows, cols = height, width
-    CircleParams{T}(radius, rows, cols, gray_scale, calibration_value, background)
+    CircleParams{T}(radius, rows, cols, nϕ, gray_scale, calibration_value, background)
 end
 
 
@@ -345,6 +349,7 @@ function circle_image(
     cols::Optional{Integer} = nothing,
     swidth::Optional{Integer} = nothing,
     sheight::Optional{Integer} = nothing,
+    nϕ::Optional{Integer} = nothing,
     ν::Real = 1,
     kwargs...,
 ) where {T<:Real}
@@ -352,7 +357,7 @@ function circle_image(
     cols = isnothing(swidth) ? maybe(rows, cols) : swidth
     nr = min(rows, cols) ÷ 2
     polar2cart(
-        circle_polar_image(T; nr, radius, calibration_value, background);
+        circle_polar_image(T; nr, nϕ, radius, calibration_value, background);
         rows, cols, background, ν, kwargs...)
 end
 
@@ -383,6 +388,7 @@ function circle_image(imp::CircleParams; kwargs...)
         imp.background,
         imp.rows,
         imp.cols,
+        imp.nϕ,
         kwargs...,
     )
 end

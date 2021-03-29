@@ -157,6 +157,17 @@ end
 @inline function iradon(
     sinog::AbstractMatrix,
     xs::AbstractVector,
+    ys::AbstractVector,
+    alg::AbstractReconstructionAlgorithm,
+    coo::AbstractCoordinates = Cartesian();
+    kwargs...
+)
+    alg(sinog, xs, ys, ϕs, coo; kwargs...)
+end
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    xs::AbstractVector,
     alg::AbstractReconstructionAlgorithm,
     coo::AbstractCoordinates = Cartesian();
     kwargs...

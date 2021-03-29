@@ -282,6 +282,7 @@ function polar2cart(
     mp::M,
     xs::AbstractVector,
     ys::AbstractVector;
+    δθ::Optional{Real} = nothing,
     ν::Real = 1,
     diag::Bool = false,
     background::Optional{Real} = nothing,
@@ -305,7 +306,7 @@ function polar2cart(
         ν *= hypot(x₀, y₀) / κ
     end
     δri::T = (nr-1) / (κ * ν)
-    δθi::T = nθ / 2π
+    δθi::T = maybe(inv, nθ / 2π, δθ)
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
     rows, cols = length(ys), length(xs)

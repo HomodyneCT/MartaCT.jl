@@ -84,9 +84,9 @@ macro _defiradonfn(f::Symbol, body)
         @inline function $f(
             sinog::AbstractMatrix{T},
             xs::AbstractVector{U1},
-            ys::AbstractVector{U2},
-            ϕs::Optional{ClosedInterval} = nothing;
+            ys::AbstractVector{U2};
             ν::Real = 1,
+            ϕs::Optional{I} = nothing,
             background::Optional{U3} = nothing,
             filter::Optional{F} = nothing,
             interpolation::Optional{Interp} = nothing,
@@ -95,6 +95,7 @@ macro _defiradonfn(f::Symbol, body)
             T <: Real,
             U1 <: Real,
             U2 <: Real,
+            I <: Interval{:closed},
             U3 <: Real,
             F <: AbstractCTFilter,
             Interp <: AbstractInterp2DOrNone,
@@ -109,8 +110,8 @@ macro _defiradonfn(f::Symbol, body)
             interpolation = maybe(interpolate, interpolation)
             interp = interpolation(filtered)
             t₀::T = (nd + 1) / 2
-            ϕs = maybe(0..2π, ϕs)
-            scϕs = sincos.(linspace(T, ORI(ϕs), nϕ))
+            ϕs = maybe(ORI(0..2π), ϕs)
+            scϕs = sincos.(linspace(T, ϕs, nϕ))
             z::T = maybe(zero(T), background)
             tomog = similar(_atype(sinog), rows, cols)
             fill!(tomog, z)
@@ -143,37 +144,18 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
             sinog::AbstractMatrix,
             xs::AbstractVector,
             ys::AbstractVector,
-            ϕs::Optional{ClosedInterval} = nothing;
+            coo::AbstractCoordinates = Cartesian();
             kwargs...
         )
-            $f(sinog, xs, ys, ϕs; kwargs...)
+            $f(sinog, xs, ys, coo; kwargs...)
         end
         @inline function (a::$A)(
             sinog::AbstractMatrix,
             xs::AbstractVector,
-            ϕs::Optional{ClosedInterval} = nothing;
+            coo::AbstractCoordinates = Cartesian();
             kwargs...
         )
-            $f(sinog, xs, xs, ϕs; kwargs...)
-        end
-        @inline function (a::$A)(
-            sinog::AbstractMatrix,
-            xs::AbstractVector,
-            ys::AbstractVector,
-            ::Cartesian,
-            ϕs::Optional{ClosedInterval} = nothing;
-            kwargs...
-        )
-            $f(sinog, xs, ys, ϕs; kwargs...)
-        end
-        @inline function (a::$A)(
-            sinog::AbstractMatrix,
-            xs::AbstractVector,
-            ::Cartesian,
-            ϕs::Optional{ClosedInterval} = nothing;
-            kwargs...
-        )
-            $f(sinog, xs, xs, ϕs; kwargs...)
+            $f(sinog, xs, xs, coo; kwargs...)
         end
         @inline function (a::$A)(sinog::AbstractMatrix; kwargs...)
             _iradon(a, sinog; kwargs...)
