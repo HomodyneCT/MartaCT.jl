@@ -78,19 +78,19 @@ function struct2dict(obj)
     end)
 end
 
-@inline function _compute_radius(x::T, y::T, d::T) where {T <: Real}
+@inline function _compute_radius(x::T, y::T, d::T)::T where {T <: Real}
     x == 0 && return abs(y) * d + one(T)
     y == 0 && return abs(x) * d + one(T)
     return √(x^2 + y^2) * d + one(T)
 end
 
-@inline function _compute_angle(x::T, y::T, d::T) where {T <: Real}
+@inline function _compute_angle(x::T, y::T, d::T)::T where {T <: Real}
     θ = atan(y, x)
     θ < 0 && return (θ + 2π) * d + one(T)
     θ * d + one(T)
 end
 
-@inline function _wrap_angle(θ::T, n::Integer) where {T <: Real}
+@inline function _wrap_angle(θ::T, n::Integer)::T where {T <: Real}
     θ >= n + 1//2 && return one(T)
     θ > n && return n
     θ
