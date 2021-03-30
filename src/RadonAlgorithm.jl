@@ -84,7 +84,8 @@ macro _defiradonfn(f::Symbol, body)
         @inline function $f(
             sinog::AbstractMatrix{T},
             xs::AbstractVector{U1},
-            ys::AbstractVector{U2};
+            ys::AbstractVector{U2},
+            ::Cartesian;
             ν::Real = 1,
             ϕs::Optional{I} = nothing,
             background::Optional{U3} = nothing,
@@ -116,6 +117,14 @@ macro _defiradonfn(f::Symbol, body)
             tomog = similar(_atype(sinog), rows, cols)
             fill!(tomog, z)
             CTTomogram($body)
+        end
+        @inline function $f(
+            sinog::AbstractMatrix{T},
+            xs::AbstractVector{X},
+            ys::AbstractVector{Y};
+            kwargs...
+        ) where {T<:Real,X<:Real,Y<:Real}
+            $f(sinog, xs, ys, Cartesian(); kwargs...)
         end
     end)
 end

@@ -8,7 +8,7 @@ export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
 import ..Monads: mjoin
-using ..Utils: linspace, _half
+using ..Utils: linspace, _half, _compute_radius, _compute_angle, _wrap_angle
 import ..Utils: _atype
 using ..Applicative, ..Monads, ..Interpolation
 using ..Geometry:
@@ -282,7 +282,6 @@ function polar2cart(
     mp::M,
     xs::AbstractVector,
     ys::AbstractVector;
-    δθ::Optional{Real} = nothing,
     ν::Real = 1,
     diag::Bool = false,
     background::Optional{Real} = nothing,
@@ -306,7 +305,7 @@ function polar2cart(
         ν *= hypot(x₀, y₀) / κ
     end
     δri::T = (nr-1) / (κ * ν)
-    δθi::T = maybe(inv, nθ / 2π, δθ)
+    δθi::T = nθ / 2π
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
     rows, cols = length(ys), length(xs)
@@ -317,20 +316,14 @@ function polar2cart(
     z::T = maybe(zero(T), background)
     mc = similar(mp, rows, cols)
     fill!(mc, z)
-    @inline function _compute_radius(x, y)
-        x == 0 && return abs(y)
-        y == 0 && return abs(x)
-        return √(x^2 + y^2)
-    end
     Threads.@threads for k ∈ eachindex(indices)
         @inbounds ix, iy = indices[k]
         @inbounds x, y = xs[ix], ys[iy]
-        r = _compute_radius(x, y)
-        θ = mod2pi(atan(y, x))
-        R = r * δri + 1
-        Θ = θ * δθi + 1
-        if R ∈ 1..nr && Θ ∈ 1..nθ
-            @inbounds mc[iy,ix] = interp(Θ, R)
+        r::T = _compute_radius(x, y, δri)
+        θ::T = _compute_angle(x, y, δθi)
+        if r ∈ 1..nr && θ ∈ 1..nθ+1
+            θ = _wrap_angle(θ, nθ)
+            @inbounds mc[iy,ix] = interp(θ, r)
         end
     end
     mc

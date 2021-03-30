@@ -12,8 +12,7 @@ function fbp_fft_square end
 
 @_defiradonfn fbp_fft_square begin
     l = min(rows, cols)
-    x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
-    κ::T = min(last(xs), last(ys))
+    κ::T = min(_half(xs), _half(ys))
     xxs = xs / κ
     yys = ys / κ
     temp_images = fill(deepcopy(tomog), 1)
