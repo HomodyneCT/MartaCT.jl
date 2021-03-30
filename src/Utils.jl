@@ -2,17 +2,14 @@ module Utils
 
 Base.Experimental.@optlevel 3
 
-
 export linspace
 export yaml_repr, struct2dict
 export ORI
 
 using IntervalSets
 
-
 const ORI{T} = Interval{:closed,:open,T}
 ORI(i::Interval) = ORI{eltype(i)}(i)
-
 
 function _atype end
 function _half end
@@ -79,6 +76,24 @@ function struct2dict(obj)
         field = getproperty(obj, p)
         p => yaml_repr(field)
     end)
+end
+
+@inline function _compute_radius(x::T, y::T, d::T) where {T <: Real}
+    x == 0 && return abs(y) * d + one(T)
+    y == 0 && return abs(x) * d + one(T)
+    return √(x^2 + y^2) * d + one(T)
+end
+
+@inline function _compute_angle(x::T, y::T, d::T) where {T <: Real}
+    θ = atan(y, x)
+    θ < 0 && return (θ + 2π) * d + one(T)
+    θ * d + one(T)
+end
+
+@inline function _wrap_angle(θ::T, n::Integer) where {T <: Real}
+    θ >= n + 1//2 && return one(T)
+    θ > n && return n
+    θ
 end
 
 end # module

@@ -15,7 +15,6 @@ function fbp_fft_square end
     κ::T = min(_half(xs), _half(ys))
     xxs = xs / κ
     yys = ys / κ
-    @show ϕs
     temp_images = fill(deepcopy(tomog), 1)
     Threads.resize_nthreads!(temp_images)
     p = _iradon_progress(nϕ, progress)
