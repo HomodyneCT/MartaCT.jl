@@ -2,7 +2,6 @@ module Marta
 
 using Reexport
 import
-    Measures,
     Statistics,
     LinearAlgebra,
     IterTools,
