@@ -28,6 +28,7 @@ function StatsBase.sample(
     nsamples::Integer = 1000,
     nblks::Integer = 1,
     nbins::Optional{Integer} = nothing,
+    progress::Bool = true,
 )
     nd, nϕ = size(data)
     @assert length(xs) == nd "Dimension mismatch: `xs` vector should match first dimension of `data`"
@@ -38,6 +39,8 @@ function StatsBase.sample(
 	sampled = similar(data, (nbins, nϕ, nblks))
     pxs = fill(similar(sampled, nsamples), 1)
     Threads.resize_nthreads!(pxs)
+    p = Progress(
+        size(sampled, 3); dt=0.2, desc="Computing samples...", enabled=progress)
 	Threads.@threads for k ∈ axes(sampled, 3)
         id = Threads.threadid()
         px = pxs[id]
@@ -50,6 +53,7 @@ function StatsBase.sample(
             )
             sampled[:,j,k] .= h.weights
         end
+        next!(p)
     end
 	sampled
 end
