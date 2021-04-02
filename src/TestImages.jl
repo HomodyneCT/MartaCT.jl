@@ -214,12 +214,10 @@ struct CircleParams{T} <: AbstractImageParams{T}
         rows::Integer,
         cols::Integer,
         nϕ::Optional{Integer} = nothing,
-        nphi::Optional{Integer} = nothing,
         gray_scale::ClosedInterval = -1000..1000,
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
     ) where {T<:Real}
-        nϕ = maybe(nϕ, nphi)
         background = maybe(leftendpoint(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
             mean(gray_scale) : calibration_value
