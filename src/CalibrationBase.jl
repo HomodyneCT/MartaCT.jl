@@ -6,8 +6,7 @@ export
     calibrate_image,
     calibrate_image!,
     calibrate_tomogram,
-    calibrate_tomogram!,
-    calibration_data
+    calibrate_tomogram!
 
 using SimpleTraits
 using ..Monads

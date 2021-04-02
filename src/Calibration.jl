@@ -2,19 +2,16 @@ module Calibration
 
 Base.Experimental.@optlevel 3
 
-using IntervalSets
+using IntervalSets,  Statistics
 using ..Monads
 using ..CTImages
 using ..TestImages
-
-import Statistics; const Stat = Statistics
 import ..CalibrationBase:
     calibrate_image,
     calibrate_image!,
     calibrate_tomogram,
     calibrate_tomogram!,
     calibration_data
-
 
 function calibration_helper(
     image::AbstractMatrix,
@@ -31,7 +28,7 @@ function calibration_helper(
         CartesianIndices,
     },
 )
-    ClosedInterval(Stat.mean.((image[min_pos], image[max_pos]))...)
+    ClosedInterval(mean.((image[min_pos], image[max_pos]))...)
 end
 
 
@@ -40,7 +37,7 @@ function calibration_helper(
     min_pos::Tuple{<:Any,<:Any},
     max_pos::Tuple{<:Any,<:Any},
 )
-    ClosedInterval(Stat.mean.((image[min_pos...], image[max_pos...]))...)
+    ClosedInterval(mean.((image[min_pos...], image[max_pos...]))...)
 end
 
 
@@ -49,7 +46,7 @@ function calibration_helper(
     min_pos::AbstractArray{C},
     max_pos::AbstractArray{C},
 ) where {C<:Base.AbstractCartesianIndex}
-    ClosedInterval(Stat.mean.((image[min_pos], image[max_pos]))...)
+    ClosedInterval(mean.((image[min_pos], image[max_pos]))...)
 end
 
 

@@ -6,7 +6,7 @@ As a starting point we prepare the session importing some
 packages:
 
 ```@example ex_img
-using Marta, Plots, Plots.Measures
+using Marta, Plots, Plots.Measures, IntervalSets
 nothing # hide
 ```
 

@@ -35,6 +35,7 @@ include("CTPlots.jl")
     .Applicative,
     .Monads,
     .Info,
+    .CalibrationBase,
     .Coordinates,
     .Geometry,
     .CTIO,
