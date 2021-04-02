@@ -84,7 +84,7 @@ We can just do the following
 
 ```@example ex_img
 calibrate_image!(tomog, img; window=-1000..1000)
-plot(tomog)
+plot(tomog, rightmargin=0.5cm)
 savefig("tomog_calib.svg"); nothing # hide
 ```
 

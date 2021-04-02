@@ -6,8 +6,12 @@ A package for image reconstruction. The main field of
 application for this package is medical imaging, but it can
 also serve as a base for Quantum Tomography applications.
 
-## Contents
+### Contents
 
 ```@contents
-Pages = ["Installation.md", "Tutorial.md", "GeneralIndex.md"]
+Pages = [
+  "Installation.md",
+  "Tutorial.md",
+  "GeneralIndex.md",
+]
 ```
