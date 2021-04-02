@@ -1,11 +1,7 @@
 using Documenter
 using Marta
 
-makedocs(
-    sitename = "Marta",
-    format = Documenter.HTML(),
-    modules = [Marta]
-)
+include("makedocs.jl")
 
 deploydocs(
     repo = "gitlab.com/homodyne-ct/Marta.git",
