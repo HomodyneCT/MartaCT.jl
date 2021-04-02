@@ -2,7 +2,14 @@
 
 _CT images reconstruction and analysis_
 
-A package for image reconstruction. The main field of application for this package is medical imaging, but it can also serve as a base for Quantum Tomography applications.
+A package for image reconstruction. The main field of
+application for this package is medical imaging, but it can
+also serve as a base for Quantum Tomography applications.
+
+## Contents
+
+```@contents
+```
 
 ## Getting started
 
@@ -15,7 +22,7 @@ import Pkg
 Pkg.add(url="https://gitlab.com/homodyne-ct/Marta.git")
 ```
 
-### Tutorial
+## Tutorial
 
 Let's see a brief example on how Marta can be used.
 
@@ -23,15 +30,16 @@ As a starting point we prepare the session importing some
 packages:
 
 ```@example ex_img
-using Marta, Plots
+using Marta, Plots, Plots.Measures
 nothing # hide
 ```
 
 ```@setup ex_img
+ENV["GKS_WSTYPE"] = "svg"
 using Plots.Measures
 gr()
 Plots.reset_defaults()
-Plots.default(size=(400,200), margin=1cm)
+Plots.default(size=(500,300))
 ```
 
 Now we can generate our first image from the available test
@@ -40,25 +48,28 @@ images.
 
 ```@example ex_img
 img = GrayScalePyramid()
-pbg = ParallelBeamGeometry(img)
+pbg = ParallelBeamGeometry(img, nϕ=800)
 nothing # hide
 ```
 
 We can plot the image as
 
 ```@example ex_img
-plot(img)
+plot(img, rightmargin=0.5cm)
 savefig("img.svg"); nothing # hide
 ```
 
 ![](img.svg)
+
+The gray scale values of the image are in Hounsfield units,
+typically used in medical applications.
 
 Now we can compute the sinogram of `img` using the function
 [`project_image`](@ref):
 
 ```@example ex_img
 sinog = project_image(img, RadonInfo(pbg), progress=false, rescaled=true)
-plot(sinog)
+plot(sinog, rightmargin=1cm)
 savefig("sinog.svg"); nothing # hide
 ```
 
@@ -72,8 +83,13 @@ function [`iradon`](@ref):
 
 ```@example ex_img
 tomog = reconstruct_image(sinog, FBPInfo(pbg), progress=false)
-plot(tomog)
+plot(tomog, rightmargin=1cm)
 savefig("tomog.svg"); nothing # hide
 ```
 
 ![](tomog.svg)
+
+## Index
+
+```@index
+```
