@@ -8,9 +8,9 @@ A package for image reconstruction. The main field of application for this packa
 
 ### Installation
 
-Marta can be installed with the following command from the Julia REPL
+Marta can be installed with the following commands:
 
-```@repl
+```@raw julia
 import Pkg
 Pkg.add(url="https://gitlab.com/homodyne-ct/Marta.git")
 ```
