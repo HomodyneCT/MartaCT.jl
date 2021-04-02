@@ -75,6 +75,9 @@ function _precompile_()
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{FanBeamGeometry},CircleImage{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{ParallelBeamGeometry},CircleImage{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,),Tuple{Int64}},Type{ParallelBeamGeometry},CircleImage{Float64}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width, :height),Tuple{Int64,Int64}},Type{ParallelBeamGeometry},Type{Float32}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width, :height, :nϕ),Tuple{Int64,Int64,Int64}},Type{FanBeamGeometry},Type{Float32}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width, :height, :nϕ),Tuple{Int64,Int64,Int64}},Type{FanBeamGeometry},Type{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{CircleImage},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{CircleImage},Type{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,),Tuple{Int64}},Type{GrayScaleLine},Type{Float32}})
@@ -87,12 +90,13 @@ function _precompile_()
     Base.precompile(Tuple{Core.kwftype(typeof(circle_image)),NamedTuple{(:radius, :calibration_value, :background, :rows),Tuple{Int64,Float64,Float64,Int64}},typeof(circle_image),Type{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(gray_scale_image)),NamedTuple{(:swidth, :sheight, :gray_scale, :background),Tuple{Int64,Int64,IntervalSets.Interval{:closed,:closed,Float32},Float32}},typeof(gray_scale_image),Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(gray_scale_image)),NamedTuple{(:swidth, :sheight, :gray_scale, :background),Tuple{Int64,Int64,IntervalSets.Interval{:closed,:closed,Float64},Float64}},typeof(gray_scale_image),Type{Float64}})
-    Base.precompile(Tuple{Marta.CTImages.var"#147#threadsfor_fun#13"{Float32,StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},Float32,Float32,Marta.Interpolation.var"#1#2"{Array{Float32,2},Marta.Interpolation.NoInterpolation},Array{Tuple{Int64,Int64},1},Array{Float32,2},Base.OneTo{Int64}}})
-    Base.precompile(Tuple{Marta.CTImages.var"#147#threadsfor_fun#13"{Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},Float64,Float64,Marta.Interpolation.var"#1#2"{Array{Float64,2},Marta.Interpolation.NoInterpolation},Array{Tuple{Int64,Int64},1},Array{Float64,2},Base.OneTo{Int64}}})
-    Base.precompile(Tuple{Marta.FanBeam.var"#177#threadsfor_fun#3"{Float32,Int64,Float32,StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},CTSinogram{Float32,Array{Float32,2}},Marta.FanBeam.var"#compute_value#2"{Float32,Int64,Int64,Float32,Float32,Float32,Marta.Interpolation.var"#1#2"{CTSinogram{Float32,Array{Float32,2}},Marta.Interpolation.BilinearInterpolation},Float32},UnitRange{Int64}}})
-    Base.precompile(Tuple{Marta.FanBeam.var"#177#threadsfor_fun#3"{Float64,Int64,Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},CTSinogram{Float64,Array{Float64,2}},Marta.FanBeam.var"#compute_value#2"{Float64,Int64,Int64,Float64,Float64,Float64,Marta.Interpolation.var"#1#2"{CTSinogram{Float64,Array{Float64,2}},Marta.Interpolation.BilinearInterpolation},Float64},UnitRange{Int64}}})
-    Base.precompile(Tuple{Marta.FanBeam.var"#197#threadsfor_fun#10"{Float32,Int64,Float32,StepRangeLen{Float32,Float64,Float64},Float32,StepRangeLen{Float32,Float64,Float64},CTSinogram{Float32,Array{Float32,2}},Marta.FanBeam.var"#compute_value#9"{Float32,Int64,Int64,Float32,Float32,Float32,Marta.Interpolation.var"#1#2"{CTSinogram{Float32,Array{Float32,2}},Marta.Interpolation.BilinearInterpolation},Float32},UnitRange{Int64}}})
-    Base.precompile(Tuple{Marta.FanBeam.var"#197#threadsfor_fun#10"{Float64,Int64,Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},CTSinogram{Float64,Array{Float64,2}},Marta.FanBeam.var"#compute_value#9"{Float64,Int64,Int64,Float64,Float64,Float64,Marta.Interpolation.var"#1#2"{CTSinogram{Float64,Array{Float64,2}},Marta.Interpolation.BilinearInterpolation},Float64},UnitRange{Int64}}})
+    Base.precompile(Tuple{Marta.CTImages.var"#164#threadsfor_fun#13"{Float32,StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},Float32,Float32,Marta.Interpolation.var"#1#2"{Array{Float32,2},Marta.Interpolation.NoInterpolation},Array{Tuple{Int64,Int64},1},Array{Float32,2},Base.OneTo{Int64}}})
+    Base.precompile(Tuple{Marta.CTImages.var"#164#threadsfor_fun#13"{Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},Float64,Float64,Marta.Interpolation.var"#1#2"{Array{Float64,2},Marta.Interpolation.BilinearInterpolation},Array{Tuple{Int64,Int64},1},Array{Float64,2},Base.OneTo{Int64}}})
+    Base.precompile(Tuple{Marta.CTImages.var"#164#threadsfor_fun#13"{Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},Float64,Float64,Marta.Interpolation.var"#1#2"{Array{Float64,2},Marta.Interpolation.NoInterpolation},Array{Tuple{Int64,Int64},1},Array{Float64,2},Base.OneTo{Int64}}})
+    Base.precompile(Tuple{Marta.FanBeam.var"#194#threadsfor_fun#3"{Float32,Int64,Float32,StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},CTSinogram{Float32,Array{Float32,2}},Marta.FanBeam.var"#compute_value#2"{Float32,Int64,Int64,Float32,Float32,Float32,Marta.Interpolation.var"#1#2"{CTSinogram{Float32,Array{Float32,2}},Marta.Interpolation.BilinearInterpolation},Float32},UnitRange{Int64}}})
+    Base.precompile(Tuple{Marta.FanBeam.var"#194#threadsfor_fun#3"{Float64,Int64,Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},CTSinogram{Float64,Array{Float64,2}},Marta.FanBeam.var"#compute_value#2"{Float64,Int64,Int64,Float64,Float64,Float64,Marta.Interpolation.var"#1#2"{CTSinogram{Float64,Array{Float64,2}},Marta.Interpolation.BilinearInterpolation},Float64},UnitRange{Int64}}})
+    Base.precompile(Tuple{Marta.FanBeam.var"#217#threadsfor_fun#10"{Float32,Int64,Float32,StepRangeLen{Float32,Float64,Float64},Float32,StepRangeLen{Float32,Float64,Float64},CTSinogram{Float32,Array{Float32,2}},Marta.FanBeam.var"#compute_value#9"{Float32,Int64,Int64,Float32,Float32,Float32,Marta.Interpolation.var"#1#2"{CTSinogram{Float32,Array{Float32,2}},Marta.Interpolation.BilinearInterpolation},Float32},UnitRange{Int64}}})
+    Base.precompile(Tuple{Marta.FanBeam.var"#217#threadsfor_fun#10"{Float64,Int64,Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},Float64,StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},CTSinogram{Float64,Array{Float64,2}},Marta.FanBeam.var"#compute_value#9"{Float64,Int64,Int64,Float64,Float64,Float64,Marta.Interpolation.var"#1#2"{CTSinogram{Float64,Array{Float64,2}},Marta.Interpolation.BilinearInterpolation},Float64},UnitRange{Int64}}})
     Base.precompile(Tuple{Type{CTScanner{FBPInfo{G,A} where A<:AbstractFBP,D} where D where G},CircleImage{Float32}})
     Base.precompile(Tuple{Type{CTScanner{FBPInfo{G,A} where A<:AbstractFBP,D} where D where G},CircleImage{Float64}})
     Base.precompile(Tuple{Type{CTScanner{FBPInfo{G,A} where A<:AbstractFBP,D} where D where G},FanBeamGeometry{Float32,DefaultTomograph},CircleImage{Float32}})
@@ -120,22 +124,22 @@ function _precompile_()
     Base.precompile(Tuple{typeof(similar),Marta.CTScan.CTImageData.CTData{Float64,Array{Float64,2}},CTSinogram{Float64,Array{Float64,2}}})
     let fbody = try __lookup_kwbody__(which(polar2cart, (Array{Float32,2},StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},))) catch missing end
         if !ismissing(fbody)
-            precompile(fbody, (Int64,Bool,Float32,Bool,Marta.Interpolation.NoInterpolation,typeof(polar2cart),Array{Float32,2},StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},))
+            precompile(fbody, (Int64,Nothing,Bool,Float32,Bool,Marta.Interpolation.NoInterpolation,typeof(polar2cart),Array{Float32,2},StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},))
         end
     end
     let fbody = try __lookup_kwbody__(which(polar2cart, (Array{Float32,2},StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},))) catch missing end
         if !ismissing(fbody)
-            precompile(fbody, (Int64,Bool,Float32,Bool,Nothing,typeof(polar2cart),Array{Float32,2},StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},))
+            precompile(fbody, (Int64,Nothing,Bool,Float32,Bool,Nothing,typeof(polar2cart),Array{Float32,2},StepRangeLen{Float32,Float64,Float64},StepRangeLen{Float32,Float64,Float64},))
         end
     end
     let fbody = try __lookup_kwbody__(which(polar2cart, (Array{Float64,2},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},))) catch missing end
         if !ismissing(fbody)
-            precompile(fbody, (Int64,Bool,Float64,Bool,Marta.Interpolation.NoInterpolation,typeof(polar2cart),Array{Float64,2},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},))
+            precompile(fbody, (Int64,Nothing,Bool,Float64,Bool,Marta.Interpolation.NoInterpolation,typeof(polar2cart),Array{Float64,2},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},))
         end
     end
     let fbody = try __lookup_kwbody__(which(polar2cart, (Array{Float64,2},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},))) catch missing end
         if !ismissing(fbody)
-            precompile(fbody, (Int64,Bool,Float64,Bool,Nothing,typeof(polar2cart),Array{Float64,2},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},))
+            precompile(fbody, (Int64,Nothing,Bool,Float64,Bool,Nothing,typeof(polar2cart),Array{Float64,2},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},StepRangeLen{Float64,Base.TwicePrecision{Float64},Base.TwicePrecision{Float64}},))
         end
     end
 end
