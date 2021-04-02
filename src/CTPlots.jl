@@ -12,7 +12,7 @@ using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn, CTImageOrTomog
 using ..CTImages: ctimage, ctsinogram, cttomogram
 using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
-using ..Utils: linspace
+using ..Utils: linspace, ORI
 using IntervalSets
 
 function __init__()
@@ -114,11 +114,8 @@ const _sinog_xticks = [45i for i in 0:8]
 
 @recipe function f(sinog::CTSinogram, α::Optional{Real} = nothing)
     nd, nϕ = size(sinog)
-    #Δϕ = 360 / (nϕ - 1)
-    #xs = (0:nϕ - 1) * Δϕ # Now we use midpoints and not edges to support more backends
-    xs = linspace(0..360, nϕ)
-    #ys = (0:nd - 1) .- (nd - 1) / 2
-    α = maybe(nd - 1, α)
+    xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
+    α = maybe((nd - 1) / 2, α)
     ys = linspace(-α..α, nd)
     seriestype --> :heatmap
     seriescolor --> :grays

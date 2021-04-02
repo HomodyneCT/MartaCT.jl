@@ -52,6 +52,7 @@ macro _defradonfn(f::Symbol, body)
             ts::AbstractVector{X},
             ϕs::AbstractVector{Y};
             ν::Real = 1,
+            scale::Optional{Real} = nothing,
             background::Optional{Z} = nothing,
             rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
@@ -63,6 +64,7 @@ macro _defradonfn(f::Symbol, body)
             Z <: Real,
             Interp <: AbstractInterp2DOrNone,
         }
+            ν = maybe(ν, scale)
             rows, cols = size(image)
             nd = length(ts)
             nϕ = length(ϕs)
@@ -87,7 +89,9 @@ macro _defiradonfn(f::Symbol, body)
             ys::AbstractVector{U2},
             ::Cartesian;
             ν::Real = 1,
+            scale::Optional{Real} = nothing,
             ϕs::Optional{I} = nothing,
+            angles::Optional{J} = nothing,
             background::Optional{U3} = nothing,
             filter::Optional{F} = nothing,
             interpolation::Optional{Interp} = nothing,
@@ -97,10 +101,13 @@ macro _defiradonfn(f::Symbol, body)
             U1 <: Real,
             U2 <: Real,
             I <: Interval{:closed},
+            J <: Interval{:closed},
             U3 <: Real,
             F <: AbstractCTFilter,
             Interp <: AbstractInterp2DOrNone,
         }
+            ν = maybe(ν, scale)
+            ϕs = maybe(ϕs, angles)
             nd, nϕ = size(sinog)
             cols = length(xs)
             rows = length(ys)

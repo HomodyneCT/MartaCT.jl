@@ -19,12 +19,6 @@ const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry)
 
 abstract type AbstractGeometry  end
 
-function getproperty(g::AbstractGeometry, s::Symbol)
-    s ≡ :width && return g.cols
-    s ≡ :height && return g.rows
-    getfield(g, s)
-end
-
 
 abstract type AbstractTomograph end
 
@@ -50,6 +44,15 @@ struct ParallelBeamGeometry{T <: Real,CT <: AbstractTomograph} <: AbstractParall
     α::T
     α₀::T
     center::T
+end
+
+@inline function getproperty(g::ParallelBeamGeometry, s::Symbol)
+    s ≡ :width && return g.cols
+    s ≡ :height && return g.rows
+    s ≡ :nphi && return getfield(g, nϕ)
+    s ≡ :alpha && return getfield(g, α)
+    s ≡ :alpha0 && return getfield(g, α₀)
+    getfield(g, s)
 end
 
 eltype(::Type{G}) where {G <: ParallelBeamGeometry{T}} where {T} = T
@@ -86,16 +89,22 @@ Construct geometry for the simulation.
 function ParallelBeamGeometry(
     ::Type{T} = Float32,
     ct::AbstractTomograph = DefaultTomograph();
-    nϕ::Optional{Int} = nothing,
-    nd::Optional{Int} = nothing,
-    rows::Optional{Int} = nothing,
-    cols::Optional{Int} = nothing,
-    width::Optional{Int} = nothing,
-    height::Optional{Int} = nothing,
+    nϕ::Optional{Integer} = nothing,
+    nphi::Optional{Integer} = nothing,
+    nd::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
     α::Real = 360,
+    alpha::Optional{Real} = nothing,
     α₀::Real = 0,
+    alpha0::Optional{Real} = nothing,
     center::Optional{Real} = nothing,
 ) where {T <: Real}
+    nϕ = maybe(nϕ, nphi)
+    α = maybe(α, alpha)
+    α₀ = maybe(α₀, alpha0)
     height = maybe(width, height)
     width = maybe(height, width)
     rows = maybe(512, maybe(height, rows))
@@ -153,6 +162,17 @@ struct FanBeamGeometry{T,CT <: AbstractTomograph} <:
     center::T
 end
 
+@inline function getproperty(g::FanBeamGeometry, s::Symbol)
+    s ≡ :width && return g.cols
+    s ≡ :height && return g.rows
+    s ≡ :nphi && return getfield(g, nϕ)
+    s ≡ :alpha && return getfield(g, α)
+    s ≡ :alpha0 && return getfield(g, α₀)
+    s ≡ :D1 && return getfield(g, D′)
+    s ≡ :gamma && return getfield(g, γ)
+    s ≡ :dx && return getfield(g, δ)
+    getfield(g, s)
+end
 
 eltype(::Type{G}) where {G <: FanBeamGeometry{T}} where {T} = T
 
@@ -201,20 +221,32 @@ not flat.
 function FanBeamGeometry(
     ::Type{T} = Float32,
     ct::AbstractTomograph = DefaultTomograph();
-    nϕ::Optional{Int} = nothing,
+    nϕ::Optional{Integer} = nothing,
+    nphi::Optional{Integer} = nothing,
     D::Real = 500,
     D′::Optional{Real} = nothing,
+    D1::Optional{Real} = nothing,
     γ::Optional{Real} = nothing,
-    nd::Optional{Int} = nothing,
-    rows::Optional{Int} = nothing,
-    cols::Optional{Int} = nothing,
-    width::Optional{Int} = nothing,
-    height::Optional{Int} = nothing,
+    gamma::Optional{Real} = nothing,
+    nd::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
     δ::Real = one(T),
+    dx::Real = one(T),
     α::Real = 360,
+    alpha::Real = 360,
     α₀::Real = zero(T),
+    alpha0::Real = zero(T),
     center::Optional{Real} = nothing,
 ) where {T <: Real}
+    nϕ = maybe(nϕ, nphi)
+    D′ = maybe(D′, D1)
+    γ = maybe(γ, gamma)
+    δ = maybe(δ, dx)
+    α = maybe(α, alpha)
+    α₀ = maybe(α₀, alpha0)
     height = maybe(width, height)
     width = maybe(height, width)
     rows = maybe(512, maybe(height, rows))

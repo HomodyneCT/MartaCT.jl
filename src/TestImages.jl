@@ -214,10 +214,12 @@ struct CircleParams{T} <: AbstractImageParams{T}
         rows::Integer,
         cols::Integer,
         nϕ::Optional{Integer} = nothing,
+        nphi::Optional{Integer} = nothing,
         gray_scale::ClosedInterval = -1000..1000,
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
     ) where {T<:Real}
+        nϕ = maybe(nϕ, nphi)
         background = maybe(leftendpoint(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
             mean(gray_scale) : calibration_value
@@ -244,6 +246,7 @@ end
 function getproperty(p::CircleParams, s::Symbol)
     s ≡ :width && return p.cols
     s ≡ :height && return p.rows
+    s ≡ :nphi && return getfield(p, nϕ)
     getfield(p, s)
 end
 
@@ -256,10 +259,12 @@ function CircleParams(
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
     nϕ::Optional{Integer} = nothing,
+    nphi::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = -1000..1000,
     calibration_value::Optional{Real} = nothing,
     background::Optional{Real} = nothing,
 ) where {T <: Real}
+    nϕ = maybe(nϕ, nphi)
     factor = 31 / 50 # magic number!
     circ_zoom = 1.3 / 17
     #=
@@ -350,9 +355,13 @@ function circle_image(
     swidth::Optional{Integer} = nothing,
     sheight::Optional{Integer} = nothing,
     nϕ::Optional{Integer} = nothing,
+    nphi::Optional{Integer} = nothing,
     ν::Real = 1,
+    scale::Optional{Real} = nothing,
     kwargs...,
 ) where {T<:Real}
+    nϕ = maybe(nϕ, nphi)
+    ν = maybe(ν, scale)
     rows = isnothing(sheight) ? maybe(2radius, rows) : sheight
     cols = isnothing(swidth) ? maybe(rows, cols) : swidth
     nr = min(rows, cols) ÷ 2
@@ -878,9 +887,10 @@ function circle_polar_image(
     radius::Integer = 60,
     nr::Optional{Integer} = nothing,
     nϕ::Optional{Integer} = nothing,
+    nphi::Optional{Integer} = nothing,
     kwargs...) where {T<:Real}
     nr = maybe(2radius, nr)
-    nϕ = maybe(nr, nϕ)
+    nϕ = maybe(nr, maybe(nϕ, nphi))
     circle_polar_image(T, nr, nϕ, radius; kwargs...)
 end
 

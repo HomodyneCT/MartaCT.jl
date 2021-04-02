@@ -104,10 +104,16 @@ function para2fan(
     pbg::ParallelBeamGeometry;
     D::Real = 500,
     D′::Optional{Real} = nothing,
+    D1::Optional{Real} = nothing,
     γ::Optional{Real} = nothing,
+    gamma::Optional{Real} = nothing,
     δ::Optional{Real} = one(T),
+    dx::Optional{Real} = one(T),
     kwargs...,
 ) where {T<:Real}
+    D′ = maybe(D′, D1)
+    γ = maybe(γ, gamma)
+    δ = maybe(δ, dx)
     fbg = FanBeamGeometry(
         T,
         pbg.ct;
