@@ -2,16 +2,25 @@ module CalibrationBase
 
 Base.Experimental.@optlevel 3
 
+export
+    calibrate_image,
+    calibrate_image!,
+    calibrate_tomogram,
+    calibrate_tomogram!,
+    calibration_data
+
 using SimpleTraits
 using ..Monads
 
 
 function calibration_data end
+function calibrate_image! end
 function calibrate_image end
+function calibrate_tomogram! end
 function calibrate_tomogram end
 
 
-for nm ∈ (:calibrate_image, :calibrate_tomogram)
+for nm ∈ (:calibrate_image, :calibrate_image!, :calibrate_tomogram, :calibrate_tomogram!)
     @eval begin
         $nm(; kwargs...) = x -> $nm(x; kwargs...)
         @traitfn $nm(m::M; kwargs...) where {M; Monad{M}} =

@@ -9,8 +9,11 @@ makedocs(
     modules = [Marta],
     pages = [
         "Home" => "index.md",
+        "Getting Started" => [
+            "Installation.md",
+        ],
         "Manual" => [
-            "MartaManual.md",
+            "Tutorial.md",
         ],
         "API Reference" => [
             "api/Algorithms.md",
@@ -27,6 +30,7 @@ makedocs(
             "api/Applicative.md",
             "api/Monads.md",
             "api/Utils.md",
-        ]
+        ],
+        "Index" => "GeneralIndex.md",
     ]
 )

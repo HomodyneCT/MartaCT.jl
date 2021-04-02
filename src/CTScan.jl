@@ -10,7 +10,6 @@ export project_image!, reconstruct_image!
 export para2fan!, fan2para!
 export compute_rmse, compute_χ2, fit_gray_scale
 export load_image!, load_sinogram!, load_tomogram!
-export calibrate_image!, calibrate_tomogram!
 export sample_sinogram!
 
 import Base: show, copy, similar, getproperty
@@ -27,7 +26,11 @@ using ..RadonAlgorithm
 import ..CTImages: ctimage, ctsinogram, cttomogram
 using ..CTImages
 import ..FanBeam: para2fan, fan2para
-import ..CalibrationBase: calibrate_image, calibrate_tomogram
+import ..CalibrationBase:
+    calibrate_image,
+    calibrate_image!,
+    calibrate_tomogram,
+    calibrate_tomogram!
 using ..Calibration
 using ..TestImages
 import ..CTIO: load_image, write_image
