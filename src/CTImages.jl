@@ -283,6 +283,7 @@ function polar2cart(
     xs::AbstractVector,
     ys::AbstractVector;
     ν::Real = 1,
+    scale::Optional{Real} = nothing,
     diag::Bool = false,
     background::Optional{Real} = nothing,
     transposed::Bool = false,
@@ -297,6 +298,7 @@ function polar2cart(
         permutedims!(mp′, mp, (2,1))
         return polar2cart(mp′, xs, ys; background, interpolation)
     end
+    ν = maybe(ν, scale)
     @assert ν > 0
     nθ, nr = size(mp)
     x₀, y₀ = _half(xs), _half(ys)

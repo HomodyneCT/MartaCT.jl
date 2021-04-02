@@ -11,6 +11,7 @@ export load_tomogram, write_tomogram
 
 import YAML, Mmap
 using IterTools: imap
+using ..Monads
 using ..CTImages
 using ..Utils: yaml_repr
 using ..TypeDict: standardize_type
@@ -366,10 +367,12 @@ function load_sinogram(
     ::Type{T} = Float32;
     header = false,
     nϕ = 0,
+    nphi = nothing,
     nd = 0,
     row_major = false,
     header_type = Int64,
 ) where {T<:Real}
+    nϕ = maybe(nϕ, nphi)
     read_ct_image(
         io,
         T;
