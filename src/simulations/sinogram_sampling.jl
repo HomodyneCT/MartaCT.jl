@@ -161,11 +161,13 @@ function sample_sinogram_external(
     log_path = "_tmp_log.txt",
     n = 10000,
     ϵ = 1,
+    eps = nothing,
     take_log = true,
     verbosity = nothing,
     progress = false,
     options = [],
 ) where {T<:Real}
+    ϵ = isnothing(eps) ? ϵ : eps
     tmp_path = mk_temp_dir()
     sinog_path = joinpath(tmp_path, sinog_path)
     resampled_path = joinpath(tmp_path, resampled_path)
