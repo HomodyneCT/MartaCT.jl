@@ -112,24 +112,28 @@ end
 const _sinog_xticks = [45i for i in 0:8]
 
 
-@recipe function plot(sinog::CTSinogram, α::Optional{Real} = nothing)
-    nd, nϕ = size(sinog)
-    xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
-    α = maybe((nd - 1) / 2, α)
-    ys = linspace(-α..α, nd)
+@recipe function plot(xs::AbstractVector, ys::AbstractVector, sinog::CTSinogram)
     seriestype --> :heatmap
-    #seriescolor --> :grays
     xticks --> _sinog_xticks
     _seriestype = get(plotattributes, :seriestype, nothing)
     if _seriestype === :heatmap
         xrotation --> -45
         tick_direction --> :out
-        # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
-        xlims --> (xs[1], xs[end])
-        # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
-        ylims --> (ys[1], ys[end])
+        # xlims --> ((xs[begin], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
+        xlims --> (xs[begin], xs[end])
+        # ylims --> ((ys[begin], ys[end]) .+ (-0.5, 0.5))
+        ylims --> (ys[begin], ys[end])
     end
     xs, ys, mjoin(sinog)
+end
+
+
+@recipe function plot(sinog::CTSinogram, α::Optional{Real} = nothing)
+    nd, nϕ = size(sinog)
+    xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
+    α = maybe((nd - 1) / 2, α)
+    ys = linspace(-α..α, nd)
+    xs, ys, sinog
 end
 
 
