@@ -4,7 +4,8 @@ _alg_method(::Radon) = IsRadonDiag()
 @_defradonalgfn Radon radon_default
 
 
-"""radon_default(image::AbstractMatrix; <keyword arguments>)
+"""
+    radon_default(image::AbstractMatrix, ts::AbstractVector, ϕs::AbstractVector; <keyword arguments>)
 
 Compute the Radon transform of `image` inside a circle of
 radius `hypot(rows,cols)/2` where `rows` and `cols` are the
@@ -17,20 +18,21 @@ function radon_default end
 @_defradonfn radon_default begin
     @assert 0 ∈ first(ts)..last(ts)
     t₀::T = hypot(rows, cols) / 2
-    κ::T = t₀ / _half(ts) * ν
+    κ::T = _half(ts) / (t₀ * ν)
     sθ, cθ = atan(rows, cols) |> sincos
     x₀::T = t₀ * cθ + 1
     y₀::T = t₀ * sθ + 1
-    zs = ts * κ
-    npoints = length(zs)
+    zs = @. T(ts / κ)
     p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for it ∈ eachindex(zs)
             t = zs[it]
-            prex, prey = t * c + x₀, t * s + y₀
+            prex = t * c + x₀
+            prey = t * s + y₀
             for z ∈ zs
-                x, y = prex - z * s, prey + z * c
+                x = prex - z * s
+                y = prey + z * c
                 if x ∈ 1..cols && y ∈ 1..rows
                     sinog[it, iϕ] += interp(y, x)
                 end
@@ -38,7 +40,7 @@ function radon_default end
         end
         next!(p)
     end
-    sinog ./= κ^2
+    sinog .*= κ^2
 end
 
 

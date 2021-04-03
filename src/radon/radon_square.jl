@@ -4,12 +4,8 @@ _alg_method(::RadonSquare) = IsRadonSquare()
 @_defradonalgfn RadonSquare radon_square
 
 
-"""radon_square(
-    image::AbstractMatrix{<:Real},
-    ts::AbstractVector{<:Real},
-    ϕs::AbstractVector{<:Real};
-    <keyword arguments>
-)
+"""
+    radon_square(image::AbstractMatrix, ts::AbstractVector, ϕs::AbstractVector; <keyword arguments>)
 
 Compute the Radon transform of `image` inside the circle
 contained in the square of side `min(rows,cols)` where `rows` and `cols` are the
@@ -23,8 +19,8 @@ function radon_square end
     @assert 0 ∈ first(ts)..last(ts)
     x₀ = (cols + 1) / 2
     y₀ = (rows + 1) / 2
-    κ = ν / _half(ts) * (min(x₀, y₀) - 1)
-    zs = T.(ts * κ)
+    κ::T = _half(ts) / ((min(x₀, y₀) - 1) * ν)
+    zs = @. T(ts / κ)
     p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
@@ -42,7 +38,7 @@ function radon_square end
         end
         next!(p)
     end
-    sinog ./= κ^2
+    sinog .*= κ^2
 end
 
 
