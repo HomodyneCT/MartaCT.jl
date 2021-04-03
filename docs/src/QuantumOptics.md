@@ -37,7 +37,7 @@ We need to get the Wigner function representation in order
 to compute the marginal distributions of the position.
 
 ```@example qoptics
-ζ = 7
+ζ = 10
 xs = linspace(-ζ..ζ, 200)
 W = wigner(ρ, xs, xs)
 heatmap(xs, xs, W')
