@@ -12,6 +12,7 @@ also serve as a base for Quantum Tomography applications.
 Pages = [
   "Installation.md",
   "Tutorial.md",
+  "QuantumOptics.md",
   "GeneralIndex.md",
 ]
 ```
