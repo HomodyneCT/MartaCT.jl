@@ -1,6 +1,7 @@
 # Quantum Optics example
 
 ```@setup qoptics
+ENV["GKS_WSTYPE"] = "svg"
 using Marta, Plots, QuantumOptics, IntervalSets, LinearAlgebra, Plots.Measures
 gr()
 Plots.reset_defaults()

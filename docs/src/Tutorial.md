@@ -2,7 +2,7 @@
 
 ```@setup ex_img
 ENV["GKS_WSTYPE"] = "svg"
-using Plots.Measures
+using Marta, Plots, Plots.Measures, IntervalSets
 gr()
 Plots.reset_defaults()
 Plots.default(size=(500,300), rightmargin=1cm)
@@ -13,9 +13,8 @@ Let's see a brief example on how Marta can be used.
 As a starting point we prepare the session importing some
 packages:
 
-```@example ex_img
+```julia
 using Marta, Plots, IntervalSets
-nothing # hide
 ```
 
 Now we can generate our first image from the available test
