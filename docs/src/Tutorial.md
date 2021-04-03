@@ -18,7 +18,7 @@ using Marta, Plots, IntervalSets
 ```
 
 Now we can generate our first image from the available test
-images (see [`Test Images`](@ref)) for a full list of test
+images (see [Test Images](@ref)) for a full list of test
 images.
 
 ```@example ex_img
