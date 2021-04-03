@@ -40,7 +40,7 @@ to compute the marginal distributions of the position.
 ζ = 7
 xs = linspace(-ζ..ζ, 200)
 W = wigner(ρ, xs, xs)
-plot(xs, xs, W)
+heatmap(xs, xs, W')
 savefig("Wcat.svg"); nothing # hide
 ```
 
@@ -52,7 +52,7 @@ transform of the Wigner function:
 ```@example qoptics
 ϕs = linspace(ORI(0..2π), 800)
 marg = radon(W, xs, ϕs, RadonSquare())
-plot(xs, ϕs, marg)
+heatmap(ϕs, xs, marg)
 savefig("marg.svg"); nothing # hide
 ```
 
@@ -63,7 +63,7 @@ Wigner distribution:
 
 ```@example qoptics
 Wrec = iradon(W, xs, xs, FBPFFTSquare())
-plot(xs, xs, Wrec)
+heatmap(xs, xs, Wrec)
 savefig("Wrec.svg"); nothing # hide
 ```
 

@@ -5,7 +5,7 @@ ENV["GKS_WSTYPE"] = "svg"
 using Marta, Plots, Plots.Measures, IntervalSets
 gr()
 Plots.reset_defaults()
-Plots.default(size=(500,300), rightmargin=1cm)
+Plots.default(size=(500,300), rightmargin=1cm, color=:grays)
 ```
 
 Let's see a brief example on how Marta can be used.
@@ -30,7 +30,7 @@ nothing # hide
 We can plot the image as
 
 ```@example ex_img
-plot(img)
+heatmap(img)
 savefig("img.svg"); nothing # hide
 ```
 
@@ -50,7 +50,7 @@ Now we can compute the sinogram of `img` using the function
 
 ```@example ex_img
 sinog = project_image(img, RadonInfo(pbg), progress=false, rescaled=true)
-plot(sinog)
+heatmap(sinog)
 savefig("sinog.svg"); nothing # hide
 ```
 
@@ -64,7 +64,7 @@ function [`iradon`](@ref):
 
 ```@example ex_img
 tomog = reconstruct_image(sinog, FBPInfo(pbg), progress=false)
-plot(tomog)
+heatmap(tomog)
 savefig("tomog.svg"); nothing # hide
 ```
 
@@ -83,7 +83,7 @@ We can just do the following
 
 ```@example ex_img
 calibrate_tomogram!(tomog, img; window=-1000..1000)
-plot(tomog)
+heatmap(tomog)
 savefig("tomog_calib.svg"); nothing # hide
 ```
 
