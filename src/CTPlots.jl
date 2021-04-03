@@ -64,12 +64,12 @@ end
 
 # TODO: Check lims for plot again!
 
-@recipe function f(
+@recipe function plot(
     xs::AbstractVector, ys::AbstractVector, image::CTImageOrTomog
 )
     rows, cols = size(image)
     proj = get(plotattributes, :projection, nothing)
-    seriescolor --> :grays
+    #seriescolor --> :grays
     aspect_ratio --> :equal
     seriestype --> :heatmap
     _seriestype = get(plotattributes, :seriestype, nothing)
@@ -86,7 +86,7 @@ end
 end
 
 
-@recipe function f(
+@recipe function plot(
     image::CTImageOrTomog,
     α::Optional{Real} = nothing,
     β::Optional{Real} = nothing,
@@ -112,13 +112,13 @@ end
 const _sinog_xticks = [45i for i in 0:8]
 
 
-@recipe function f(sinog::CTSinogram, α::Optional{Real} = nothing)
+@recipe function plot(sinog::CTSinogram, α::Optional{Real} = nothing)
     nd, nϕ = size(sinog)
     xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
     α = maybe((nd - 1) / 2, α)
     ys = linspace(-α..α, nd)
     seriestype --> :heatmap
-    seriescolor --> :grays
+    #seriescolor --> :grays
     xticks --> _sinog_xticks
     _seriestype = get(plotattributes, :seriestype, nothing)
     if _seriestype === :heatmap
@@ -133,7 +133,7 @@ const _sinog_xticks = [45i for i in 0:8]
 end
 
 
-@recipe function f(
+@recipe function plot(
     xs::AbstractVector,
     ys::AbstractVector,
     gs::AbstractTestImage
@@ -141,7 +141,7 @@ end
     xs, ys, gs.image
 end
 
-@recipe function f(
+@recipe function plot(
     gs::AbstractTestImage,
     α::Optional{Real} = nothing,
     β::Optional{Real} = nothing
@@ -150,7 +150,7 @@ end
 end
 
 
-@recipe function f(imp::ImageParams, gray_scale_data::AbstractVector...)
+@recipe function plot(imp::ImageParams, gray_scale_data::AbstractVector...)
     _, xs = gray_scale_indices(imp)
     seriestype --> :scatter
     linewidth --> 1.3
@@ -162,7 +162,7 @@ end
 end
 
 
-@recipe function f(gst::AbstractCTScanner, s::Symbol)
+@recipe function plot(gst::AbstractCTScanner, s::Symbol)
     gst, Val(s)
 end
 
@@ -170,7 +170,7 @@ end
 for (nm, ctf) ∈ pairs(ctfn)
     v = Val{nm}
     @eval begin
-        @recipe function f(gst::AbstractCTScanner, ::$v)
+        @recipe function plot(gst::AbstractCTScanner, ::$v)
             mjoin($ctf(gst))
         end
     end
