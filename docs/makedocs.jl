@@ -14,6 +14,7 @@ makedocs(
         ],
         "Manual" => [
             "Tutorial.md",
+            "Quantum Optics" => "QuantumOptics.md",
         ],
         "API Reference" => [
             "api/Algorithms.md",
