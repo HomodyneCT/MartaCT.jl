@@ -56,7 +56,7 @@ macro _defradonfn(f::Symbol, body)
             background::Optional{Z} = nothing,
             rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
-            progress::Bool = true,
+            progress::Bool = false,
         ) where {
             T <: Real,
             X <: Real,
@@ -95,7 +95,7 @@ macro _defiradonfn(f::Symbol, body)
             background::Optional{U3} = nothing,
             filter::Optional{F} = nothing,
             interpolation::Optional{Interp} = nothing,
-            progress::Bool = true,
+            progress::Bool = false,
         ) where {
             T <: Real,
             U1 <: Real,
