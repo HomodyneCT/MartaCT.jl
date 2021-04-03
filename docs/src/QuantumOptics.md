@@ -2,7 +2,7 @@
 
 ```@setup qoptics
 using Marta, Plots, QuantumOptics, IntervalSets, LinearAlgebra, Plots.Measures
-gc()
+gr()
 Plots.reset_defaults()
 default(size=(500,300), rightmargin=1cm)
 ```
