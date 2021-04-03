@@ -5,7 +5,7 @@ ENV["GKS_WSTYPE"] = "svg"
 using Marta, Plots, QuantumOptics, IntervalSets, LinearAlgebra, Plots.Measures
 gr()
 Plots.reset_defaults()
-default(size=(500,300), rightmargin=1cm)
+default(size=(500,300), rightmargin=0.5cm)
 ```
 
 Marta can also be used for Quantum Tomography as the basic
@@ -39,8 +39,8 @@ to compute the marginal distributions of the position.
 ```@example qoptics
 ζ = 10
 xs = linspace(-ζ..ζ, 200)
-W = wigner(ρ, xs, xs)
-heatmap(xs, xs, W')
+W = wigner(ρ, xs, xs) |> permutedims |> CTTomogram
+heatmap(xs, xs, W)
 savefig("Wcat.svg"); nothing # hide
 ```
 
@@ -62,7 +62,7 @@ Now we can employ the standard FBP algorithm to recover the
 Wigner distribution:
 
 ```@example qoptics
-Wrec = iradon(W, xs, xs, FBPFFTSquare())
+Wrec = iradon(marg, xs, xs, FBPFFTSquare())
 heatmap(xs, xs, Wrec)
 savefig("Wrec.svg"); nothing # hide
 ```
