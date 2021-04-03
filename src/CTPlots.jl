@@ -69,9 +69,8 @@ end
 )
     rows, cols = size(image)
     proj = get(plotattributes, :projection, nothing)
-    #seriescolor --> :grays
     aspect_ratio --> :equal
-    seriestype --> :heatmap
+    #seriestype --> :heatmap
     _seriestype = get(plotattributes, :seriestype, nothing)
     if proj === :polar
         yaxis --> false
@@ -113,11 +112,9 @@ const _sinog_xticks = [45i for i in 0:8]
 
 
 @recipe function plot(xs::AbstractVector, ys::AbstractVector, sinog::CTSinogram)
-    seriestype --> :heatmap
-    xticks --> _sinog_xticks
+    #seriestype --> :heatmap
     _seriestype = get(plotattributes, :seriestype, nothing)
     if _seriestype === :heatmap
-        xrotation --> -45
         tick_direction --> :out
         # xlims --> ((xs[begin], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
         xlims --> (xs[begin], xs[end])
@@ -133,6 +130,8 @@ end
     xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
     α = maybe((nd - 1) / 2, α)
     ys = linspace(-α..α, nd)
+    xticks --> _sinog_xticks
+    xrotation --> -45
     xs, ys, sinog
 end
 
