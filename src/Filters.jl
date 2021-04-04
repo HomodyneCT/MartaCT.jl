@@ -17,7 +17,8 @@ struct RamLak <: AbstractCTFilter end
 
 
 function ram_lak(::Type{T}, nd::Int, nϕ::Int) where {T<:Real}
-    repeat((T ∘ abs).(0.5 * fftfreq(nd)), outer = (1, nϕ))
+    freqs = abs.(fftfreq(nd, one(T)))
+    repeat(freqs, outer = (1, nϕ))
 end
 
 ram_lak(nd::Int, nϕ::Int) = ram_lak(Float32, nd, nϕ)

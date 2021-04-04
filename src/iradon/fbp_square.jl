@@ -11,10 +11,9 @@ _alg_method(::FBPFFTSquare) = IsIRadonSquare()
 function fbp_fft_square end
 
 @_defiradonfn fbp_fft_square begin
-    l = min(rows, cols)
-    κ::T = min(_half(xs), _half(ys))
-    xxs = xs / κ
-    yys = ys / κ
+    κ::T = inv(ν * min(_half(xs), _half(ys)))
+    xxs = xs * κ
+    yys = ys * κ
     temp_images = fill(deepcopy(tomog), 1)
     Threads.resize_nthreads!(temp_images)
     p = _iradon_progress(nϕ, progress)

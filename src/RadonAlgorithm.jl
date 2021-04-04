@@ -12,7 +12,7 @@ using ..Monads
 using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
-import ..Utils: ORI, linspace, _atype, _half
+import ..Utils: ORI, linspace, _atype, _half, _width
 import ..AbstractAlgorithms:
     radon,
     iradon,
@@ -53,6 +53,8 @@ macro _defradonfn(f::Symbol, body)
             ϕs::AbstractVector{Y};
             ν::Real = 1,
             scale::Optional{Real} = nothing,
+            τ::Real = 1,
+            ratio::Optional{Real} = 1,
             background::Optional{Z} = nothing,
             rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
@@ -65,6 +67,7 @@ macro _defradonfn(f::Symbol, body)
             Interp <: AbstractInterp2DOrNone,
         }
             ν = maybe(ν, scale)
+            τ = maybe(τ, ratio)
             rows, cols = size(image)
             nd = length(ts)
             nϕ = length(ϕs)
@@ -113,7 +116,7 @@ macro _defiradonfn(f::Symbol, body)
             rows = length(ys)
             filtered = apply(maybe(RamLak(), filter)) do f
                 filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
-                ifft(filter_freq, 1) |> real
+                bfft(filter_freq, 1) |> real
             end
             interpolation = maybe(interpolate, interpolation)
             interp = interpolation(filtered)

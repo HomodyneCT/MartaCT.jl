@@ -17,20 +17,23 @@ function radon_square end
 
 @_defradonfn radon_square begin
     @assert 0 ∈ first(ts)..last(ts)
-    x₀ = (cols + 1) / 2
-    y₀ = (rows + 1) / 2
-    κ::T = _half(ts) / ((min(x₀, y₀) - 1) * ν)
-    zs = @. T(ts / κ)
+    x₀::T = (cols + 1) / 2
+    y₀::T = (rows + 1) / 2
+    κx::T = ν * (x₀ - 1) / _half(ts) * ifelse(τ < 1, τ, 1)
+    κy::T = ν * (y₀ - 1) / _half(ts) * ifelse(τ < 1, 1, inv(τ))
+    txs = @. T(ts * κx)
+    tys = @. T(ts * κy)
     p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
-        @inbounds @simd for j ∈ eachindex(zs)
-            t = zs[j]
-            prex = t * c + x₀
-            prey = t * s + y₀
-            for w ∈ zs
-                x = prex - w * s
-                y = prey + w * c
+        @inbounds @simd for j ∈ eachindex(ts)
+            tx, ty = txs[j], tys[j]
+            prex = tx * c + x₀
+            prey = ty * s + y₀
+            for k ∈ eachindex(ts)
+                wx, wy = txs[k], tys[k]
+                x = prex - wx * s
+                y = prey + wy * c
                 if x ∈ 1..cols && y ∈ 1..rows
                     sinog[j,iϕ] += interp(y, x)
                 end
@@ -38,7 +41,8 @@ function radon_square end
         end
         next!(p)
     end
-    sinog .*= κ^2
+    δt::T = ν * _width(ts) / (length(ts) - 1)
+    sinog .*= δt^2
 end
 
 

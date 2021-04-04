@@ -18,11 +18,11 @@ function radon_default end
 @_defradonfn radon_default begin
     @assert 0 ∈ first(ts)..last(ts)
     t₀::T = hypot(rows, cols) / 2
-    κ::T = _half(ts) / (t₀ * ν)
+    κ::T = ν * t₀ / _half(ts)
     sθ, cθ = atan(rows, cols) |> sincos
     x₀::T = t₀ * cθ + 1
     y₀::T = t₀ * sθ + 1
-    zs = @. T(ts / κ)
+    zs = @. T(ts * κ)
     p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
@@ -40,7 +40,8 @@ function radon_default end
         end
         next!(p)
     end
-    sinog .*= κ^2
+    δt::T = ν * _width(ts) / (length(ts) - 1)
+    sinog .*= δt^2
 end
 
 
