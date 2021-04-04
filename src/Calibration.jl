@@ -2,16 +2,16 @@ module Calibration
 
 Base.Experimental.@optlevel 3
 
-export calibrate_image, calibrate_tomogram
-
-using IntervalSets
+using IntervalSets,  Statistics
 using ..Monads
 using ..CTImages
 using ..TestImages
-
-import Statistics; const Stat = Statistics
-import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
-
+import ..CalibrationBase:
+    calibrate_image,
+    calibrate_image!,
+    calibrate_tomogram,
+    calibrate_tomogram!,
+    calibration_data
 
 function calibration_helper(
     image::AbstractMatrix,
@@ -28,7 +28,7 @@ function calibration_helper(
         CartesianIndices,
     },
 )
-    ClosedInterval(Stat.mean.((image[min_pos], image[max_pos]))...)
+    ClosedInterval(mean.((image[min_pos], image[max_pos]))...)
 end
 
 
@@ -37,7 +37,7 @@ function calibration_helper(
     min_pos::Tuple{<:Any,<:Any},
     max_pos::Tuple{<:Any,<:Any},
 )
-    ClosedInterval(Stat.mean.((image[min_pos...], image[max_pos...]))...)
+    ClosedInterval(mean.((image[min_pos...], image[max_pos...]))...)
 end
 
 
@@ -46,7 +46,7 @@ function calibration_helper(
     min_pos::AbstractArray{C},
     max_pos::AbstractArray{C},
 ) where {C<:Base.AbstractCartesianIndex}
-    ClosedInterval(Stat.mean.((image[min_pos], image[max_pos]))...)
+    ClosedInterval(mean.((image[min_pos], image[max_pos]))...)
 end
 
 
@@ -84,6 +84,23 @@ function calibrate_image(
 end
 
 
+"""
+    calibrate_image!(image::AbstractMatrix{T}; min_pos, max_pos, interval=0..1, window=nothing) where {T<:Real}
+
+Perform calibration of `image` with reference values.
+"""
+function calibrate_image!(
+    image::AbstractMatrix{T};
+    min_pos,
+    max_pos,
+    interval::ClosedInterval = 0..1,
+    window::Optional{ClosedInterval{U}} = nothing,
+) where {T<:Real,U<:Real}
+    calibration = calibration_helper(image, min_pos, max_pos)
+    rescale!(image; interval, calibration, window)
+end
+
+
 # function calibrate_image(img::AbstractCTImage; kwargs...)
 #     mmap(calibrate_image(; kwargs...), img)
 # end
@@ -105,6 +122,31 @@ function calibrate_image(
         interval = imp.background..imp.calibration_value
     end
     calibrate_image(
+        image;
+        interval,
+        min_pos,
+        max_pos,
+        window,
+    )
+end
+
+
+"""
+    calibrate_image!(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
+
+Perform calibration of `image` using image parameters as reference.
+"""
+function calibrate_image!(
+    image::AbstractMatrix{T},
+    imp::AbstractImageParams;
+    interval::Optional{ClosedInterval{U}} = nothing,
+    window::Optional{ClosedInterval{W}} = nothing,
+) where {T<:Real,U<:Real,W<:Real}
+    min_pos, max_pos = calibration_data(imp)
+    if isnothing(interval)
+        interval = imp.background..imp.calibration_value
+    end
+    calibrate_image!(
         image;
         interval,
         min_pos,
@@ -138,6 +180,21 @@ function calibrate_tomogram(
 end
 
 
+"""
+    calibrate_tomogram!(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
+
+Perform calibration of reconstructed `image` with image parameters as reference.
+"""
+function calibrate_tomogram!(
+    image::AbstractMatrix{T},
+    imp::AbstractImageParams;
+    interval::Optional{ClosedInterval{U}} = nothing,
+    window::Optional{ClosedInterval{W}} = nothing,
+) where {T<:Real,U<:Real,W<:Real}
+    calibrate_image!(image, imp; interval, window)
+end
+
+
 # function calibrate_tomogram(
 #     img::CTTomogram,
 #     imp::AbstractImageParams;
@@ -160,6 +217,28 @@ function calibrate_tomogram(
     window::Optional{ClosedInterval{U}} = nothing,
 ) where {T<:Real,U<:Real}
     calibrate_image(
+        image;
+        min_pos,
+        max_pos,
+        interval,
+        window,
+    )
+end
+
+
+"""
+    calibrate_tomogram(image::AbstractMatrix{T}; min_pos, max_pos, interval=0..1, window=nothing) where {T<:Real}
+
+Perform calibration of reconstructed `image` with reference values.
+"""
+function calibrate_tomogram!(
+    image::AbstractMatrix{T};
+    min_pos,
+    max_pos,
+    interval::ClosedInterval = 0..1,
+    window::Optional{ClosedInterval{U}} = nothing,
+) where {T<:Real,U<:Real}
+    calibrate_image!(
         image;
         min_pos,
         max_pos,

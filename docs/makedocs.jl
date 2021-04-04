@@ -9,8 +9,12 @@ makedocs(
     modules = [Marta],
     pages = [
         "Home" => "index.md",
+        "Getting Started" => [
+            "Installation.md",
+        ],
         "Manual" => [
-            "MartaManual.md",
+            "Tutorial.md",
+            "Quantum Optics" => "QuantumOptics.md",
         ],
         "API Reference" => [
             "api/Algorithms.md",
@@ -21,13 +25,13 @@ makedocs(
             "api/Simulations.md",
             "api/Calibration.md",
             "api/TestImages.md",
-            "api/CTImageData.md",
             "api/CTScan.md",
             "api/Info.md",
             "api/Interpolation.md",
             "api/Applicative.md",
             "api/Monads.md",
             "api/Utils.md",
-        ]
+        ],
+        "Index" => "GeneralIndex.md",
     ]
 )

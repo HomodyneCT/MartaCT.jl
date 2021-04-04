@@ -12,8 +12,14 @@ function fbp_fft end
 
 @_defiradonfn fbp_fft begin
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
+    x₀::T = _half(xs)
+    y₀::T = _half(ys)
+    h::T = hypot(x₀, y₀)
+    κ::T = (t₀ - 1) / h / ν
     @inbounds @simd for k ∈ eachindex(xys)
-        xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
+        x = xs[(k - 1) ÷ rows + 1] * κ
+        y = ys[(k - 1) % rows + 1] * κ
+        xys[k] = x, y
     end
     temp_images = fill(deepcopy(tomog), 1)
     Threads.resize_nthreads!(temp_images)
@@ -25,7 +31,7 @@ function fbp_fft end
         @inbounds @simd for k ∈ eachindex(xys)
             x, y = xys[k]
             # To be consistent with our conventions should be '+'.
-            t = (x * cϕ + y * sϕ + 1) * t₀
+            t = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
                 img[k] += interp(t, T(iϕ))
             end

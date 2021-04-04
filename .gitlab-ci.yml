@@ -18,8 +18,9 @@ pages:
   dependencies:
   - test
   only:
-  - tags
+  - documentation
   - master
+  - tags
   before_script:
   - apt-get update -y && apt-get install -y git
   - julia --project=docs/ -e "using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()"

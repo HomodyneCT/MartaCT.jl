@@ -64,14 +64,13 @@ end
 
 # TODO: Check lims for plot again!
 
-@recipe function f(
+@recipe function plot(
     xs::AbstractVector, ys::AbstractVector, image::CTImageOrTomog
 )
     rows, cols = size(image)
     proj = get(plotattributes, :projection, nothing)
-    seriescolor --> :grays
     aspect_ratio --> :equal
-    seriestype --> :heatmap
+    #seriestype --> :heatmap
     _seriestype = get(plotattributes, :seriestype, nothing)
     if proj === :polar
         yaxis --> false
@@ -86,7 +85,7 @@ end
 end
 
 
-@recipe function f(
+@recipe function plot(
     image::CTImageOrTomog,
     α::Optional{Real} = nothing,
     β::Optional{Real} = nothing,
@@ -112,28 +111,32 @@ end
 const _sinog_xticks = [45i for i in 0:8]
 
 
-@recipe function f(sinog::CTSinogram, α::Optional{Real} = nothing)
-    nd, nϕ = size(sinog)
-    xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
-    α = maybe((nd - 1) / 2, α)
-    ys = linspace(-α..α, nd)
-    seriestype --> :heatmap
-    seriescolor --> :grays
-    xticks --> _sinog_xticks
+@recipe function plot(xs::AbstractVector, ys::AbstractVector, sinog::CTSinogram)
+    #seriestype --> :heatmap
     _seriestype = get(plotattributes, :seriestype, nothing)
     if _seriestype === :heatmap
-        xrotation --> -45
         tick_direction --> :out
-        # xlims --> ((xs[1], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
-        xlims --> (xs[1], xs[end])
-        # ylims --> ((ys[1], ys[end]) .+ (-0.5, 0.5))
-        ylims --> (ys[1], ys[end])
+        # xlims --> ((xs[begin], xs[end]) .+ (-0.5, 0.5) .* Δϕ)
+        xlims --> (xs[begin], xs[end])
+        # ylims --> ((ys[begin], ys[end]) .+ (-0.5, 0.5))
+        ylims --> (ys[begin], ys[end])
     end
     xs, ys, mjoin(sinog)
 end
 
 
-@recipe function f(
+@recipe function plot(sinog::CTSinogram, α::Optional{Real} = nothing)
+    nd, nϕ = size(sinog)
+    xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
+    α = maybe((nd - 1) / 2, α)
+    ys = linspace(-α..α, nd)
+    xticks --> _sinog_xticks
+    xrotation --> -45
+    xs, ys, sinog
+end
+
+
+@recipe function plot(
     xs::AbstractVector,
     ys::AbstractVector,
     gs::AbstractTestImage
@@ -141,7 +144,7 @@ end
     xs, ys, gs.image
 end
 
-@recipe function f(
+@recipe function plot(
     gs::AbstractTestImage,
     α::Optional{Real} = nothing,
     β::Optional{Real} = nothing
@@ -150,7 +153,7 @@ end
 end
 
 
-@recipe function f(imp::ImageParams, gray_scale_data::AbstractVector...)
+@recipe function plot(imp::ImageParams, gray_scale_data::AbstractVector...)
     _, xs = gray_scale_indices(imp)
     seriestype --> :scatter
     linewidth --> 1.3
@@ -162,7 +165,7 @@ end
 end
 
 
-@recipe function f(gst::AbstractCTScanner, s::Symbol)
+@recipe function plot(gst::AbstractCTScanner, s::Symbol)
     gst, Val(s)
 end
 
@@ -170,7 +173,7 @@ end
 for (nm, ctf) ∈ pairs(ctfn)
     v = Val{nm}
     @eval begin
-        @recipe function f(gst::AbstractCTScanner, ::$v)
+        @recipe function plot(gst::AbstractCTScanner, ::$v)
             mjoin($ctf(gst))
         end
     end

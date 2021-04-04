@@ -25,7 +25,12 @@ using ..AbstractAlgorithms: AbstractProjectionAlgorithm
 import ..Utils: _atype, yaml_repr, struct2dict, linspace
 import ..Info: CTInfo
 import ..AbstractAlgorithms: project_image
-import ..CalibrationBase: calibrate_image, calibrate_tomogram, calibration_data
+import ..CalibrationBase:
+    calibrate_image,
+    calibrate_image!,
+    calibrate_tomogram,
+    calibrate_tomogram!,
+    calibration_data
 import Base: getproperty, size, show, getindex, setindex!, IndexStyle, eltype
 using Base: @propagate_inbounds
 
@@ -1016,7 +1021,7 @@ end
 plateau_length(grsc::GrayScalePyramid) = round(Int, grsc.swidth * grsc.plateau)
 
 
-for nm ∈ (:calibrate_image, :calibrate_tomogram)
+for nm ∈ (:calibrate_image, :calibrate_image!, :calibrate_tomogram,:calibrate_tomogram!)
     @eval begin
         $nm(imp::AbstractImageParams; kwargs...) = x -> $nm(x, imp; kwargs...)
         $nm(x, gs::AbstractTestImage; kwargs...) = $nm(x, gs.params; kwargs...)

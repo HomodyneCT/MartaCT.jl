@@ -1,1 +1,0 @@
-# Manual of Marta package
