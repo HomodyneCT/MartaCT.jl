@@ -12,7 +12,7 @@ using ..Monads
 using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
-import ..Utils: ORI, linspace, _atype, _half, _width
+import ..Utils: ORI, linspace, _atype, half, width
 import ..AbstractAlgorithms:
     radon,
     iradon,

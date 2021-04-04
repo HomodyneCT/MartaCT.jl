@@ -11,7 +11,7 @@ _alg_method(::FBPFFTSquare) = IsIRadonSquare()
 function fbp_fft_square end
 
 @_defiradonfn fbp_fft_square begin
-    κ::T = inv(ν * min(_half(xs), _half(ys)))
+    κ::T = inv(ν * min(half(xs), half(ys)))
     xxs = xs * κ
     yys = ys * κ
     temp_images = fill(deepcopy(tomog), 1)
@@ -33,6 +33,7 @@ function fbp_fft_square end
     foreach(temp_images) do x
         tomog .+= x
     end
+    #tomog .*= inv(2π)
     tomog
 end
 

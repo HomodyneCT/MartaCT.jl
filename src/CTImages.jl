@@ -8,7 +8,7 @@ export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
 import ..Monads: mjoin
-using ..Utils: linspace, _half, _compute_radius, _compute_angle, _wrap_angle
+using ..Utils: linspace, half, _compute_radius, _compute_angle, _wrap_angle
 import ..Utils: _atype
 using ..Applicative, ..Monads, ..Interpolation
 using ..Geometry:
@@ -301,7 +301,7 @@ function polar2cart(
     ν = maybe(ν, scale)
     @assert ν > 0
     nθ, nr = size(mp)
-    x₀, y₀ = _half(xs), _half(ys)
+    x₀, y₀ = half(xs), half(ys)
     κ::T = min(x₀, y₀)
     if diag
         ν *= hypot(x₀, y₀) / κ

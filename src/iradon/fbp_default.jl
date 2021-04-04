@@ -12,8 +12,8 @@ function fbp_fft end
 
 @_defiradonfn fbp_fft begin
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
-    x₀::T = _half(xs)
-    y₀::T = _half(ys)
+    x₀::T = half(xs)
+    y₀::T = half(ys)
     h::T = hypot(x₀, y₀)
     κ::T = (t₀ - 1) / h / ν
     @inbounds @simd for k ∈ eachindex(xys)
@@ -41,7 +41,7 @@ function fbp_fft end
     foreach(temp_images) do x
         tomog .+= x
     end
-    tomog
+    tomog .*= inv(2π)
 end
 
 

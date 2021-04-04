@@ -18,7 +18,7 @@ function radon_default end
 @_defradonfn radon_default begin
     @assert 0 ∈ first(ts)..last(ts)
     t₀::T = hypot(rows, cols) / 2
-    κ::T = ν * t₀ / _half(ts)
+    κ::T = ν * t₀ / half(ts)
     sθ, cθ = atan(rows, cols) |> sincos
     x₀::T = t₀ * cθ + 1
     y₀::T = t₀ * sθ + 1
@@ -40,7 +40,7 @@ function radon_default end
         end
         next!(p)
     end
-    δt::T = ν * _width(ts) / (length(ts) - 1)
+    δt::T = ν * width(ts) / (length(ts) - 1)
     sinog .*= δt^2
 end
 

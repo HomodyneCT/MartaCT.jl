@@ -34,7 +34,7 @@ function StatsBase.sample(
     @assert length(xs) == nd "Dimension mismatch: `xs` vector should match first dimension of `data`"
     Random.seed!()
     nbins = maybe(nd+1, nbins)
-    ζ = _half(xs)
+    ζ = half(xs)
     bins = linspace(-ζ..ζ, nbins+1)
 	sampled = similar(data, (nbins, nϕ, nblks))
     pxs = fill(similar(sampled, nsamples), 1)

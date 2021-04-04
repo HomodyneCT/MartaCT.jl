@@ -13,7 +13,7 @@ function fbpa_fft_square end
 @_defiradonfn fbpa_fft_square begin
     l = min(rows, cols)
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
-    κ::T = min(_half(xs), _half(ys))
+    κ::T = min(half(xs), half(ys))
     xys = Vector{NTuple{2,T}}(undef, l^2)
     indices = Vector{NTuple{2,Int}}(undef, l^2)
     @inbounds @simd for k ∈ eachindex(xys)
