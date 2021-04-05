@@ -964,7 +964,7 @@ function square_image(imp::SquareParams)
     )
 end
 
-struct SquareParams{T} <: AbstractImageParams{T
+struct SquareParams{T} <: AbstractImageParams{T}
     l::Int
     rows::Int
     cols::Int
