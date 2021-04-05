@@ -40,7 +40,7 @@ function radon_default end
         end
         next!(p)
     end
-    δt::T = ν * width(ts) / (length(ts) - 1)
+    δt::T = ν * width(ts) / (length(ts) - 1) / τ
     sinog .*= δt^2
 end
 
