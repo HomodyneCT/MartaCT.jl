@@ -285,6 +285,63 @@ function CircleParams(
 end
 
 
+struct SquareParams{T} <: AbstractImageParams{T}
+    l::Int
+    rows::Int
+    cols::Int
+    gray_scale::ClosedInterval{T}
+    calibration_value::T
+    background::T
+
+    function SquareParams{T}(
+        l::Int,
+        rows::Integer,
+        cols::Integer,
+        gray_scale::ClosedInterval{T} = -1000..1000,
+        calibration_value::Optional{Real} = nothing,
+        background::Optional{Real} = nothing,
+    ) where {T <: Real}
+        background = maybe(leftendpoint(gray_scale), background)
+        calibration_value = isnothing(calibration_value) ?
+            mean(gray_scale) : calibration_value
+
+        if calibration_value ∉ background..rightendpoint(gray_scale)
+            midpoint = mean(gray_scale)
+            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
+            calibration_value = midpoint
+        end
+        new(l, rows, cols, gray_scale, calibration_value, background)
+    end
+end
+
+
+function getproperty(p::SquareParams, s::Symbol)
+    s ≡ :width && return p.cols
+    s ≡ :height && return p.rows
+    getfield(p, s)
+end
+
+
+function SquareParams(
+    ::Type{T} = Float32;
+    l::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
+    gray_scale::ClosedInterval = -1000..1000,
+    calibration_value::Optional{Real} = nothing,
+    background::Optional{Real} = nothing,
+) where {T <: Real}
+    rows, cols = maybe(rows, height), maybe(cols, width)
+    width = maybe(512, cols)
+    height = maybe(width, rows)
+    rows, cols = height, width
+    l = maybe(min(rows, cols) ÷ 2, l)
+    SquareParams{T}(l, rows, cols, gray_scale, calibration_value, background)
+end
+
+
 """
     circle_position(imp::AbstractImageParams)
 
@@ -962,62 +1019,6 @@ function square_image(imp::SquareParams)
         imp.calibration_value,
         imp.background,
     )
-end
-
-struct SquareParams{T} <: AbstractImageParams{T}
-    l::Int
-    rows::Int
-    cols::Int
-    gray_scale::ClosedInterval{T}
-    calibration_value::T
-    background::T
-
-    function SquareParams{T}(
-        l::Int,
-        rows::Integer,
-        cols::Integer,
-        gray_scale::ClosedInterval{T} = -1000..1000,
-        calibration_value::Optional{Real} = nothing,
-        background::Optional{Real} = nothing,
-    )
-        background = maybe(leftendpoint(gray_scale), background)
-        calibration_value = isnothing(calibration_value) ?
-            mean(gray_scale) : calibration_value
-
-        if calibration_value ∉ background..rightendpoint(gray_scale)
-            midpoint = mean(gray_scale)
-            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
-            calibration_value = midpoint
-        end
-        new(l, rows, cols, gray_scale, calibration_value, background)
-    end
-end
-
-
-function getproperty(p::CircleParams, s::Symbol)
-    s ≡ :width && return p.cols
-    s ≡ :height && return p.rows
-    getfield(p, s)
-end
-
-
-function SquareParams(
-    ::Type{T} = Float32;
-    l::Optional{Integer} = nothing,
-    rows::Optional{Integer} = nothing,
-    cols::Optional{Integer} = nothing,
-    width::Optional{Integer} = nothing,
-    height::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Optional{Real} = nothing,
-    background::Optional{Real} = nothing,
-)
-    rows, cols = maybe(rows, height), maybe(cols, width)
-    width = maybe(512, cols)
-    height = maybe(width, rows)
-    rows, cols = height, width
-    l = maybe(min(rows, cols) ÷ 2, l)
-    SquareParams{T}(l, rows, cols, gray_scale, calibration_value, background)
 end
 
 
