@@ -75,18 +75,16 @@ Wigner distribution:
 ```@example qoptics
 marg′ = marg * length
 Wrec = iradon(marg, xs, xs, FBPFFTSquare())
-δW = 2ζ^3 / π * (length(xs)-1) / length(ϕs) / length(Wrec)
-@show sum(Wrec) * δW
 heatmap(xs, xs, Wrec)
 savefig("Wrec.svg"); nothing # hide
 ```
 
 ![](Wrec.svg)
 
-We can check that the normalization is preserved:
+We can check that the normalization is (roughly) preserved:
 
 ```@example qoptics
-δWrec = 4ζ^2 / (length(xs)-1)^2
+δWrec = 4ζ^2 / length(Wrec)
 @show sum(Wrec) * δWrec
 nothing # hide
 ```
