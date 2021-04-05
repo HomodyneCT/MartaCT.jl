@@ -2,7 +2,7 @@ module Simulations
 
 using ..Monads
 using ..CTImages
-using ..Utils: linspace, _half
+using ..Utils: linspace, half
 using ProgressMeter, LinearAlgebra, IntervalSets
 import Random, Distributions, StatsBase
 

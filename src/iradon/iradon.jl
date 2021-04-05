@@ -45,6 +45,7 @@ end
     sinog::AbstractMatrix{T};
     rows::Optional{I} = nothing,
     cols::Optional{J} = nothing,
+    ν::Real = 1,
     α::Real = 360,
     α₀::Real = 0,
     kwargs...

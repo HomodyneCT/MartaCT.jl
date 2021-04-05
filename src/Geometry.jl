@@ -49,9 +49,9 @@ end
 @inline function getproperty(g::ParallelBeamGeometry, s::Symbol)
     s ≡ :width && return g.cols
     s ≡ :height && return g.rows
-    s ≡ :nphi && return getfield(g, nϕ)
-    s ≡ :alpha && return getfield(g, α)
-    s ≡ :alpha0 && return getfield(g, α₀)
+    s ≡ :nphi && return getfield(g, :nϕ)
+    s ≡ :alpha && return getfield(g, :α)
+    s ≡ :alpha0 && return getfield(g, :α₀)
     getfield(g, s)
 end
 
@@ -165,12 +165,12 @@ end
 @inline function getproperty(g::FanBeamGeometry, s::Symbol)
     s ≡ :width && return g.cols
     s ≡ :height && return g.rows
-    s ≡ :nphi && return getfield(g, nϕ)
-    s ≡ :alpha && return getfield(g, α)
-    s ≡ :alpha0 && return getfield(g, α₀)
-    s ≡ :D1 && return getfield(g, D′)
-    s ≡ :gamma && return getfield(g, γ)
-    s ≡ :dx && return getfield(g, δ)
+    s ≡ :nphi && return getfield(g, :nϕ)
+    s ≡ :alpha && return getfield(g, :α)
+    s ≡ :alpha0 && return getfield(g, :α₀)
+    s ≡ :D1 && return getfield(g, :D′)
+    s ≡ :gamma && return getfield(g, :γ)
+    s ≡ :dx && return getfield(g, :δ)
     getfield(g, s)
 end
 

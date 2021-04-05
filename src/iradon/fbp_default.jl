@@ -12,10 +12,10 @@ function fbp_fft end
 
 @_defiradonfn fbp_fft begin
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
-    x₀::T = _half(xs)
-    y₀::T = _half(ys)
-    h::T = hypot(x₀, y₀)
-    κ::T = (t₀ - 1) / h / ν
+    δx::T = width(xs)
+    δy::T = width(ys)
+    h::T = hypot(δx, δy)
+    κ::T = (nd - 1) / h / ν
     @inbounds @simd for k ∈ eachindex(xys)
         x = xs[(k - 1) ÷ rows + 1] * κ
         y = ys[(k - 1) % rows + 1] * κ
@@ -41,7 +41,8 @@ function fbp_fft end
     foreach(temp_images) do x
         tomog .+= x
     end
-    tomog
+    δt::T = π * (nd - 1) / length(scϕs) / 2
+    tomog .*= δt
 end
 
 
