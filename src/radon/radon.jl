@@ -60,6 +60,15 @@ end
 end
 
 
+"""
+    radon(image::AbstractMatrix[, algorithm::AbstractProjectionAlgorithm]; <keyword arguments>)
+
+Compute the Radon transform of `image` with parameters given as keyword
+arguments. The parameters depend on the algorithm, please see the relative
+documentation. The default algorithm is [`Radon`](@ref).
+
+See Also: [`project_image`](@ref)
+"""
 @inline function radon(
     image::AbstractMatrix,
     alg::AbstractProjectionAlgorithm = Radon();
@@ -68,6 +77,17 @@ end
     alg(image; kwargs...)
 end
 
+
+"""
+    radon(image::AbstractMatrix, ts, ϕs[, algorithm::AbstractProjectionAlgorithm]; <keyword arguments>)
+
+Compute the Radon transform of `image` with integration points given by the
+vector `ts` and projection angles given by the vector `ϕs`. Additional
+parameters can be passed to the algorithm through keyword arguments.Please see
+the relative documentation. The default algorithm is [`Radon`](@ref).
+
+See Also: [`project_image`](@ref)
+"""
 @inline function radon(
     image::AbstractMatrix,
     ts::AbstractVector,
@@ -78,6 +98,16 @@ end
     alg(image, ts, ϕs; kwargs...)
 end
 
+
+"""
+    radon(image::AbstractMatrix, geometry::AbstractGeometry[, algorithm::AbstractProjectionAlgorithm]; <keyword arguments>)
+
+Compute the Radon transform of `image` with explicit geometry. Additional
+parameters can be passed to the algorithm through keyword arguments. Please see
+the relative documentation. The default algorithm is [`Radon`](@ref).
+
+See Also: [`project_image`](@ref)
+"""
 @inline function radon(
     image::AbstractMatrix,
     geometry::AbstractParallelBeamGeometry,
@@ -91,6 +121,7 @@ end
     radon(image, alg; nd, nϕ, α, α₀, kwargs...)
 end
 
+
 @inline function radon(
     image::AbstractMatrix,
     geometry::AbstractFanBeamGeometry,
@@ -102,6 +133,7 @@ end
     _, fan_sinog = para2fan(sinog, geometry)
     fan_sinog
 end
+
 
 @inline function radon(
     g::AbstractGeometry,
