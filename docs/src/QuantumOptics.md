@@ -34,6 +34,13 @@ bs = FockBasis(N-1)
 nothing # hide
 ```
 
+```@setup qoptics
+bar(diag(ρ.data)|>real; c=:red, leg=:none)
+savefig("rho-diag.svg"); nothing # hide
+```
+
+![](rho-diag.svg)
+
 We need to get the Wigner function representation in order
 to compute the marginal distributions of the position.
 
@@ -75,3 +82,11 @@ savefig("Wrec.svg"); nothing # hide
 ```
 
 ![](Wrec.svg)
+
+We can check that the normalization is preserved:
+
+```@example qoptics
+δWrec = 4ζ^2 / (length(xs)-1)^2
+@show sum(Wrec) * δWrec
+nothing # hide
+```
