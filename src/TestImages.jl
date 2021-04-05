@@ -240,7 +240,7 @@ struct CircleParams{T} <: AbstractImageParams{T}
             rows,
             cols,
             maybe(max(rows,cols), nϕ),
-            ClosedInterval{T}(gray_scale),
+            gray_scale,
             calibration_value,
             background,
         )
@@ -297,7 +297,7 @@ struct SquareParams{T} <: AbstractImageParams{T}
         l::Int,
         rows::Integer,
         cols::Integer,
-        gray_scale::ClosedInterval{T} = -1000..1000,
+        gray_scale::ClosedInterval = -1000..1000,
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
     ) where {T <: Real}
@@ -338,7 +338,14 @@ function SquareParams(
     height = maybe(width, rows)
     rows, cols = height, width
     l = maybe(min(rows, cols) ÷ 2, l)
-    SquareParams{T}(l, rows, cols, gray_scale, calibration_value, background)
+    SquareParams{T}(
+        l,
+        rows,
+        cols,
+        gray_scale,
+        calibration_value,
+        background
+    )
 end
 
 
@@ -982,7 +989,7 @@ function square_image(
     c::Integer,
     l::Optional{Integer} = nothing;
     calibration_value::Real = zero(T),
-    background::Real = -1000
+    background::Real = -1000,
 ) where {T<:Real}
     matrix = fill(T(background), r, c)
     if isnothing(l)
@@ -1015,7 +1022,6 @@ function square_image(imp::SquareParams)
         imp.l,
         imp.rows,
         imp.cols,
-        imp.gray_scale,
         imp.calibration_value,
         imp.background,
     )
