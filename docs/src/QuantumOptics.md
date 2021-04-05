@@ -73,7 +73,6 @@ Now we can employ the standard FBP algorithm to recover the
 Wigner distribution:
 
 ```@example qoptics
-marg′ = marg * length
 Wrec = iradon(marg, xs, xs, FBPFFTSquare())
 heatmap(xs, xs, Wrec)
 savefig("Wrec.svg"); nothing # hide
