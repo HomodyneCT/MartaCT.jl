@@ -10,8 +10,8 @@ export square_image, circle_polar_image
 export combined_images_size, combine_images
 export create_image, plateau_length
 export AbstractTestImage, AbstractGrayScale
-export GrayScaleLine, GrayScalePyramid, CircleImage, WhiteRect
-export SquareImage
+export GrayScaleLine, GrayScalePyramid, WhiteRect
+export CircleImage, SquareImage
 
 
 using IntervalSets, SimpleTraits
