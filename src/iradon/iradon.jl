@@ -67,9 +67,11 @@ end
     a(sinog, xs, ys; ϕs, kwargs...)
 end
 
+
 @inline function iradon(sinog::AbstractMatrix; kwargs...)
     iradon(sinog, FBP(); kwargs...)
 end
+
 
 @inline function iradon(
     sinog::AbstractMatrix,
@@ -80,6 +82,7 @@ end
     iradon(sinog, xs, ys, FBP(); kwargs...)
 end
 
+
 @inline function iradon(
     sinog::AbstractMatrix,
     geometry::AbstractGeometry;
@@ -87,6 +90,7 @@ end
 )
     iradon(sinog, geometry, FBP(); kwargs...)
 end
+
 
 @inline function iradon(g::AbstractGeometry; kwargs...)
     iradon(g, FBP(); kwargs...)

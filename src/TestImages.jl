@@ -367,6 +367,16 @@ circle_position(imp::CircleParams) = imp.rows ÷ 2, imp.cols ÷ 2
 
 
 """
+    square_position(imp::SquareParams)
+
+Return square position inside image given image parameters.
+"""
+function square_position(imp::SquareParams)
+    imp.rows ÷ 2, imp.cols ÷ 2
+end
+
+
+"""
     background_position(imp::AbstractImageParams)
 
 Return suitable position to calibrate background.

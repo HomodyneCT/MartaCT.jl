@@ -135,6 +135,15 @@ end
 @_defapi reconstruct_image iradon AbstractReconstructionAlgorithm
 
 
+"""
+    iradon(sinog::AbstractMatrix[, algorithm::AbstractProjectionAlgorithm]; <keyword arguments>)
+
+Compute the inverse Radon transform of `sinog` with parameters given as keyword
+arguments. The parameters depend on the algorithm, please see the relative
+documentation. The default algorithm is [`FBP`](@ref).
+
+See Also: [`reconstruct_image`](@ref)
+"""
 @inline function iradon(
     sinog::AbstractMatrix,
     alg::AbstractReconstructionAlgorithm;
@@ -143,6 +152,18 @@ end
     alg(sinog; kwargs...)
 end
 
+
+"""
+    iradon(sinog::AbstractMatrix, xs[, ys[, algorithm::AbstractProjectionAlgorithm[, coo::AbstractCoordinates]]]; <keyword arguments>)
+
+Compute the inverse Radon transform of `sinog` on the points given by the
+vectors `xs` and `ys`. If `ys` is omitted, the reconstruction is performed on
+the square with `xs == ys`. The default reconstruction algorithm is
+[`FBP`](@ref). Please refer to the respective documentation for additional
+parameters.
+
+See Also: [`reconstruct_image`](@ref)
+"""
 @inline function iradon(
     sinog::AbstractMatrix,
     xs::AbstractVector,
@@ -154,6 +175,7 @@ end
     alg(sinog, xs, ys, coo; kwargs...)
 end
 
+
 @inline function iradon(
     sinog::AbstractMatrix,
     xs::AbstractVector,
@@ -164,6 +186,18 @@ end
     alg(sinog, xs, coo; kwargs...)
 end
 
+
+"""
+    iradon(sinog::AbstractMatrix[, geometry::AbstractGeometry[, params::AbstractParams[, algorithm::AbstractProjectionAlgorithm]]]; <keyword arguments>)
+
+Compute the inverse Radon transform of `sinog` with explicit geometry. If the
+algorithm needs specific parameters, these can be passed with `params`.
+Additional parameters can be passed to the algorithm through keyword arguments.
+Please see the respective documentation for more details. The default algorithm
+is [`FBP`](@ref).
+
+See Also: [`reconstruct_image`](@ref)
+"""
 @inline function iradon(
     sinog::AbstractMatrix,
     geometry::AbstractParallelBeamGeometry,
@@ -177,6 +211,7 @@ end
     iradon(sinog, alg; rows, cols, α, α₀, kwargs...)
 end
 
+
 @inline function iradon(
     sinog::AbstractMatrix,
     geometry::AbstractFanBeamGeometry,
@@ -187,6 +222,7 @@ end
     iradon(para_sinog, g′, alg; kwargs...)
 end
 
+
 @inline function iradon(
     g::AbstractGeometry,
     alg::AbstractReconstructionAlgorithm;
@@ -194,6 +230,7 @@ end
 )
     x -> iradon(x, g, alg; kwargs...)
 end
+
 
 @inline function iradon(
     sinog::AbstractMatrix,
