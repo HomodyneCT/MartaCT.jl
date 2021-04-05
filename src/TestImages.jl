@@ -2,7 +2,8 @@ module TestImages
 
 export indicator_matrix, indicator_matrix_2
 export AbstractImageParams, ImageParams, CircleParams
-export circle_position, background_position
+export circle_position, square_position
+export calibration_position, background_position
 export gray_scale_indices
 export circle_image, gray_scale_image
 export square_image, circle_polar_image
@@ -10,6 +11,7 @@ export combined_images_size, combine_images
 export create_image, plateau_length
 export AbstractTestImage, AbstractGrayScale
 export GrayScaleLine, GrayScalePyramid, CircleImage, WhiteRect
+export SquareImage
 
 
 using IntervalSets, SimpleTraits
@@ -238,7 +240,7 @@ struct CircleParams{T} <: AbstractImageParams{T}
             rows,
             cols,
             maybe(max(rows,cols), nϕ),
-            gray_scale,
+            ClosedInterval{T}(gray_scale),
             calibration_value,
             background,
         )
@@ -315,6 +317,13 @@ end
 function background_position(imp::CircleParams)
     cr, cc = circle_position(imp)
     max(1, cr - imp.radius), max(1, cc - imp.radius)
+end
+
+
+function background_position(imp::SquareParams)
+    imp.l == imp.rows == imp.cols && @warn "Cannot calibrate square image if square side equals image size"
+    cr, cc = square_position(imp)
+    max(1, cr), max(1, (1 + cc - imp.l) ÷ 2)
 end
 
 
@@ -913,8 +922,8 @@ julia> square_image(30, 30; l=10)
 function square_image(
     ::Type{T},
     r::Integer,
-    c::Integer;
-    l::Optional{Integer} = nothing,
+    c::Integer,
+    l::Optional{Integer} = nothing;
     calibration_value::Real = zero(T),
     background::Real = -1000
 ) where {T<:Real}
@@ -931,8 +940,117 @@ function square_image(
     matrix
 end
 
+square_image(r, c, l; kwargs...) = square_image(Float32, r, c, l; kwargs...)
 
-square_image(r, c; kwargs...) = square_image(Float32, r, c; kwargs...)
+function square_image(
+    ::Type{T} = Float32;
+    rows::Integer,
+    cols::Integer,
+    l::Optional{Integer} = nothing,
+    kwargs...
+) where {T <: Real}
+    square_image(T, rows, cols, l; kwargs...)
+end
+
+function square_image(imp::SquareParams)
+    square_image(
+        eltype(imp);
+        imp.l,
+        imp.rows,
+        imp.cols,
+        imp.gray_scale,
+        imp.calibration_value,
+        imp.background,
+    )
+end
+
+struct SquareParams{T} <: AbstractImageParams{T
+    l::Int
+    rows::Int
+    cols::Int
+    gray_scale::ClosedInterval{T}
+    calibration_value::T
+    background::T
+
+    function SquareParams{T}(
+        l::Int,
+        rows::Integer,
+        cols::Integer,
+        gray_scale::ClosedInterval{T} = -1000..1000,
+        calibration_value::Optional{Real} = nothing,
+        background::Optional{Real} = nothing,
+    )
+        background = maybe(leftendpoint(gray_scale), background)
+        calibration_value = isnothing(calibration_value) ?
+            mean(gray_scale) : calibration_value
+
+        if calibration_value ∉ background..rightendpoint(gray_scale)
+            midpoint = mean(gray_scale)
+            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
+            calibration_value = midpoint
+        end
+        new(l, rows, cols, gray_scale, calibration_value, background)
+    end
+end
+
+
+function getproperty(p::CircleParams, s::Symbol)
+    s ≡ :width && return p.cols
+    s ≡ :height && return p.rows
+    getfield(p, s)
+end
+
+
+function SquareParams(
+    ::Type{T} = Float32;
+    l::Optional{Integer} = nothing,
+    rows::Optional{Integer} = nothing,
+    cols::Optional{Integer} = nothing,
+    width::Optional{Integer} = nothing,
+    height::Optional{Integer} = nothing,
+    gray_scale::ClosedInterval = -1000..1000,
+    calibration_value::Optional{Real} = nothing,
+    background::Optional{Real} = nothing,
+)
+    rows, cols = maybe(rows, height), maybe(cols, width)
+    width = maybe(512, cols)
+    height = maybe(width, rows)
+    rows, cols = height, width
+    l = maybe(min(rows, cols) ÷ 2, l)
+    SquareParams{T}(l, rows, cols, gray_scale, calibration_value, background)
+end
+
+
+struct SquareImage{T} <: AbstractTestImage{T}
+    params::SquareParams{T}
+    image::CTImageMat{T}
+end
+
+
+function getproperty(grimg::SquareImage, s::Symbol)
+    s ∈ fieldnames(SquareImage) && return getfield(grimg, s)
+    getproperty(grimg.params, s)
+end
+
+
+function SquareImage(imp::SquareParams)
+    img = square_image(imp)
+    SquareImage{T}(imp, img)
+end
+
+
+function SquareImage(
+    ::Type{T};
+    l::Optional{Integer} = nothing,
+    kwargs...
+) where {T <: Real}
+    imp = SquareParams(
+        T;
+        l,
+        kwargs...
+    )
+    SquareImage(imp)
+end
 
 
 struct WhiteRect{T} <: AbstractGrayScale{T}
@@ -1029,23 +1147,25 @@ for nm ∈ (:calibrate_image, :calibrate_image!, :calibrate_tomogram,:calibrate_
 end
 
 
+"""
+    calibration_position(imp::AbstractImageParams)
+
+Get the position for calibration (max value).
+"""
+function calibration_position end
+
+calibration_position(imp::Union{ImageParams,CircleParams}) = circle_position(imp)
+calibration_position(imp::SquareParams) = square_position(imp)
+
+
 function calibration_data(imp::AbstractImageParams)
     min_pos = background_position(imp)
-    max_pos = circle_position(imp)
+    max_pos = calibration_position(imp)
     min_pos, max_pos
 end
 
 
-# function rescale!(img::AbstractTestImage, args...; kwargs...)
-#     rescale!(img.image, args...; kwargs...)
-# end
-
-
-# function rescale(img::AbstractTestImage, args...; kwargs...)
-#     rescale(img.image, args...; kwargs...)
-# end
-
 const _gs_images =
-    (:CircleImage, :WhiteRect, :GrayScaleLine, :GrayScalePyramid)
+    (:CircleImage, :WhiteRect, :GrayScaleLine, :GrayScalePyramid, :SquareImage)
 
 end # module
