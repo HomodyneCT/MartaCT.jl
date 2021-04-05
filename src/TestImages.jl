@@ -1042,7 +1042,7 @@ end
 
 function SquareImage(imp::SquareParams)
     img = square_image(imp)
-    SquareImage{T}(imp, img)
+    SquareImage(imp, CTImage(img))
 end
 
 
