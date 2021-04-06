@@ -2,7 +2,7 @@ struct IsRadonDiag end
 struct IsRadonSquare end
 
 
-include("radon_default.jl")
+include("radon_diag.jl")
 include("radon_square.jl")
 
 
