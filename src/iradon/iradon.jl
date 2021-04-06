@@ -4,7 +4,7 @@ struct IsIRadonDiag end
 struct IsIRadonSquare end
 
 
-include("fbp_default.jl")
+include("fbp_fft.jl")
 include("fbp_square.jl")
 include("fbpa.jl")
 include("fbpa_square.jl")

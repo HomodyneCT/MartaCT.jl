@@ -1,11 +1,11 @@
 struct Radon <: AbstractProjectionAlgorithm end
 
 _alg_method(::Radon) = IsRadonDiag()
-@_defradonalgfn Radon radon_default
+@_defradonalgfn Radon radon_diag
 
 
 """
-    radon_default(image::AbstractMatrix, ts::AbstractVector, ϕs::AbstractVector; <keyword arguments>)
+    radon_diag(image::AbstractMatrix, ts::AbstractVector, ϕs::AbstractVector; <keyword arguments>)
 
 Compute the Radon transform of `image` inside a circle of
 radius `hypot(rows,cols)/2` where `rows` and `cols` are the
@@ -13,9 +13,9 @@ dimensions of `image`.
 
 See Also: [`radon_square`](@ref)
 """
-function radon_default end
+function radon_diag end
 
-@_defradonfn radon_default begin
+@_defradonfn radon_diag begin
     @assert 0 ∈ first(ts)..last(ts)
     t₀::T = hypot(rows, cols) / 2
     κ::T = ν * t₀ / width(ts)
