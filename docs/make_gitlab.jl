@@ -4,6 +4,6 @@ using MartaCT
 include("makedocs.jl")
 
 deploydocs(
-    repo = "gitlab.com/homodyne-ct/MartaCT.git",
+    repo = "gitlab.com/homodyne-ct/MartaCT.jl.git",
     deploy_config = Documenter.GitLab()
 )

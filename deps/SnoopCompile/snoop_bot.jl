@@ -1,7 +1,7 @@
 using CompileBot
 
 bot_config = BotConfig(
-    "Marta";
+    "MartaCT";
     os = ["linux", "macos", "windows"],
     else_os = "linux",
     version = [v"1.5.0"],

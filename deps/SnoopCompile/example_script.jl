@@ -1,4 +1,4 @@
-using Marta
+using MartaCT
 
 const _pre_types = (:Float32, :Float64)
 const width = 5
