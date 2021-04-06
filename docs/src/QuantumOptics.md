@@ -79,11 +79,3 @@ savefig("Wrec.svg"); nothing # hide
 ```
 
 ![](Wrec.svg)
-
-We can check that the normalization is (roughly) preserved:
-
-```@example qoptics
-δWrec = 4ζ^2 / length(Wrec)
-@show sum(Wrec) * δWrec
-nothing # hide
-```
