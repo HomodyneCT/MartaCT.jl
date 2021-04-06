@@ -6,7 +6,7 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://HomodyneCT.github.io/MartaCT.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://HomodyneCT.github.io/MartaCT.jl/dev)
 
-# [**MartaCT CT**](https://gitlab.com/homodyne-ct/MartaCT.jl)
+# [**Marta CT**](https://gitlab.com/homodyne-ct/MartaCT.jl)
 ###### _A Julia package for CT images reconstruction and analysis_
 
 ## Installation
