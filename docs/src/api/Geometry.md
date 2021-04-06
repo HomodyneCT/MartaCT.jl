@@ -1,5 +1,5 @@
 # Geometry
 
 ```@autodocs
-Modules = [Marta.Geometry, Marta.FanBeam]
+Modules = [MartaCT.Geometry, MartaCT.FanBeam]
 ```

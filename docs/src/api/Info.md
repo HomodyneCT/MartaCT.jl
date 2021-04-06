@@ -1,5 +1,5 @@
 # Info objects
 
 ```@autodocs
-Modules = [Marta.Info]
+Modules = [MartaCT.Info]
 ```

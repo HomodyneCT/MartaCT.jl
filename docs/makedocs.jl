@@ -1,12 +1,12 @@
 using Documenter
-using Marta
+using MartaCT
 
 makedocs(
-    sitename = "Marta",
+    sitename = "MartaCT",
     format = Documenter.HTML(
         prettyurls = "local" ∉ ARGS,
     ),
-    modules = [Marta],
+    modules = [MartaCT],
     pages = [
         "Home" => "index.md",
         "Getting Started" => [

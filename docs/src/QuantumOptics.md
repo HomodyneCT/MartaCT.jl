@@ -2,13 +2,13 @@
 
 ```@setup qoptics
 ENV["GKS_WSTYPE"] = "svg"
-using Marta, Plots, QuantumOptics, IntervalSets, LinearAlgebra, Plots.Measures
+using MartaCT, Plots, QuantumOptics, IntervalSets, LinearAlgebra, Plots.Measures
 gr()
 Plots.reset_defaults()
 default(size=(500,300), rightmargin=0.5cm)
 ```
 
-Marta can also be used for Quantum Tomography as the basic
+MartaCT can also be used for Quantum Tomography as the basic
 _filtered backprojection_ algorithm can be used to
 reconstruct a quantum state (or more precisely the Wigner
 function) from the measurements of the position.
@@ -18,7 +18,7 @@ use the QuantumOptics Julia package for the definition of
 the quantum objects.
 
 ```julia
-using Marta, Plots, QuantumOptics, IntervalSets, LinearAlgebra
+using MartaCT, Plots, QuantumOptics, IntervalSets, LinearAlgebra
 ```
 
 At this point, let's construct an optical cat state:

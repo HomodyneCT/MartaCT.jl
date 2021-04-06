@@ -1,5 +1,5 @@
 # Interpolation
 
 ```@autodocs
-Modules = [Marta.Interpolation]
+Modules = [MartaCT.Interpolation]
 ```
