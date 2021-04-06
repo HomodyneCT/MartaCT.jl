@@ -334,7 +334,7 @@ function SquareParams(
     background::Optional{Real} = nothing,
 ) where {T <: Real}
     rows, cols = maybe(rows, height), maybe(cols, width)
-    width = maybe(512, cols)
+    width = maybe(maybe(512, rows), cols)
     height = maybe(width, rows)
     rows, cols = height, width
     l = maybe(min(rows, cols) ÷ 2, l)
@@ -1057,7 +1057,7 @@ end
 
 
 function SquareImage(
-    ::Type{T};
+    ::Type{T} = Float32;
     l::Optional{Integer} = nothing,
     kwargs...
 ) where {T <: Real}
