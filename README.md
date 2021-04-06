@@ -11,7 +11,7 @@
 
 ## Installation
 
-The Marta package can be installed with the following commands:
+The MartaCT package can be installed with the following commands:
 
 ```julia
 import Pkg
