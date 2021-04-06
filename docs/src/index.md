@@ -1,4 +1,4 @@
-# MartaCT
+# Marta CT
 
 _CT images reconstruction and analysis_
 
