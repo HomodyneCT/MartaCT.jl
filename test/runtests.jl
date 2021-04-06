@@ -1,5 +1,13 @@
-using Test, Marta
+include("setup.jl")
 
-include("test_radon.jl")
-include("test_fbp.jl")
-include("test_geometry.jl")
+tests = ["radon", "fbp", "geometry"]
+
+if !isempty(ARGS)
+    tests = ARGS
+end
+
+@testset "Tests for the Marta package" begin
+    for t ∈ tests
+        include("test_$t.jl")
+    end
+end
