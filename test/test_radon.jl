@@ -6,7 +6,7 @@ img = SquareImage(rows=4, cols=4, l=2, calibration_value=1, background=0)
         [0 1 1 0];
         [0 0 0 0]
     ]
-    @testset "Testing diag algotithm" begin
+    @testset "Testing diag algorithm" begin
         sinog = radon(img, Radon())
         @test sinog ≈ [
             [0.323768   0.398227  0.0333993  0.0        0.00320944];
@@ -17,7 +17,7 @@ img = SquareImage(rows=4, cols=4, l=2, calibration_value=1, background=0)
             [0.0        0.0       0.0966751  0.401678   0.208203]
         ]
     end
-    @testset "Testing square algotithm" begin
+    @testset "Testing square algorithm" begin
         sinog = radon(img, RadonSquare())
         @test sinog ≈ [
             [0.0       0.05596    0.044909  0.064763   0.0647629  0.044909  0.05596];

@@ -10,7 +10,7 @@ img = SquareImage(rows=4, cols=4, l=2, calibration_value=1, background=0)
             [-0.926158  0.120973  -0.136073  -1.26307]
         ]
     end
-    @testset "Testing FBP FFT square algotithm" begin
+    @testset "Testing FBP FFT square algorithm" begin
         sinog = radon(img, RadonSquare())
         tomog = iradon(sinog, FBPFFTSquare())
         @test tomog ≈ [
