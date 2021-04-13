@@ -18,7 +18,6 @@ include("fbpa_square.jl")
     cols::Optional{J} = nothing,
     α::Real = 360,
     α₀::Real = 0,
-    ν::Real = 1,
     kwargs...
 ) where {
     A <: AbstractIRadonAlgorithm,
@@ -32,7 +31,7 @@ include("fbpa_square.jl")
     cols = maybe(rows, cols)
     ϕs = deg2rad(α₀)..(deg2rad(α₀) + deg2rad(α))
     sθ, cθ = sincos(atan(rows, cols))
-    x₀, y₀ = cθ / ν, sθ / ν
+    x₀, y₀ = cθ, sθ
     xs = linspace(eltype(sinog), -x₀..x₀, cols)
     ys = linspace(eltype(sinog), -y₀..y₀, rows)
     a(sinog, xs, ys; ϕs, kwargs...)
@@ -45,7 +44,6 @@ end
     sinog::AbstractMatrix{T};
     rows::Optional{I} = nothing,
     cols::Optional{J} = nothing,
-    ν::Real = 1,
     α::Real = 360,
     α₀::Real = 0,
     kwargs...
@@ -61,7 +59,7 @@ end
     cols = maybe(rows, cols)
     ϕs = deg2rad(α₀)..(deg2rad(α₀) + deg2rad(α))
     sθ, cθ = sincos(atan(rows, cols))
-    x₀, y₀ = cθ / ν, sθ / ν
+    x₀, y₀ = cθ, sθ
     xs = linspace(eltype(sinog), -x₀..x₀, cols)
     ys = linspace(eltype(sinog), -y₀..y₀, rows)
     a(sinog, xs, ys; ϕs, kwargs...)

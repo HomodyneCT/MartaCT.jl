@@ -68,6 +68,8 @@ macro _defradonfn(f::Symbol, body)
         }
             ν = maybe(ν, scale)
             τ = maybe(τ, ratio)
+            @assert ν > 0
+            @assert τ > 0
             rows, cols = size(image)
             nd = length(ts)
             nϕ = length(ϕs)
@@ -110,6 +112,7 @@ macro _defiradonfn(f::Symbol, body)
             Interp <: AbstractInterp2DOrNone,
         }
             ν = maybe(ν, scale)
+            @assert ν > 0
             ϕs = maybe(ϕs, angles)
             nd, nϕ = size(sinog)
             cols = length(xs)
