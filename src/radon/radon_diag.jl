@@ -19,7 +19,7 @@ function radon_diag end
     @assert 0 ∈ first(ts)..last(ts)
     x₀::T = (cols + 1) / 2
     y₀::T = (rows + 1) / 2
-    cθ::T = inv(√(1+τ^2))
+    cθ::T = half(ts) * inv(√(1+τ^2))
     sθ::T = τ * cθ
     txs = @. T(ts * (x₀ - 1) / cθ)
     tys = @. T(ts * (y₀ - 1) / sθ)

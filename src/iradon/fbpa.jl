@@ -12,8 +12,15 @@ function fbpa_fft end
 
 @_defiradonfn fbpa_fft begin
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
+    δx::T = width(xs)
+    δy::T = width(ys)
+    h::T = hypot(δx, δy)
+    λ::T = (nd - 1) / h
+    κ::T = λ / ν
     @inbounds @simd for k ∈ eachindex(xys)
-        xys[k] = xs[(k - 1) ÷ rows + 1], ys[(k - 1) % rows + 1]
+        x = xs[(k - 1) ÷ rows + 1] * κ
+        y = ys[(k - 1) % rows + 1] * κ
+        xys[k] = x, y
     end
     p = _iradon_progress(length(tomog), progress)
     Threads.@threads for k ∈ eachindex(xys)
@@ -26,7 +33,9 @@ function fbpa_fft end
         end
         next!(p)
     end
-    tomog
+    γ::T = min(rows, cols) / hypot(rows, cols) * rows / cols
+    δt::T = π * γ / length(scϕs) / nd * λ^2
+    tomog .*= δt
 end
 
 

@@ -53,8 +53,8 @@ macro _defradonfn(f::Symbol, body)
             ϕs::AbstractVector{Y};
             ν::Real = 1,
             scale::Optional{Real} = nothing,
-            τ::Real = 1,
-            ratio::Optional{Real} = 1,
+            τ::Optional{Real} = nothing,
+            ratio::Optional{Real} = nothing,
             background::Optional{Z} = nothing,
             rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
@@ -67,10 +67,10 @@ macro _defradonfn(f::Symbol, body)
             Interp <: AbstractInterp2DOrNone,
         }
             ν = maybe(ν, scale)
-            τ = maybe(τ, ratio)
             @assert ν > 0
-            @assert τ > 0
             rows, cols = size(image)
+            τ = maybe(maybe(rows / cols, τ), ratio)
+            @assert τ > 0
             nd = length(ts)
             nϕ = length(ϕs)
             scϕs = sincos.(ϕs)

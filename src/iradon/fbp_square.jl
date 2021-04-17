@@ -33,7 +33,7 @@ function fbp_fft_square end
     foreach(temp_images) do x
         tomog .+= x
     end
-    δt::T = π / length(scϕs) / nd * κ^2
+    δt::T = π / length(scϕs) / nd * κ^2 * rows / cols
     tomog .*= δt
 end
 
