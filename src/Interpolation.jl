@@ -70,7 +70,7 @@ end
         "Interpolation of arrays with dimensions higher than 2 " *
         "is not currently supported"
     )
-    @propagate_inbounds function (xs::U...) where {U <: Number}
+    @propagate_inbounds function (xs::Vararg{Integer,N}) where {N}
         interp(a, xs...)
     end
 end
