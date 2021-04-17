@@ -25,7 +25,7 @@ function fbp_fft_square end
             x, y = xxs[ix], yys[iy]
             t::T = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                img[iy,ix] += interp(t, T(iϕ))
+                img[iy,ix] += interp(t, iϕ)
             end
         end
         next!(p)

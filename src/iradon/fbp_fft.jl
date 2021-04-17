@@ -33,7 +33,7 @@ function fbp_fft end
             # To be consistent with our conventions should be '+'.
             t = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                img[k] += interp(t, T(iϕ))
+                img[k] += interp(t, iϕ)
             end
         end
         next!(p)

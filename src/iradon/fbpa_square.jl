@@ -29,7 +29,7 @@ function fbpa_fft_square end
             sϕ, cϕ = scϕs[iϕ]
             # To be consistent with our conventions should be '+'.
             t = (x * cϕ + y * sϕ + 1) * t₀
-            t ∈ 1..nd ? interp(t, T(iϕ)) : z
+            t ∈ 1..nd ? interp(t, iϕ) : z
         end
         next!(p)
     end
