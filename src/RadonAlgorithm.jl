@@ -30,18 +30,20 @@ function _alg_method end
 
 @inline function _radon(
     a::AbstractProjectionAlgorithm,
-    x::AbstractMatrix;
+    img::AbstractMatrix,
+    args...;
     kwargs...
 )
-    _radon(_alg_method(a), a, x; kwargs...)
+    _radon(_alg_method(a), a, img, args...; kwargs...)
 end
 
 @inline function _iradon(
     a::AbstractIRadonAlgorithm,
-    x::AbstractMatrix;
+    sinog::AbstractMatrix,
+    args...;
     kwargs...
 )
-    _iradon(_alg_method(a), a, x; kwargs...)
+    _iradon(_alg_method(a), a, sinog, args...; kwargs...)
 end
 
 
