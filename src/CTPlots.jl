@@ -135,11 +135,11 @@ const _sinog_xticks = [45i for i in 0:8]
 end
 
 
-@recipe function plot(tsi::Interval, θsi::Interval, sinog::CTSinogram)
+@recipe function plot(θsi::Interval, tsi::Interval, sinog::CTSinogram)
     nd, nϕ = size(sinog)
     ts = linspace(tsi, nd)
     θs = linspace(θsi, nϕ)
-    ts, θs, sinog
+    θs, ts, sinog
 end
 
 
