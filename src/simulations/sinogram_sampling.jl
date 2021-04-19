@@ -1,21 +1,14 @@
-struct CTSimulation <: AbstractSimulation end
+struct CTSimulation <: AbstractSimulation
+    nphotons::Int
+end
+
 
 @inline function Random.rand(
     sinog::CTSinogram,
-    nphotons::Integer,
     sim::CTSimulation;
     kwargs...
 )
-    simulate_ct(sinog; nphotons, kwargs...)
-end
-
-@inline function Random.rand(
-    sinog::CTSinogram,
-    ::CTSimulation;
-    nphotons::Integer,
-    kwargs...
-)
-    rand(sinog, nphotons, CTSimulation(); kwargs...)
+    simulate_ct(sinog; sim.nphotons, kwargs...)
 end
 
 
