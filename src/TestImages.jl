@@ -116,7 +116,7 @@ struct ImageParams{T} <: AbstractImageParams{T}
         cols::Optional{Integer} = nothing;
         gray_scale::Optional{ClosedInterval} = nothing,
         calibration_value::Optional{Real} = nothing,
-        background::Optional{Real} = nothing;
+        background::Optional{Real} = nothing,
         hounsfield::Bool = true,
         kwargs...
     ) where {T<:Real}
@@ -264,14 +264,16 @@ function CircleParams(
     kwargs...
 ) where {T <: Real}
     nϕ = maybe(nϕ, nphi)
-    factor = 31 / 50 # magic number!
-    circ_zoom = 1.3 / 17
+    #factor = 31 / 50 # magic number!
+    factor = 1
+    #circ_zoom = 1.3 / 17
+    circ_zoom = 1//5
     #=
         If width or height are present, use them, otherwise use rows and cols.
         Finally, if rows or cols are not present, compute defaults.
     =#
     rows, cols = maybe(rows, height), maybe(cols, width)
-    width = maybe(500, cols)
+    width = maybe(512, cols)
     height = isnothing(rows) ? round(Int, width * factor) : rows
     radius = isnothing(radius) ? round(Int, width * circ_zoom) : radius
     rows, cols = height, width
@@ -1048,11 +1050,7 @@ function SquareImage(
     l::Optional{Integer} = nothing,
     kwargs...
 ) where {T <: Real}
-    imp = SquareParams(
-        T;
-        l,
-        kwargs...
-    )
+    imp = SquareParams(T; l, kwargs...)
     SquareImage(imp)
 end
 
