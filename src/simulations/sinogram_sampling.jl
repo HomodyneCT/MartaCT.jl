@@ -1,5 +1,5 @@
-struct CTSimulation <: AbstractSimulation
-    nphotons::Int
+Base.@kwdef struct CTSimulation <: AbstractSimulation
+    nphotons::Int = 10000
 end
 
 
