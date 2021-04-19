@@ -59,6 +59,16 @@ function StatsBase.sample(
 end
 
 
+@inline function StatsBase.sample(
+    data::CTSinogram,
+    xsi::Interval;
+    kwargs...
+)
+    xs = linspace(xsi, size(data, 1))
+    sample(data, xs; kwargs...)
+end
+
+
 """generate_photons(n::Integer, nx::Integer, nϕ::Integer)
 
 Generate ``⟨n⟩`` Poisson distributed photons per projection
