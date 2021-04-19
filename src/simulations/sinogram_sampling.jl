@@ -3,13 +3,18 @@ struct CTSimulation <: AbstractSimulation end
 @inline function Random.rand(
     sinog::CTSinogram,
     nphotons::Integer,
-    ::CTSimulation;
+    sim::CTSimulation
     kwargs...
 )
-    sample_sinogram(sinog; kwargs...)
+    simulate_ct(sinog; nphotons,  kwargs...)
 end
 
-@inline function Random.rand(sinog::CTSinogram, ::CTSimulation; kwargs...)
+@inline function Random.rand(
+    sinog::CTSinogram,
+    ::CTSimulation;
+    nphotons::Integer,
+    kwargs...
+)
     rand(sinog, nphotons, CTSimulation(); kwargs...)
 end
 
