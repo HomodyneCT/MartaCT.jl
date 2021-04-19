@@ -18,6 +18,7 @@ using ..Geometry:
     AbstractGeometry, AbstractParallelBeamGeometry, AbstractFanBeamGeometry
 using ..FanBeam: fan2para
 using ..Coordinates
+using IntervalSets: Interval
 
 
 @inline function _alg_progress(
@@ -166,8 +167,8 @@ See Also: [`reconstruct_image`](@ref)
 """
 @inline function iradon(
     sinog::AbstractMatrix,
-    xs::AbstractVector,
-    ys::AbstractVector,
+    xs::Union{AbstractVector,Interval},
+    ys::Union{AbstractVector,Interval},
     alg::AbstractReconstructionAlgorithm,
     coo::AbstractCoordinates = Cartesian();
     kwargs...

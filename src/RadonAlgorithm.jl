@@ -153,6 +153,14 @@ macro _defradonalgfn(A::Symbol, f::Symbol)
         )
             $f(image, ts, ϕs; kwargs...)
         end
+        @inline function (a::$A)(
+            image::AbstractMatrix,
+            ts::Interval,
+            ϕs::Interval;
+            kwargs...
+        )
+            _radon(a, image, ts, ϕs; kwargs...)
+        end
         @inline function (a::$A)(image::AbstractMatrix; kwargs...)
             _radon(a, image; kwargs...)
         end
@@ -170,6 +178,15 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
             kwargs...
         )
             $f(sinog, xs, ys, coo; kwargs...)
+        end
+        @inline function (a::$A)(
+            sinog::AbstractMatrix,
+            xs::Interval,
+            ys::Interval,
+            coo::AbstractCoordinates = Cartesian();
+            kwargs...
+        )
+            _iradon(a, sinog, xs, ys, coo; kwargs...)
         end
         @inline function (a::$A)(
             sinog::AbstractMatrix,

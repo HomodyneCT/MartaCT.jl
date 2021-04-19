@@ -39,6 +39,32 @@ end
 
 
 @inline function _iradon(
+    ::IsIRadonDiag,
+    a::A,
+    sinog::AbstractMatrix{T},
+    xsi::Interval,
+    ysi::Interval,
+    coo::Cartesian = Cartesian();
+    rows::Optional{I} = nothing,
+    cols::Optional{J} = nothing,
+    kwargs...
+) where {
+    A <: AbstractIRadonAlgorithm,
+    T <: Real,
+    I <: Integer,
+    J <: Integer,
+}
+    nd, nϕ = size(sinog)
+    rows = maybe(cols, rows)
+    rows = maybe(round(Int, nd / √2), rows)
+    cols = maybe(rows, cols)
+    xs = linspace(eltype(sinog), xsi, cols)
+    ys = linspace(eltype(sinog), ysi, rows)
+    a(sinog, xs, ys, coo; kwargs...)
+end
+
+
+@inline function _iradon(
     ::IsIRadonSquare,
     a::A,
     sinog::AbstractMatrix{T};
@@ -66,6 +92,32 @@ end
 end
 
 
+@inline function _iradon(
+    ::IsIRadonSquare,
+    a::A,
+    sinog::AbstractMatrix{T},
+    xs::Interval,
+    ys::Interval,
+    coo::Cartesian = Cartesian();
+    rows::Optional{I} = nothing,
+    cols::Optional{J} = nothing,
+    kwargs...
+) where {
+    A <: AbstractIRadonAlgorithm,
+    T <: Real,
+    I <: Integer,
+    J <: Integer,
+}
+    nd, nϕ = size(sinog)
+    rows = maybe(cols, rows)
+    rows = maybe(round(Int, nd), rows)
+    cols = maybe(rows, cols)
+    xs = linspace(eltype(sinog), xsi, cols)
+    ys = linspace(eltype(sinog), ysi, rows)
+    a(sinog, xs, ys, coo; kwargs...)
+end
+
+
 @inline function iradon(sinog::AbstractMatrix; kwargs...)
     iradon(sinog, FBP(); kwargs...)
 end
@@ -73,8 +125,8 @@ end
 
 @inline function iradon(
     sinog::AbstractMatrix,
-    xs::AbstractVector,
-    ys::AbstractVector,
+    xs::Union{AbstractVector,Interval},
+    ys::Union{AbstractVector,Interval};
     kwargs...
 )
     iradon(sinog, xs, ys, FBP(); kwargs...)
