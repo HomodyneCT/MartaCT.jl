@@ -106,7 +106,7 @@ random photons per projection angle.
 - `sinog`: sinogram data.
 - `nphotons::Integer=10000`: mean number of photons.
 - `ϵ::Real=1`: detectors quantum efficiency.
-- `take_log::Bool=true`: whether to take the logarithm of the
+- `take_log::Bool=false`: whether to take the logarithm of the
   resampled intensities to obtain the corresponding
   sinogram.
 """
@@ -114,7 +114,7 @@ function simulate_ct(
     sinog::AbstractMatrix{T};
     nphotons::Integer = 10000,
     ϵ::Real = 1,
-    take_log::Bool = true,
+    take_log::Bool = false,
 ) where {T <: Real}
     nd, nϕ = size(sinog)
     photons = generate_photons(nphotons, nd, nϕ)
