@@ -67,12 +67,15 @@ end
 function _precompile_()
     ccall(:jl_generating_output, Cint, ()) == 1 || return nothing
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},FanBeamGeometry{Float32, DefaultTomograph},CTImageMat{Float32}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},FanBeamGeometry{Float64, DefaultTomograph},CTImageMat{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},ParallelBeamGeometry{Float32, DefaultTomograph},CTImageMat{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Nothing, Nothing}},Type{FBPScanner{G, D} where {G, D}},ParallelBeamGeometry{Float64, DefaultTomograph},CTImageMat{Float64}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:name, :study_id), Tuple{Symbol, String}},Type{CTScanner},FBPInfo{ParallelBeamGeometry{Float32, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}},MartaCT.CTScan.CTImageData.CTData{Float32, Matrix{Float32}}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,), Tuple{Int64}},Type{FanBeamGeometry},CircleImage{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,), Tuple{Int64}},Type{FanBeamGeometry},CircleImage{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,), Tuple{Int64}},Type{ParallelBeamGeometry},CircleImage{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,), Tuple{Int64}},Type{ParallelBeamGeometry},CircleImage{Float64}})
+    Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:nϕ,), Tuple{Int64}},Type{ParallelBeamGeometry},GrayScaleLine{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width, :height), Tuple{Int64, Int64}},Type{ParallelBeamGeometry},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width, :height, :nϕ), Tuple{Int64, Int64, Int64}},Type{FanBeamGeometry},Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,), Tuple{Int64}},Type{CircleImage},Type{Float32}})
@@ -87,7 +90,6 @@ function _precompile_()
     Base.precompile(Tuple{Core.kwftype(typeof(Type)),NamedTuple{(:width,), Tuple{Int64}},Type{WhiteRect},Type{Float64}})
     Base.precompile(Tuple{Core.kwftype(typeof(circle_image)),NamedTuple{(:radius, :calibration_value, :background, :rows), Tuple{Int64, Float32, Float32, Int64}},typeof(circle_image),Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(circle_image)),NamedTuple{(:radius, :calibration_value, :background, :rows), Tuple{Int64, Float64, Float64, Int64}},typeof(circle_image),Type{Float64}})
-    Base.precompile(Tuple{Core.kwftype(typeof(combined_images_size)),NamedTuple{(:swidth, :sheight, :radius, :pad, :dist), NTuple{5, Int64}},typeof(combined_images_size)})
     Base.precompile(Tuple{Core.kwftype(typeof(gray_scale_image)),NamedTuple{(:swidth, :sheight, :gray_scale, :background), Tuple{Int64, Int64, IntervalSets.ClosedInterval{Float32}, Float32}},typeof(gray_scale_image),Type{Float32}})
     Base.precompile(Tuple{Core.kwftype(typeof(gray_scale_image)),NamedTuple{(:swidth, :sheight, :gray_scale, :background), Tuple{Int64, Int64, IntervalSets.ClosedInterval{Float64}, Float64}},typeof(gray_scale_image),Type{Float64}})
     Base.precompile(Tuple{MartaCT.CTImages.var"#181#threadsfor_fun#13"{Float32, StepRangeLen{Float32, Float64, Float64}, StepRangeLen{Float32, Float64, Float64}, Matrix{Float32}, Vector{Tuple{Int64, Int64}}, MartaCT.Interpolation.var"#1#2"{Matrix{Float32}, MartaCT.Interpolation.BilinearInterpolation}, Float32, Float32, Base.OneTo{Int64}}})
@@ -114,11 +116,11 @@ function _precompile_()
     Base.precompile(Tuple{typeof(MartaCT.Utils._wrap_angle),Float64,Int64})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{FanBeamGeometry{Float32, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float32, Matrix{Float32}}},CircleImage{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{FanBeamGeometry{Float64, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},CircleImage{Float64}})
+    Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{FanBeamGeometry{Float64, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},GrayScaleLine{Float64}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float32, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float32, Matrix{Float32}}},CircleImage{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float32, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float32, Matrix{Float32}}},CircleParams{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float32, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float32, Matrix{Float32}}},ImageParams{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float32, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float32, Matrix{Float32}}},MartaCT.TestImages.SquareParams{Float32}})
-    Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float32, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float32, Matrix{Float32}}},SquareImage{Float32}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float64, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},CircleImage{Float64}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float64, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},CircleParams{Float64}})
     Base.precompile(Tuple{typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float64, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},ImageParams{Float64}})
@@ -128,6 +130,11 @@ function _precompile_()
     let fbody = try __lookup_kwbody__(which(FBPScanner, (ParallelBeamGeometry{Float64, DefaultTomograph},CircleImage{Float64},))) catch missing end
         if !ismissing(fbody)
             precompile(fbody, (Nothing,Nothing,Type{FBPScanner{G, D} where {G, D}},ParallelBeamGeometry{Float64, DefaultTomograph},CircleImage{Float64},))
+        end
+    end
+    let fbody = try __lookup_kwbody__(which(calibrate_tomogram, (CTScanner{FBPInfo{ParallelBeamGeometry{Float64, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},WhiteRect{Float64},))) catch missing end
+        if !ismissing(fbody)
+            precompile(fbody, (Base.Iterators.Pairs{Union{}, Union{}, Tuple{}, NamedTuple{(), Tuple{}}},typeof(calibrate_tomogram),CTScanner{FBPInfo{ParallelBeamGeometry{Float64, DefaultTomograph}, FBP{MartaCT.RadonAlgorithm.Filters.RamLak}}, MartaCT.CTScan.CTImageData.CTData{Float64, Matrix{Float64}}},WhiteRect{Float64},))
         end
     end
 end
