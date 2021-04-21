@@ -1,5 +1,5 @@
 # CTImages
 
 ```@autodocs
-Modules = [Marta.CTImages]
+Modules = [MartaCT.CTImages]
 ```

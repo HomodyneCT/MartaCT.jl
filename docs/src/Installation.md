@@ -1,8 +1,8 @@
 # Installation
 
-Marta can be installed with the following commands:
+MartaCT can be installed with the following commands:
 
 ```julia
 import Pkg
-Pkg.add(url="https://gitlab.com/homodyne-ct/Marta.git")
+Pkg.add(url="https://gitlab.com/homodyne-ct/MartaCT.jl.git")
 ```

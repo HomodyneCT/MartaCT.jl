@@ -1,5 +1,5 @@
 # Test images
 
 ```@autodocs
-Modules = [Marta.TestImages]
+Modules = [MartaCT.TestImages]
 ```

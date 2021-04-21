@@ -1,5 +1,5 @@
 # Input/Output functions
 
 ```@autodocs
-Modules = [Marta.CTIO]
+Modules = [MartaCT.CTIO]
 ```

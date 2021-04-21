@@ -1,16 +1,14 @@
-struct CTSimulation <: AbstractSimulation end
+Base.@kwdef struct CTSimulation <: AbstractSimulation
+    nphotons::Int = 10000
+end
+
 
 @inline function Random.rand(
     sinog::CTSinogram,
-    nphotons::Integer,
-    ::CTSimulation;
+    sim::CTSimulation;
     kwargs...
 )
-    sample_sinogram(sinog; kwargs...)
-end
-
-@inline function Random.rand(sinog::CTSinogram, ::CTSimulation; kwargs...)
-    rand(sinog, nphotons, CTSimulation(); kwargs...)
+    simulate_ct(sinog; sim.nphotons, kwargs...)
 end
 
 
@@ -33,7 +31,7 @@ function StatsBase.sample(
     nd, nϕ = size(data)
     @assert length(xs) == nd "Dimension mismatch: `xs` vector should match first dimension of `data`"
     Random.seed!()
-    nbins = maybe(nd+1, nbins)
+    nbins = maybe(nd, nbins)
     ζ = half(xs)
     bins = linspace(-ζ..ζ, nbins+1)
 	sampled = similar(data, (nbins, nϕ, nblks))
@@ -56,6 +54,16 @@ function StatsBase.sample(
         next!(p)
     end
 	sampled
+end
+
+
+@inline function StatsBase.sample(
+    data::CTSinogram,
+    xsi::Interval;
+    kwargs...
+)
+    xs = linspace(xsi, size(data, 1))
+    sample(data, xs; kwargs...)
 end
 
 
@@ -98,7 +106,7 @@ random photons per projection angle.
 - `sinog`: sinogram data.
 - `nphotons::Integer=10000`: mean number of photons.
 - `ϵ::Real=1`: detectors quantum efficiency.
-- `take_log::Bool=true`: whether to take the logarithm of the
+- `take_log::Bool=false`: whether to take the logarithm of the
   resampled intensities to obtain the corresponding
   sinogram.
 """
@@ -106,7 +114,7 @@ function simulate_ct(
     sinog::AbstractMatrix{T};
     nphotons::Integer = 10000,
     ϵ::Real = 1,
-    take_log::Bool = true,
+    take_log::Bool = false,
 ) where {T <: Real}
     nd, nϕ = size(sinog)
     photons = generate_photons(nphotons, nd, nϕ)

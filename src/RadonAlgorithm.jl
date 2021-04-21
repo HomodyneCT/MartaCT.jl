@@ -30,18 +30,20 @@ function _alg_method end
 
 @inline function _radon(
     a::AbstractProjectionAlgorithm,
-    x::AbstractMatrix;
+    img::AbstractMatrix,
+    args...;
     kwargs...
 )
-    _radon(_alg_method(a), a, x; kwargs...)
+    _radon(_alg_method(a), a, img, args...; kwargs...)
 end
 
 @inline function _iradon(
     a::AbstractIRadonAlgorithm,
-    x::AbstractMatrix;
+    sinog::AbstractMatrix,
+    args...;
     kwargs...
 )
-    _iradon(_alg_method(a), a, x; kwargs...)
+    _iradon(_alg_method(a), a, sinog, args...; kwargs...)
 end
 
 
@@ -53,8 +55,8 @@ macro _defradonfn(f::Symbol, body)
             ϕs::AbstractVector{Y};
             ν::Real = 1,
             scale::Optional{Real} = nothing,
-            τ::Real = 1,
-            ratio::Optional{Real} = 1,
+            τ::Optional{Real} = nothing,
+            ratio::Optional{Real} = nothing,
             background::Optional{Z} = nothing,
             rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
@@ -67,8 +69,10 @@ macro _defradonfn(f::Symbol, body)
             Interp <: AbstractInterp2DOrNone,
         }
             ν = maybe(ν, scale)
-            τ = maybe(τ, ratio)
+            @assert ν > 0
             rows, cols = size(image)
+            τ = maybe(maybe(rows / cols, τ), ratio)
+            @assert τ > 0
             nd = length(ts)
             nϕ = length(ϕs)
             scϕs = sincos.(ϕs)
@@ -110,6 +114,7 @@ macro _defiradonfn(f::Symbol, body)
             Interp <: AbstractInterp2DOrNone,
         }
             ν = maybe(ν, scale)
+            @assert ν > 0
             ϕs = maybe(ϕs, angles)
             nd, nϕ = size(sinog)
             cols = length(xs)
@@ -150,6 +155,14 @@ macro _defradonalgfn(A::Symbol, f::Symbol)
         )
             $f(image, ts, ϕs; kwargs...)
         end
+        @inline function (a::$A)(
+            image::AbstractMatrix,
+            ts::Interval,
+            ϕs::Interval;
+            kwargs...
+        )
+            _radon(a, image, ts, ϕs; kwargs...)
+        end
         @inline function (a::$A)(image::AbstractMatrix; kwargs...)
             _radon(a, image; kwargs...)
         end
@@ -167,6 +180,15 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
             kwargs...
         )
             $f(sinog, xs, ys, coo; kwargs...)
+        end
+        @inline function (a::$A)(
+            sinog::AbstractMatrix,
+            xs::Interval,
+            ys::Interval,
+            coo::AbstractCoordinates = Cartesian();
+            kwargs...
+        )
+            _iradon(a, sinog, xs, ys, coo; kwargs...)
         end
         @inline function (a::$A)(
             sinog::AbstractMatrix,

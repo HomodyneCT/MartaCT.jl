@@ -1,5 +1,5 @@
 # CT Plots
 
 ```@autodocs
-Modules = [Marta.CTPlots]
+Modules = [MartaCT.CTPlots]
 ```

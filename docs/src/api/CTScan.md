@@ -1,5 +1,5 @@
 # CT Scan abstraction
 
 ```@autodocs
-Modules = [Marta.CTScan, Marta.CTScan.CTImageData]
+Modules = [MartaCT.CTScan, MartaCT.CTScan.CTImageData]
 ```

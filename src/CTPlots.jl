@@ -86,6 +86,16 @@ end
 
 
 @recipe function plot(
+    xsi::Interval, ysi::Interval, image::CTImageOrTomog
+)
+    rows, cols = size(image)
+    xs = linspace(xsi, cols)
+    ys = linspace(ysi, rows)
+    xs, ys, image
+end
+
+
+@recipe function plot(
     image::CTImageOrTomog,
     α::Optional{Real} = nothing,
     β::Optional{Real} = nothing,
@@ -125,6 +135,14 @@ const _sinog_xticks = [45i for i in 0:8]
 end
 
 
+@recipe function plot(θsi::Interval, tsi::Interval, sinog::CTSinogram)
+    nd, nϕ = size(sinog)
+    ts = linspace(tsi, nd)
+    θs = linspace(θsi, nϕ)
+    θs, ts, sinog
+end
+
+
 @recipe function plot(sinog::CTSinogram, α::Optional{Real} = nothing)
     nd, nϕ = size(sinog)
     xs = linspace(ORI(0..360), nϕ) # Now we use midpoints and not edges to support more backends
@@ -137,8 +155,8 @@ end
 
 
 @recipe function plot(
-    xs::AbstractVector,
-    ys::AbstractVector,
+    xs::Union{AbstractVector,Interval},
+    ys::Union{AbstractVector,Interval},
     gs::AbstractTestImage
 )
     xs, ys, gs.image

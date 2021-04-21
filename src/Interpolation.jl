@@ -34,8 +34,8 @@ const _interpolation_types = (
 
 
 @propagate_inbounds function (::NoInterpolation)(
-    a::AbstractArray{T}, x::U, xs::U...
-) where {T <: Number,U <: Number}
+    a::AbstractArray{T}, x::Number, xs::Number...
+) where {T <: Number}
     xs = (x, xs...)
     inds = round.(Int, xs)
     @boundscheck checkbounds(a, inds...)
@@ -43,8 +43,8 @@ const _interpolation_types = (
 end
 
 @propagate_inbounds function (::BilinearInterpolation)(
-    mat::AbstractMatrix{T}, y::U, x::U
-) where {T <: Number,U <: Number}
+    mat::AbstractMatrix{T}, y::Number, x::Number
+) where {T <: Number}
     x1 = floor(Int, x)
     y1 = floor(Int, y)
     x2 = ceil(Int, x)
@@ -53,8 +53,8 @@ end
 end
 
 @propagate_inbounds function (::LinearInterpolation)(
-    v::AbstractVector{T}, x::U
-) where {T <: Number,U <: Number}
+    v::AbstractVector{T}, x::Number
+) where {T <: Number}
     x1 = floor(Int, x)
     x2 = ceil(Int, x)
     lerp(v, x1, x2, x)
@@ -70,7 +70,7 @@ end
         "Interpolation of arrays with dimensions higher than 2 " *
         "is not currently supported"
     )
-    @propagate_inbounds function (xs::U...) where {U <: Number}
+    @propagate_inbounds function (xs::Vararg{Number,N}) where {N}
         interp(a, xs...)
     end
 end
@@ -87,21 +87,21 @@ for nm ∈ _interpolation_types
 end
 
 
-@inline function lerp(q1::Q, q2::Q, t::T) where {Q <: Number,T <: Number}
+@inline function lerp(q1::Q, q2::Q, t::Number) where {Q <: Number}
     t′::Q = t
     (one(Q) - t′) * q1 + t′ * q2
 end
 
 @inline function lerp(
-    f::Function, x1::X, x2::X, x::T
-) where {X <: Number,T <: Number}
+    f::Function, x1::X, x2::X, x::Number
+) where {X <: Number}
     x1 == x2 && return f(x1)
     lerp(f(x1), f(x2), (x - x1) / (x2 - x1))
 end
 
 @propagate_inbounds function lerp(
-    v::AbstractVector{T}, x1::X, x2::X, x::U
-) where {T <: Number,X <: Integer,U<:Number}
+    v::AbstractVector{T}, x1::X, x2::X, x::Number
+) where {T <: Number,X <: Integer}
     @boundscheck checkbounds(v, x1)
     x1 == x2 && return @inbounds v[x1]
     @boundscheck checkbounds(v, x2)
@@ -109,16 +109,16 @@ end
 end
 
 @inline function blerp(
-    q11::Q, q12::Q, q21::Q, q22::Q, t₁::T1, t₂::T2
-) where {Q <: Number,T1 <: Number, T2 <: Number}
+    q11::Q, q12::Q, q21::Q, q22::Q, t₁::Number, t₂::Number
+) where {Q <: Number}
     t̄₁::Q = t₁
     t̄₂::Q = t₂
     lerp(lerp(q11, q21, t̄₁), lerp(q12, q22, t̄₁), t̄₂)
 end
 
 @propagate_inbounds function blerp(
-    mat::AbstractMatrix{T}, q1::Q, q2::Q, p1::P, p2::P, q::U, p::U
-) where {Q <: Integer,P <: Integer,T <: Number,U <: Number}
+    mat::AbstractMatrix{T}, q1::Q, q2::Q, p1::P, p2::P, q::Number, p::Number
+) where {T <: Number,Q <: Integer,P <: Integer}
     @boundscheck checkbounds(mat, q1, p1)
     @boundscheck checkbounds(mat, q1, p2)
     @boundscheck checkbounds(mat, q2, p1)

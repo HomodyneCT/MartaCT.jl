@@ -1,9 +1,9 @@
 using Documenter
-using Marta
+using MartaCT
 
 include("makedocs.jl")
 
 deploydocs(
-    repo = "gitlab.com/homodyne-ct/Marta.git",
+    repo = "gitlab.com/homodyne-ct/MartaCT.jl.git",
     deploy_config = Documenter.GitLab()
 )

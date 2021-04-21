@@ -10,18 +10,19 @@ import IntervalSets: width
 using IntervalSets
 
 const ORI{T} = Interval{:closed,:open,T}
-ORI(i::Interval) = ORI{eltype(i)}(i)
+ORI(i::Interval{L,R,T}) where {L,R,T} = ORI{T}(i)
 
 function _atype end
 function half end
 function width end
 
-width(xs::AbstractVector) = abs(last(xs) - first(xs))
-half(xs::AbstractVector) = width(xs) / 2
-half(i::Interval) = width(i) / 2
+width(xs::AbstractVector{T}) where T = width(Interval(extrema(xs)...))
+width(xs::AbstractRange{T}) where T = abs(last(xs) - first(xs))
+half(xs::AbstractVector{T}) where T = width(xs) / 2
+half(i::Interval{L,R,T}) where {L,R,T} = width(i) / 2
 
 _atype(::Type{T}) where {T <: AbstractArray} = T
-_atype(a::AbstractArray) = typeof(a)
+_atype(a::AbstractArray{T}) where T = typeof(a)
 
 @inline function linspace(start::T, stop::U, len::Integer) where {
     T <: Number,

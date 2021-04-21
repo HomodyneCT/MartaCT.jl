@@ -15,7 +15,8 @@ function fbp_fft end
     δx::T = width(xs)
     δy::T = width(ys)
     h::T = hypot(δx, δy)
-    κ::T = (nd - 1) / h / ν
+    λ::T = (nd - 1) / h
+    κ::T = λ / ν
     @inbounds @simd for k ∈ eachindex(xys)
         x = xs[(k - 1) ÷ rows + 1] * κ
         y = ys[(k - 1) % rows + 1] * κ
@@ -33,7 +34,7 @@ function fbp_fft end
             # To be consistent with our conventions should be '+'.
             t = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                img[k] += interp(t, T(iϕ))
+                img[k] += interp(t, iϕ)
             end
         end
         next!(p)
@@ -41,7 +42,8 @@ function fbp_fft end
     foreach(temp_images) do x
         tomog .+= x
     end
-    δt::T = π * (nd - 1) / length(scϕs) / 2
+    γ::T = min(rows, cols) / hypot(rows, cols) * rows / cols
+    δt::T = π * γ / length(scϕs) / nd * λ^2
     tomog .*= δt
 end
 

@@ -17,31 +17,30 @@ function radon_diag end
 
 @_defradonfn radon_diag begin
     @assert 0 ∈ first(ts)..last(ts)
-    t₀::T = hypot(rows, cols) / 2
-    κ::T = ν * t₀ / width(ts)
-    #sθ, cθ = atan(rows, cols) |> sincos
-    sθ, cθ = atan(τ) |> sincos
-    x₀::T = t₀ * cθ + 1
-    y₀::T = t₀ * sθ + 1
-    zs = @. T(ts * κ)
+    x₀::T = (cols + 1) / 2
+    y₀::T = (rows + 1) / 2
+    cθ::T = half(ts) * inv(√(1+τ^2))
+    sθ::T = τ * cθ
+    txs = @. T(ts * (x₀ - 1) / cθ)
+    tys = @. T(ts * (y₀ - 1) / sθ)
     p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
-        @inbounds @simd for it ∈ eachindex(zs)
-            t = zs[it]
-            prex = t * c + x₀
-            prey = t * s + y₀
-            for z ∈ zs
-                x = prex - z * s
-                y = prey + z * c
+        @inbounds @simd for i ∈ eachindex(ts)
+            prex = txs[i] * c + x₀
+            prey = tys[i] * s + y₀
+            for j ∈ eachindex(ts)
+                x = prex - txs[j] * s
+                y = prey + tys[j] * c
                 if x ∈ 1..cols && y ∈ 1..rows
-                    sinog[it, iϕ] += interp(y, x)
+                    sinog[i, iϕ] += interp(y, x)
                 end
             end
         end
         next!(p)
     end
-    δt::T = ν * width(ts) / (length(ts) - 1) / τ
+    γ::T = hypot(rows, cols) / min(rows, cols)
+    δt::T = ν * γ * width(ts) / (length(ts) - 1)
     sinog .*= δt^2
 end
 
