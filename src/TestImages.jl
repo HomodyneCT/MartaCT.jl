@@ -120,7 +120,7 @@ struct ImageParams{T} <: AbstractImageParams{T}
         hounsfield::Bool = true,
         kwargs...
     ) where {T<:Real}
-        gray_scale = maybe(ifelse(hounsfield, -1000..1000, 0..1))
+        gray_scale = maybe(ifelse(hounsfield, -1000..1000, 0..1), gray_scale)
         kw = isempty(kwargs) ? _default_gray_scale_params : Dict(kwargs)
         srows, scols = combined_images_size(; kw...)
         rows, cols = maybe(srows, rows), maybe(scols, cols)
