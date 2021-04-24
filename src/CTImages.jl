@@ -320,7 +320,8 @@ function polar2cart(
     fill!(mc, z)
     Threads.@threads for k ∈ eachindex(indices)
         @inbounds ix, iy = indices[k]
-        @inbounds x, y = xs[ix], ys[iy]
+        @inbounds x::T = xs[ix]
+        @inbounds y::T = ys[iy]
         r::T = _compute_radius(x, y, δri)
         θ::T = _compute_angle(x, y, δθi)
         if r ∈ 1..nr && θ ∈ 1..nθ+1
