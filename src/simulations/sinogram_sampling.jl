@@ -26,7 +26,7 @@ function StatsBase.sample(
     nsamples::Integer = 1000,
     nblks::Integer = 1,
     nbins::Optional{Integer} = nothing,
-    progress::Bool = true,
+    progress::Bool = false,
 )
     nd, nϕ = size(data)
     @assert length(xs) == nd "Dimension mismatch: `xs` vector should match first dimension of `data`"
