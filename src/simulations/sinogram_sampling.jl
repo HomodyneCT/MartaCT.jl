@@ -3,11 +3,18 @@ Base.@kwdef struct CTSimulation <: AbstractSimulation
 end
 
 
-@inline function Random.rand(
-    sinog::CTSinogram,
-    sim::CTSimulation;
-    kwargs...
-)
+"""
+    simulate(sim::CTSimulation, sinog::CTSinogram; <keyword arguments>)
+
+Simulate a CT scan by generating `sim.nphotons` Poisson-distributed photons for
+each angle, which are then detected with a probability given by
+``p_{ϕ_j}(x_i) = exp(-s_{i,j})``, where ``s_{i,j}`` is `sinog[i,j]`.
+
+The keyword arguments are the same as those for [`simulate_ct`](@ref).
+
+See also: [`simulate_ct`](@ref)
+"""
+@inline function simulate(sim::CTSimulation, sinog::CTSinogram; kwargs...)
     simulate_ct(sinog; sim.nphotons, kwargs...)
 end
 
