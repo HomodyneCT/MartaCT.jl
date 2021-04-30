@@ -141,16 +141,14 @@ end
         q1 == q2 && return mat[q1, p1]
         q11 = mat[q1, p1]
         q21 = mat[q2, p1]
-        return lerp(q11, q21, (q - q1) / (q2 - q1))
-    end
-    @inbounds if q1 == q2
+        lerp(q11, q21, (q - q1) / (q2 - q1))
+    elseif q1 == q2
         q11 = mat[q1, p1]
         q12 = mat[q1, p2]
-        return lerp(q11, q12, (p - p1) / (p2 - p1))
-    end
-    t1 = (q - q1) / (q2 - q1)
-    t2 = (p - p1) / (p2 - p1)
-    @inbounds begin
+        lerp(q11, q12, (p - p1) / (p2 - p1))
+    else
+        t1 = (q - q1) / (q2 - q1)
+        t2 = (p - p1) / (p2 - p1)
         q11 = mat[q1, p1]
         q12 = mat[q1, p2]
         q21 = mat[q2, p1]
