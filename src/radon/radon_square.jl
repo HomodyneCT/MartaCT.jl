@@ -11,7 +11,7 @@ Compute the Radon transform of `image` inside the circle
 contained in the square of side `min(rows,cols)` where `rows` and `cols` are the
 dimensions of `image`.
 
-See also: [`radon_default`](@ref)
+See also: [`radon_diag`](@ref)
 """
 function radon_square end
 
