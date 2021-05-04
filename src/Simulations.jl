@@ -14,6 +14,8 @@ import Random, Distributions, StatsBase
 abstract type AbstractSimulation end
 
 function simulate end
+function simulate_blocks end
+function simulate_single end
 
 include("simulations/sinogram_sampling.jl")
 
