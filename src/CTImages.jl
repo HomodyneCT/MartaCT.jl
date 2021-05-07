@@ -319,14 +319,16 @@ function polar2cart(
     mc = similar(mp, rows, cols)
     fill!(mc, z)
     Threads.@threads for k ∈ eachindex(indices)
-        @inbounds ix, iy = indices[k]
-        @inbounds x::T = xs[ix]
-        @inbounds y::T = ys[iy]
-        r::T = _compute_radius(x, y, δri)
-        θ::T = _compute_angle(x, y, δθi)
-        if r ∈ 1..nr && θ ∈ 1..nθ+1
-            θ = _wrap_angle(θ, nθ)
-            @inbounds mc[iy,ix] = interp(θ, r)
+        @inbounds begin
+            ix, iy = indices[k]
+            x::T = xs[ix]
+            y::T = ys[iy]
+            r::T = _compute_radius(x, y, δri)
+            θ::T = _compute_angle(x, y, δθi)
+            if r ∈ 1..nr && θ ∈ 1..nθ+1
+                θ = _wrap_angle(θ, nθ)
+                @inbounds mc[iy,ix] = interp(θ, r)
+            end
         end
     end
     mc

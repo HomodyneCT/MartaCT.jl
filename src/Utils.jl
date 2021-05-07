@@ -93,7 +93,7 @@ end
 
 @inline function _wrap_angle(θ::T, n::Integer)::T where {T <: Real}
     θ >= n + 1//2 && return one(T)
-    θ > n && return n
+    θ > n && return T(n)
     θ
 end
 
