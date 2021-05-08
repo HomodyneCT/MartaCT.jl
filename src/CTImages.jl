@@ -308,26 +308,29 @@ function polar2cart(
     end
     δri::T = (nr-1) / (κ * ν)
     δθi::T = nθ / 2π
+    xs′ = xs * δri
+    ys′ = ys * δri
+    nt1 = nθ + 1
+    nthalf = nθ + 1//2
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(mp)
     rows, cols = length(ys), length(xs)
-    indices = Vector{NTuple{2,Int}}(undef, rows * cols)
-    @inbounds for k ∈ eachindex(indices)
-        indices[k] = (k - 1) ÷ rows + 1, (k - 1) % rows + 1
-    end
     z::T = maybe(zero(T), background)
     mc = similar(mp, rows, cols)
     fill!(mc, z)
-    Threads.@threads for k ∈ eachindex(indices)
-        @inbounds begin
-            ix, iy = indices[k]
-            x::T = xs[ix]
-            y::T = ys[iy]
-            r::T = _compute_radius(x, y, δri)
+    Threads.@threads for ix ∈ axes(mc, 2)
+        @inbounds @fastmath @simd for iy ∈ axes(mc, 1)
+            x::T = xs′[ix]
+            y::T = ys′[iy]
+            r::T = _compute_radius(x, y)
             θ::T = _compute_angle(x, y, δθi)
-            if r ∈ 1..nr && θ ∈ 1..nθ+1
-                θ = _wrap_angle(θ, nθ)
-                @inbounds mc[iy,ix] = interp(θ, r)
+            if 1 <= r <= nr && 1 <= θ <= nt1
+                if θ >= nthalf
+                    θ = one(T)
+                elseif θ > nθ
+                    θ = nθ
+                end
+                mc[iy,ix] = interp(θ, r)
             end
         end
     end

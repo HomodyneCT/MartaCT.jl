@@ -34,7 +34,7 @@ function radon_square end
                 wx, wy = txs[k], tys[k]
                 x = prex - wx * s
                 y = prey + wy * c
-                if x ∈ 1..cols && y ∈ 1..rows
+                if 1 <= x <= cols && 1 <= y <= rows
                     sinog[j,iϕ] += interp(y, x)
                 end
             end

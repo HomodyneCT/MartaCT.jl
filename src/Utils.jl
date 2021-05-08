@@ -80,9 +80,15 @@ function struct2dict(obj)
 end
 
 @inline function _compute_radius(x::T, y::T, d::T)::T where {T <: Real}
-    x == 0 && return abs(y) * d + one(T)
-    y == 0 && return abs(x) * d + one(T)
+    x == zero(T) && return abs(y) * d + one(T)
+    y == zero(T) && return abs(x) * d + one(T)
     return √(x^2 + y^2) * d + one(T)
+end
+
+@inline function _compute_radius(x::T, y::T)::T where {T <: Real}
+    x == 0 && return abs(y) + one(T)
+    y == 0 && return abs(x) + one(T)
+    return √(x^2 + y^2) + one(T)
 end
 
 @inline function _compute_angle(x::T, y::T, d::T)::T where {T <: Real}
@@ -91,8 +97,8 @@ end
     θ * d + one(T)
 end
 
-@inline function _wrap_angle(θ::T, n::Integer)::T where {T <: Real}
-    θ >= n + 1//2 && return one(T)
+@inline function _wrap_angle(θ::T, n::Integer, nh::Real)::T where {T <: Real}
+    θ >= nh && return one(T)
     θ > n && return T(n)
     θ
 end
