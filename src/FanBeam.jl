@@ -63,6 +63,7 @@ function para2fan(
     γ₀::T = center * δγ
     γs = linspace(T, ORI(-γ₀..γ₀), nd)
     x′₀::T = center + 1
+    nthalf = nϕ + 1//2
 
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(sinog_para)
@@ -82,7 +83,7 @@ function para2fan(
         x′ = x′ * δx′i + x′₀
         ϕ = mod2pi(ϕ) * δϕi + 1 # need +1 in order to be in 1:nϕ
         return x′ ∈ 1..nd && ϕ ∈ 1..nϕ+1 ?
-            interp(x′, _wrap_angle(ϕ, nϕ)) : z
+            interp(x′, _wrap_angle(ϕ, nϕ, nthalf)) : z
     end
 
     Threads.@threads for iγ ∈ 1:nd
@@ -205,6 +206,7 @@ function fan2para(
     z::T = maybe(zero(T), background)
     sinog_para = similar(sinog_fan, nd, nϕ)
     fill!(sinog_para, z)
+    nthalf = nϕ + 1//2
 
     @inline function compute_value(γ′::T, β::T)
         if β < 0
@@ -222,7 +224,7 @@ function fan2para(
         γ′′ = γ′ * δγi + γ₀
         β = mod2pi(β) * δβi + 1 # need +1 in order to be in 1:nβ
         return γ′′ ∈ 1..nd && β ∈ 1..nϕ+1 ?
-            interp(γ′′, _wrap_angle(β, nϕ)) : z
+            interp(γ′′, _wrap_angle(β, nϕ, nthalf)) : z
     end
 
     Threads.@threads for ix ∈ 1:nd
