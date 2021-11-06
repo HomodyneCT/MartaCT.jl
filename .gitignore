@@ -64,3 +64,4 @@ Makefile
 .tags
 .vscode/
 Manifest.toml
+tags
