@@ -2,11 +2,12 @@ module MartaCT
 
 using Reexport
 import
-    Statistics,
     LinearAlgebra,
     IterTools,
     YAML,
     FFTW,
+    Statistics,
+    StatsBase,
     Distributions,
     IntervalSets
 

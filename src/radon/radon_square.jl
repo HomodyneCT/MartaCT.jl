@@ -11,7 +11,7 @@ Compute the Radon transform of `image` inside the circle
 contained in the square of side `min(rows,cols)` where `rows` and `cols` are the
 dimensions of `image`.
 
-See also: [`radon_default`](@ref)
+See also: [`radon_diag`](@ref)
 """
 function radon_square end
 
@@ -34,7 +34,7 @@ function radon_square end
                 wx, wy = txs[k], tys[k]
                 x = prex - wx * s
                 y = prey + wy * c
-                if x ∈ 1..cols && y ∈ 1..rows
+                if 1 <= x <= cols && 1 <= y <= rows
                     sinog[j,iϕ] += interp(y, x)
                 end
             end
