@@ -117,7 +117,7 @@ struct ImageParams{T} <: AbstractImageParams{T}
         gray_scale::Optional{ClosedInterval} = nothing,
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
-        hounsfield::Bool = true,
+        hounsfield::Bool = false,
         kwargs...
     ) where {T<:Real}
         gray_scale = maybe(ifelse(hounsfield, -1000..1000, 0..1), gray_scale)
@@ -219,6 +219,7 @@ struct CircleParams{T} <: AbstractImageParams{T}
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
         hounsfield::Bool = false,
+        kwargs...
     ) where {T<:Real}
         gray_scale = maybe(ifelse(hounsfield, -1000..0, 0..1), gray_scale)
         background = maybe(minimum(gray_scale), background)
@@ -297,6 +298,7 @@ struct SquareParams{T} <: AbstractImageParams{T}
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
         hounsfield::Bool = false,
+        kwargs...
     ) where {T <: Real}
         gray_scale = maybe(ifelse(hounsfield, -1000..0, 0..1), gray_scale)
         background = maybe(minimum(gray_scale), background)
@@ -505,7 +507,7 @@ function gray_scale_image(
     cols::Integer = 40,
     swidth::Optional{Integer} = nothing,
     sheight::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
+    gray_scale::ClosedInterval = 0..1,
     background::Optional{Real} = nothing,
 ) where {T<:Real}
     rows = maybe(rows, sheight)
@@ -520,9 +522,9 @@ end
 
 
 """
-pyramid_gray_scale_image([T=Float32]; swidth=200, sheight=40, gray_scale=-1000..1000, plateau = 0) where {T <: Real}
+pyramid_gray_scale_image([T=Float32]; swidth=200, sheight=40, gray_scale=0..1, plateau = 0) where {T <: Real}
 
-Create an image with a pyramid gray scale rectangle with given scale gray_scale.
+Create an image with a pyramid gray scale rectangle with given scale gray_scale. The `plateau` parameter denotes the percentage of the rectangle width that has the maximum value of `gray_scale`.
 
 # Examples
 ```julia-repl
@@ -537,7 +539,7 @@ function pyramid_gray_scale_image(
     ::Type{T} = Float32;
     swidth::Integer = 200,
     sheight::Integer = 40,
-    gray_scale::ClosedInterval = -1000..1000,
+    gray_scale::ClosedInterval = 0..1,
     background::Optional{Real} = nothing,
     plateau::Real = 0,
 ) where {T<:Real}
@@ -787,8 +789,8 @@ function getproperty(grimg::GrayScaleLine, s::Symbol)
 end
 
 
-function GrayScaleLine(imp::ImageParams; kwargs...)
-    GrayScaleLine(imp, create_image(imp); kwargs...)
+function GrayScaleLine(imp::ImageParams)
+    GrayScaleLine(imp, create_image(imp))
 end
 
 
@@ -799,9 +801,6 @@ function GrayScaleLine(
     height::Optional{Integer} = nothing,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
     kwargs...,
 ) where {T<:Real}
     factor = 31 / 50 # magic number!
@@ -828,11 +827,9 @@ function GrayScaleLine(
         pad,
         dist,
         radius,
-        gray_scale,
-        calibration_value,
-        background,
+        kwargs...
     )
-    GrayScaleLine(imp; kwargs...)
+    GrayScaleLine(imp)
 end
 
 
@@ -860,9 +857,9 @@ end
 
 
 function GrayScalePyramid(
-    imp::ImageParams{T}; plateau::Real = zero(T), kwargs...) where {T<:Real}
+    imp::ImageParams{T}; plateau::Real = zero(T)) where {T<:Real}
     image = create_pyramid_image(imp; plateau)
-    GrayScalePyramid(imp, plateau, image)
+    GrayScalePyramid(imp, T(plateau), image)
 end
 
 
@@ -873,9 +870,6 @@ function GrayScalePyramid(
     height::Optional{Integer} = nothing,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
     plateau::Real = zero(T),
     kwargs...,
 ) where {T<:Real}
@@ -903,11 +897,9 @@ function GrayScalePyramid(
         pad,
         dist,
         radius,
-        gray_scale,
-        calibration_value,
-        background,
+        kwargs...
     )
-    GrayScalePyramid(imp; plateau, kwargs...)
+    GrayScalePyramid(imp; plateau)
 end
 
 
@@ -1067,8 +1059,8 @@ function getproperty(grimg::WhiteRect, s::Symbol)
 end
 
 
-function WhiteRect(imp::ImageParams; kwargs...)
-    grimg = GrayScaleLine(imp; kwargs...)
+function WhiteRect(imp::ImageParams)
+    grimg = GrayScalePyramid(imp; plateau = 1)
     WhiteRect(grimg.params, grimg.image)
 end
 
@@ -1080,12 +1072,8 @@ function WhiteRect(
     height::Optional{Integer} = nothing,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
-    gray_scale::Union{ClosedInterval,U} = 1000,
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
     kwargs...,
 ) where {T<:Real,U<:Real}
-    gray_scale = gray_scale isa Real ? gray_scale..gray_scale : gray_scale
     factor = 31 / 50 # magic number!
     #=
         If width or height are present, use them, otherwise use rows and cols.
@@ -1110,11 +1098,9 @@ function WhiteRect(
         pad,
         dist,
         radius,
-        gray_scale,
-        calibration_value,
-        background,
+        kwargs...
     )
-    WhiteRect(imp; kwargs...)
+    WhiteRect(imp)
 end
 
 
