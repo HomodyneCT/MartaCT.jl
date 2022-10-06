@@ -10,7 +10,7 @@ using RecipesBase
 using ..Monads
 using ..CTImages: CTImage, CTSinogram, CTTomogram, ctfn, CTImageOrTomog
 using ..CTImages: ctimage, ctsinogram, cttomogram
-using ..TestImages: AbstractTestImage, ImageParams, gray_scale_indices
+using ..CTTestImages: AbstractTestImage, ImageParams, gray_scale_indices
 using ..CTScan: AbstractCTScanner
 using ..Utils: linspace, ORI
 using IntervalSets

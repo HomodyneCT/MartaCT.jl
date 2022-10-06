@@ -32,7 +32,7 @@ import ..CalibrationBase:
     calibrate_tomogram,
     calibrate_tomogram!
 using ..Calibration
-using ..TestImages
+using ..CTTestImages
 import ..CTIO: load_image, write_image
 import ..CTIO: load_sinogram, write_sinogram
 import ..CTIO: load_tomogram, write_tomogram

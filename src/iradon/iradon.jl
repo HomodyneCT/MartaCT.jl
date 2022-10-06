@@ -13,7 +13,7 @@ include("fbpa_square.jl")
 @inline function _iradon(
     ::IsIRadonDiag,
     a::A,
-    sinog::AbstractMatrix{T};
+    sinog::AbstractMatrix;
     rows::Optional{I} = nothing,
     cols::Optional{J} = nothing,
     α::Real = 360,
@@ -21,7 +21,6 @@ include("fbpa_square.jl")
     kwargs...
 ) where {
     A <: AbstractIRadonAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }
@@ -41,7 +40,7 @@ end
 @inline function _iradon(
     ::IsIRadonDiag,
     a::A,
-    sinog::AbstractMatrix{T},
+    sinog::AbstractMatrix,
     xsi::Interval,
     ysi::Interval,
     coo::Cartesian = Cartesian();
@@ -50,7 +49,6 @@ end
     kwargs...
 ) where {
     A <: AbstractIRadonAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }
@@ -67,7 +65,7 @@ end
 @inline function _iradon(
     ::IsIRadonSquare,
     a::A,
-    sinog::AbstractMatrix{T};
+    sinog::AbstractMatrix;
     rows::Optional{I} = nothing,
     cols::Optional{J} = nothing,
     α::Real = 360,
@@ -75,7 +73,6 @@ end
     kwargs...
 ) where {
     A <: AbstractIRadonAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }
@@ -95,7 +92,7 @@ end
 @inline function _iradon(
     ::IsIRadonSquare,
     a::A,
-    sinog::AbstractMatrix{T},
+    sinog::AbstractMatrix,
     xs::Interval,
     ys::Interval,
     coo::Cartesian = Cartesian();
@@ -104,7 +101,6 @@ end
     kwargs...
 ) where {
     A <: AbstractIRadonAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }

@@ -33,18 +33,14 @@ const _interpolation_types = (
 )
 
 
-@propagate_inbounds function (::NoInterpolation)(
-    a::AbstractArray{T}, x::Number, xs::Number...
-) where {T <: Number}
+@propagate_inbounds function (::NoInterpolation)(a::AbstractArray, x, xs...)
     xs = (x, xs...)
     inds = round.(Int, xs)
     @boundscheck checkbounds(a, inds...)
     @inbounds a[inds...]
 end
 
-@propagate_inbounds function (::BilinearInterpolation)(
-    mat::AbstractMatrix{T}, y::Number, x::Number
-) where {T <: Number}
+@propagate_inbounds function (::BilinearInterpolation)(mat::AbstractMatrix, y, x)
     x1 = floor(Int, x)
     y1 = floor(Int, y)
     x2 = ceil(Int, x)
@@ -52,25 +48,20 @@ end
     blerp(mat, y1, y2, x1, x2, y, x)
 end
 
-@propagate_inbounds function (::LinearInterpolation)(
-    v::AbstractVector{T}, x::Number
-) where {T <: Number}
+@propagate_inbounds function (::LinearInterpolation)(v::AbstractVector, x)
     x1 = floor(Int, x)
     x2 = ceil(Int, x)
     lerp(v, x1, x2, x)
 end
 
 
-@propagate_inbounds function interpolate(
-    a::AbstractArray{T},
-    interp::AbstractInterpolation,
-) where {T <: Number}
+@propagate_inbounds function interpolate(a::AbstractArray, interp::AbstractInterpolation)
     @assert(
         a isa AbstractVecOrMat || interp isa NoInterpolation,
         "Interpolation of arrays with dimensions higher than 2 " *
         "is not currently supported"
     )
-    @propagate_inbounds function (xs::Vararg{Number,N}) where {N}
+    @propagate_inbounds function (xs...)
         interp(a, xs...)
     end
 end
@@ -87,38 +78,32 @@ for nm ∈ _interpolation_types
 end
 
 
-@inline function lerp(q1::Q, q2::Q, t::Number) where {Q <: Number}
+@inline function lerp(q1::Q, q2::Q, t) where {Q}
     t′::Q = t
     (one(Q) - t′) * q1 + t′ * q2
 end
 
-@inline function lerp(
-    f::Function, x1::X, x2::X, x::Number
-) where {X <: Number}
+@inline function lerp(f::Function, x1::X, x2::X, x) where {X}
     x1 == x2 && return f(x1)
     lerp(f(x1), f(x2), (x - x1) / (x2 - x1))
 end
 
-@propagate_inbounds function lerp(
-    v::AbstractVector{T}, x1::X, x2::X, x::Number
-) where {T <: Number,X <: Integer}
+@propagate_inbounds function lerp(v::AbstractVector, x1::X, x2::X, x) where {X}
     @boundscheck checkbounds(v, x1)
     x1 == x2 && return @inbounds v[x1]
     @boundscheck checkbounds(v, x2)
     @inbounds lerp(v[x1], v[x2], x)
 end
 
-@inline function blerp(
-    q11::Q, q12::Q, q21::Q, q22::Q, t₁::Number, t₂::Number
-) where {Q <: Number}
+@inline function blerp(q11::Q, q12::Q, q21::Q, q22::Q, t₁, t₂) where {Q}
     t̄₁::Q = t₁
     t̄₂::Q = t₂
     lerp(lerp(q11, q21, t̄₁), lerp(q12, q22, t̄₁), t̄₂)
 end
 
 @propagate_inbounds function blerp(
-    mat::AbstractMatrix{T}, q1::Q, q2::Q, p1::P, p2::P, q::Number, p::Number
-) where {T <: Number,Q <: Integer,P <: Integer}
+    mat::AbstractMatrix, q1::Q, q2::Q, p1::P, p2::P, q, p
+) where {Q <: Integer,P <: Integer}
     @boundscheck checkbounds(mat, q1, p1)
     @boundscheck checkbounds(mat, q1, p2)
     @boundscheck checkbounds(mat, q2, p1)
