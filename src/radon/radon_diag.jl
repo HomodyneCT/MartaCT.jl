@@ -17,12 +17,12 @@ function radon_diag end
 
 @_defradonfn radon_diag begin
     @assert 0 ∈ first(ts)..last(ts)
-    x₀::T = (cols + 1) / 2
-    y₀::T = (rows + 1) / 2
-    cθ::T = half(ts) * inv(√(1+τ^2))
-    sθ::T = τ * cθ
-    txs = @. T(ts * (x₀ - 1) / cθ)
-    tys = @. T(ts * (y₀ - 1) / sθ)
+    x₀ = (cols + 1) / 2
+    y₀ = (rows + 1) / 2
+    cθ = half(ts) * inv(√(one(τ)+τ^2))
+    sθ = τ * cθ
+    txs = @. Tₑ(ts * (x₀ - 1) / cθ)
+    tys = @. Tₑ(ts * (y₀ - 1) / sθ)
     p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
@@ -39,8 +39,8 @@ function radon_diag end
         end
         next!(p)
     end
-    γ::T = hypot(rows, cols) / min(rows, cols)
-    δt::T = ν * γ * width(ts) / (length(ts) - 1)
+    γ::Tₑ = hypot(rows, cols) / min(rows, cols)
+    δt::Tₑ = ν * γ * width(ts) / (length(ts) - 1)
     sinog .*= δt^2
 end
 

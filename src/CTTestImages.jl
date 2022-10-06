@@ -1,4 +1,4 @@
-module TestImages
+module CTTestImages
 
 export indicator_matrix, indicator_matrix_2
 export AbstractImageParams, ImageParams, CircleParams

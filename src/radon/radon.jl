@@ -9,7 +9,7 @@ include("radon_square.jl")
 @inline function _radon(
     ::IsRadonDiag,
     a::A,
-    image::AbstractMatrix{T};
+    image::AbstractMatrix;
     nd::Optional{I} = nothing,
     nϕ::Optional{J} = nothing,
     α::Real = 360,
@@ -17,17 +17,16 @@ include("radon_square.jl")
     kwargs...
 ) where {
     A <: AbstractProjectionAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }
     rows, cols = size(image)
-    h::T = hypot(rows, cols)
+    h = hypot(rows, cols)
     nd = isnothing(nd) ? round(Int, h) : nd
     nϕ = isnothing(nϕ) ? 2 * ((rows + 1) * (cols + 1) ÷ (2nd)) + 1 : nϕ
-    ts = linspace(T, -1..1, nd)
-    ϕ₀::T = deg2rad(α₀)
-    ϕ₁::T = ϕ₀ + deg2rad(α)
+    ts = linspace(-1..1, nd)
+    ϕ₀ = deg2rad(α₀)
+    ϕ₁ = ϕ₀ + deg2rad(α)
     ϕs = linspace(ORI(ϕ₀..ϕ₁), nϕ)
     a(image, ts, ϕs; kwargs...)
 end
@@ -36,7 +35,7 @@ end
 @inline function _radon(
     ::IsRadonDiag,
     a::A,
-    image::AbstractMatrix{T},
+    image::AbstractMatrix,
     tsi::Interval,
     ϕsi::Interval;
     nd::Optional{I} = nothing,
@@ -44,15 +43,14 @@ end
     kwargs...
 ) where {
     A <: AbstractProjectionAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }
     rows, cols = size(image)
-    h::T = hypot(rows, cols)
+    h = hypot(rows, cols)
     nd = isnothing(nd) ? round(Int, h) : nd
     nϕ = isnothing(nϕ) ? 2 * ((rows + 1) * (cols + 1) ÷ (2nd)) + 1 : nϕ
-    ts = linspace(T, tsi, nd)
+    ts = linspace(tsi, nd)
     ϕs = linspace(ϕsi, nϕ)
     a(image, ts, ϕs; kwargs...)
 end
@@ -61,7 +59,7 @@ end
 @inline function _radon(
     ::IsRadonSquare,
     a::A,
-    image::AbstractMatrix{T};
+    image::AbstractMatrix;
     nd::Optional{I} = nothing,
     nϕ::Optional{J} = nothing,
     α::Real = 360,
@@ -69,7 +67,6 @@ end
     kwargs...
 ) where {
     A <: AbstractProjectionAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }
@@ -78,8 +75,8 @@ end
     nd = maybe(l, nd)
     nϕ = isnothing(nϕ) ? 2 * ((rows + 1) * (cols + 1) ÷ (2nd)) + 1 : nϕ
     ts = linspace(-1..1, nd)
-    ϕ₀::T = deg2rad(α₀)
-    ϕ₁::T = ϕ₀ + deg2rad(α)
+    ϕ₀ = deg2rad(α₀)
+    ϕ₁ = ϕ₀ + deg2rad(α)
     ϕs = linspace(ORI(ϕ₀..ϕ₁), nϕ)
     a(image, ts, ϕs; kwargs...)
 end
@@ -88,7 +85,7 @@ end
 @inline function _radon(
     ::IsRadonSquare,
     a::A,
-    image::AbstractMatrix{T},
+    image::AbstractMatrix,
     tsi::Interval,
     ϕsi::Interval;
     nd::Optional{I} = nothing,
@@ -96,7 +93,6 @@ end
     kwargs...
 ) where {
     A <: AbstractProjectionAlgorithm,
-    T <: Real,
     I <: Integer,
     J <: Integer,
 }

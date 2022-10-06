@@ -22,6 +22,7 @@ import ..AbstractAlgorithms:
 using ..AbstractAlgorithms, ..Coordinates
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
 using FFTW, ProgressMeter, IntervalSets
+using ColorTypes: AbstractGray
 
 
 function _radon end
@@ -62,10 +63,10 @@ macro _defradonfn(f::Symbol, body)
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
         ) where {
-            T <: Real,
+            T <: Union{AbstractFloat,AbstractGray{<:AbstractFloat}},
             X <: Real,
             Y <: Real,
-            Z <: Real,
+            Z <: Union{Real,AbstractGray},
             Interp <: AbstractInterp2DOrNone,
         }
             ν = maybe(ν, scale)
@@ -75,14 +76,15 @@ macro _defradonfn(f::Symbol, body)
             @assert τ > 0
             nd = length(ts)
             nϕ = length(ϕs)
-            scϕs = sincos.(ϕs)
-            z::T = maybe(zero(T), background)
-            sinog = similar(_atype(image), nd, nϕ)
+            Tₑ = eltype(T)
+            scϕs = @. sincos(Tₑ(ϕs))
+            z::Tₑ = maybe(zero(T), background)
+            sinog = similar(image, Tₑ, nd, nϕ)
             fill!(sinog, z)
             rimage = rescaled ? rescale(image) : image
             interp = isnothing(interpolation) ?
                 interpolate(rimage) : interpolation(rimage)
-            CTSinogram($body)
+            CTSinogram(convert(_atype(image), $body))
         end
     end)
 end
@@ -104,12 +106,12 @@ macro _defiradonfn(f::Symbol, body)
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
         ) where {
-            T <: Real,
+            T <: Union{AbstractFloat,AbstractGray{<:AbstractFloat}},
             U1 <: Real,
             U2 <: Real,
             I <: Interval{:closed},
             J <: Interval{:closed},
-            U3 <: Real,
+            U3 <: Union{Real,AbstractGray},
             F <: AbstractCTFilter,
             Interp <: AbstractInterp2DOrNone,
         }
@@ -120,25 +122,26 @@ macro _defiradonfn(f::Symbol, body)
             cols = length(xs)
             rows = length(ys)
             filtered = apply(maybe(RamLak(), filter)) do f
-                filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
+                filter_freq = fft(channelview(sinog), 1) .* f(T, nd, nϕ)
                 bfft(filter_freq, 1) |> real
             end
             interpolation = maybe(interpolate, interpolation)
             interp = interpolation(filtered)
-            t₀::T = (nd + 1) / 2
+            t₀ = (nd + 1) / 2
             ϕs = maybe(ORI(0..2π), ϕs)
-            scϕs = sincos.(linspace(T, ϕs, nϕ))
-            z::T = maybe(zero(T), background)
-            tomog = similar(_atype(sinog), rows, cols)
+            Tₑ = eltype(T)
+            scϕs = sincos.(linspace(Tₑ, ϕs, nϕ))
+            z::Tₑ = maybe(zero(T), background)
+            tomog = similar(sinog, Tₑ, rows, cols)
             fill!(tomog, z)
-            CTTomogram($body)
+            CTTomogram(convert(_atype(sinog), $body))
         end
         @inline function $f(
-            sinog::AbstractMatrix{T},
-            xs::AbstractVector{X},
-            ys::AbstractVector{Y};
+            sinog::AbstractMatrix,
+            xs::AbstractVector,
+            ys::AbstractVector;
             kwargs...
-        ) where {T<:Real,X<:Real,Y<:Real}
+        )
             $f(sinog, xs, ys, Cartesian(); kwargs...)
         end
     end)

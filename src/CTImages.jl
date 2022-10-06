@@ -7,13 +7,14 @@ export CTImageOrTomog, CTImageMat, CTSinogMat, CTTomogMat
 export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
+using ColorTypes: AbstractGray, Fractional
 import ..Monads: mjoin
 using ..Utils: linspace, half, _compute_radius, _compute_angle, _wrap_angle
 import ..Utils: _atype
 using ..Applicative, ..Monads, ..Interpolation
 using ..Geometry:
     AbstractParallelBeamGeometry, AbstractFanBeamGeometry, ParallelBeamGeometry
-import Base: size, convert, similar, eltype, getindex, setindex!, IndexStyle
+import Base: size, convert, similar, eltype, ndims, getindex, setindex!, IndexStyle
 using Base: @propagate_inbounds
 
 
@@ -22,7 +23,7 @@ function ctsinogram end
 function cttomogram end
 
 
-abstract type AbstractCTImage{T<:Number} <: AbstractMatrix{T} end
+abstract type AbstractCTImage{T,N} <: AbstractArray{T,N} end
 
 @traitimpl Monad{AbstractCTImage}
 mjoin(img::AbstractCTImage) = img.data
@@ -34,6 +35,7 @@ mjoin(img::AbstractCTImage) = img.data
 
 _atype(img::M) where {M <: AbstractCTImage} = _atype(M)
 eltype(::Type{M}) where {M<:AbstractCTImage{T}} where T = T
+ndims(::Type{M}) where {M<:AbstractCTImage{T,N}} where {T,N} = ndims(_atype(M))
 size(img::AbstractCTImage) = mbind(size, img)
 size(img::AbstractCTImage, dim::Int) = size(mjoin(img), dim)
 @propagate_inbounds function getindex(img::AbstractCTImage, i::Int)
@@ -41,8 +43,8 @@ size(img::AbstractCTImage, dim::Int) = size(mjoin(img), dim)
     @inbounds getindex(mjoin(img), i)
 end
 @propagate_inbounds function getindex(
-    img::AbstractCTImage, I::Vararg{Int,2}
-)
+    img::AbstractCTImage, I::Vararg{Int,N}
+) where N
     @boundscheck checkbounds(img, I...)
     @inbounds getindex(mjoin(img), I...)
 end
@@ -51,8 +53,8 @@ end
     @inbounds setindex!(mjoin(img), v, i)
 end
 @propagate_inbounds function setindex!(
-    img::AbstractCTImage, v, I::Vararg{Int,2}
-)
+    img::AbstractCTImage, v, I::Vararg{Int,N}
+) where N
     @boundscheck checkbounds(img, I...)
     @inbounds setindex!(mjoin(img), v, I...)
 end
@@ -64,21 +66,21 @@ const ctfn = (image = :ctimage, sinog = :ctsinogram, tomog = :cttomogram)
 
 for nm in ctnames
     @eval begin
-        struct $nm{T<:Number,M<:AbstractMatrix{T}} <: AbstractCTImage{T}
+        struct $nm{T,N,M<:AbstractArray{T,N}} <: AbstractCTImage{T,N}
             data::M
         end
-        @inline _atype(::Type{$nm{T,M}}) where {T,M} = M
+        @inline _atype(::Type{$nm{T,N,M}}) where {T,N,M} = M
         IndexStyle(::Type{T}) where T<:$nm = IndexStyle(_atype(T))
-        @inline function $nm{T,M}(
+        @inline function $nm{T,N,M}(
             ::UndefInitializer,
-            dims::Vararg{Union{Integer,AbstractUnitRange},2}
-        ) where {T,M}
+            dims::Vararg{Union{Integer,AbstractUnitRange},N}
+        ) where {T,N,M}
             $nm(M(undef, dims...))
         end
-        @inline $nm{T,M}(img::$nm) where {T,M} = $nm{T,M}(mjoin(img))
-        @inline $nm{T}(img::M) where {T,M<:AbstractMatrix{T}} = $nm{T,M}(img)
+        @inline $nm{T,N,M}(img::$nm) where {T,N,M} = $nm{T,N,M}(mjoin(img))
+        @inline $nm{T}(img::M) where {T,M<:AbstractArray{T,N}} where N = $nm{T,N,M}(img)
         @inline $nm(img::$nm) = img
-        @inline convert(::Type{M}, img::AbstractMatrix) where {M<:$nm} =
+        @inline convert(::Type{M}, img::AbstractArray) where {M<:$nm} =
             mreturn(M, img)
         @inline convert(::Type{M}, img::$nm) where {M<:$nm} =
             mreturn($nm, convert(_atype(M), mjoin(img)))
@@ -88,8 +90,8 @@ for nm in ctnames
         @inline function similar(
             img::M,
             ::Type{S},
-            dims::Tuple{Vararg{Int,2}}
-        ) where {S,M<:$nm}
+            dims::Tuple{Vararg{Int,N}}
+        ) where {S,N,M<:$nm}
             mreturn(M, similar(mjoin(img), S, dims))
         end
     end
@@ -102,10 +104,10 @@ CTSinogram(::Union{CTImage,CTTomogram}) =
 CTTomogram(::Union{CTImage,CTSinogram}) =
     @error "Cannot construct a CT tomogram from an image or a sinogram"
 
-const CTImageOrTomog{T,M} = Union{CTImage{T,M},CTTomogram{T,M}}
-const CTImageMat{T} = CTImage{T,Matrix{T}}
-const CTSinogMat{T} = CTSinogram{T,Matrix{T}}
-const CTTomogMat{T} = CTTomogram{T,Matrix{T}}
+const CTImageOrTomog{T,N,M} = Union{CTImage{T,N,M},CTTomogram{T,N,M}}
+const CTImageMat{T} = CTImage{T,2,Matrix{T}}
+const CTSinogMat{T} = CTSinogram{T,2,Matrix{T}}
+const CTTomogMat{T} = CTTomogram{T,2,Matrix{T}}
 
 """
     rotate(mat::AbstractMatrix, α::Real; <keyword arguments>)
@@ -129,7 +131,8 @@ function rotate(
     cols::Optional{Integer} = nothing,
     background::Optional{Real} = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {T <: Number,Interp <: AbstractInterp2DOrNone}
+) where {T,Interp <: AbstractInterp2DOrNone}
+    Base.depwarn("`rotate` will be removed in a future release, please use the `Images` package functionality", :rotate)
     orows, ocols = size(mat)
     rows = maybe(orows, rows)
     cols = maybe(ocols, cols)
@@ -149,7 +152,7 @@ function rotate(
         x′ = x * cϕ + y * sϕ + x′₀
         y′ = y * cϕ - x * sϕ + y′₀
         if x′ ∈ 1..ocols && y′ ∈ 1..orows
-            rmat[iy, ix] = interp(y′, x′)
+            rmat[iy, ix] = convert(T, interp(y′, x′))
         end
     end
     rmat
@@ -172,9 +175,10 @@ See also: [`rescale`](@ref)
 function rescale!(
     img::AbstractArray{T};
     interval::ClosedInterval = zero(T)..one(T),
-    calibration::Optional{ClosedInterval{U}} = nothing,
-    window::Optional{ClosedInterval{W}} = nothing,
-) where {T <: Number,U <: Number,W <: Number}
+    calibration::Optional{ClosedInterval} = nothing,
+    window::Optional{ClosedInterval} = nothing,
+) where {T}
+    Base.depwarn("`rescale` will be removed in a future release, please use the `Images` package functionality", :rescale)
     if isnothing(calibration)
         calibration = ClosedInterval(extrema(img)...)
     end
@@ -215,8 +219,9 @@ function rescale(
     image::AbstractArray{T},
     slope::Number,
     intercept::Number;
-    window::Optional{ClosedInterval{U}} = nothing,
-) where {T <: Number,U <: Number}
+    window::Optional{ClosedInterval} = nothing,
+) where {T}
+    Base.depwarn("`rescale` will be removed in a future release, please use the `Images` package functionality", :rescale)
     res = @. image * slope + intercept
     isnothing(window) && return res
     a, b = T.(endpoints(window))
@@ -240,8 +245,9 @@ function rescale!(
     img::AbstractArray{T},
     slope::Number,
     intercept::Number;
-    window::Optional{ClosedInterval{U}} = nothing,
-) where {T <: Number,U <: Number}
+    window::Optional{ClosedInterval} = nothing,
+) where {T}
+    Base.depwarn("`rescale` will be removed in a future release, please use the `Images` package functionality", :rescale)
     @. img = slope * img + intercept
     isnothing(window) && return img
     a, b = T.(endpoints(window))
@@ -269,17 +275,17 @@ minimum and maximum are assumed to be the values specified by
 See also: [`rescale!`](@ref)
 """
 function rescale(
-    x::AbstractArray;
-    interval = 0..1,
+    x::AbstractArray{T};
+    interval = zero(T)..one(T),
     calibration = nothing,
     window = nothing,
-)
+) where {T}
     rescale!(deepcopy(x); interval, calibration, window)
 end
 
 
 function polar2cart(
-    mp::M,
+    mp::AbstractMatrix{T},
     xs::AbstractVector,
     ys::AbstractVector;
     ν::Real = 1,
@@ -288,10 +294,7 @@ function polar2cart(
     background::Optional{Real} = nothing,
     transposed::Bool = false,
     interpolation::Optional{Interp} = nothing,
-)::M where {
-    M <: AbstractMatrix{T},
-    Interp <: AbstractInterp2DOrNone,
-} where {T <: Real}
+) where {T,Interp <: AbstractInterp2DOrNone}
     if transposed
         nr, nθ = size(mp)
         mp′ = similar(mp, nθ, nr)
@@ -344,7 +347,7 @@ end
     cols::Optional{Integer} = nothing,
     transposed::Bool = false,
     kwargs...
-) where {T <: Real,Interp <: AbstractInterp2DOrNone}
+) where {T}
     mp = transposed ? permutedims(mp) : mp
     rows = isnothing(rows) ? maybe(2 * size(mp, 2), cols) : rows
     cols = maybe(rows, cols)

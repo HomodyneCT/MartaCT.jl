@@ -13,8 +13,8 @@ function fbpa_fft_square end
 @_defiradonfn fbpa_fft_square begin
     l = min(rows, cols)
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
-    κ::T = (nd - 1) / min(width(xs), width(ys))
-    xys = Vector{NTuple{2,T}}(undef, l^2)
+    κ::Tₑ = (nd - 1) / min(width(xs), width(ys))
+    xys = Vector{NTuple{2,Tₑ}}(undef, l^2)
     indices = Vector{NTuple{2,Int}}(undef, l^2)
     @inbounds @simd for k ∈ eachindex(xys)
         ix, iy = (k - 1) ÷ l + 1, (k - 1) % l + 1
@@ -33,7 +33,7 @@ function fbpa_fft_square end
         end
         next!(p)
     end
-    δt::T = π / length(scϕs) / nd * κ^2 * rows / cols
+    δt::Tₑ = π / length(scϕs) / nd * κ^2 * rows / cols
     tomog .*= δt
 end
 
