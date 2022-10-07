@@ -7,7 +7,6 @@ export CTImageOrTomog, CTImageMat, CTSinogMat, CTTomogMat
 export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
-using ColorTypes: AbstractGray, Fractional
 import ..Monads: mjoin
 using ..Utils: linspace, half, _compute_radius, _compute_angle, _wrap_angle
 import ..Utils: _atype
@@ -97,12 +96,12 @@ for nm in ctnames
     end
 end
 
-CTImage(::Union{CTSinogram,CTTomogram}) =
-    @error "Cannot construct a CT image from a sinogram or a tomogram"
-CTSinogram(::Union{CTImage,CTTomogram}) =
-    @error "Cannot construct a CT sinogram from an image or a tomogram"
-CTTomogram(::Union{CTImage,CTSinogram}) =
-    @error "Cannot construct a CT tomogram from an image or a sinogram"
+# CTImage(::Union{CTSinogram,CTTomogram}) =
+#     @error "Cannot construct a CT image from a sinogram or a tomogram"
+# CTSinogram(::Union{CTImage,CTTomogram}) =
+#     @error "Cannot construct a CT sinogram from an image or a tomogram"
+# CTTomogram(::Union{CTImage,CTSinogram}) =
+#     @error "Cannot construct a CT tomogram from an image or a sinogram"
 
 const CTImageOrTomog{T,N,M} = Union{CTImage{T,N,M},CTTomogram{T,N,M}}
 const CTImageMat{T} = CTImage{T,2,Matrix{T}}

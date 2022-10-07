@@ -22,7 +22,6 @@ import ..AbstractAlgorithms:
 using ..AbstractAlgorithms, ..Coordinates
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
 using FFTW, ProgressMeter, IntervalSets
-using ColorTypes: AbstractGray
 
 
 function _radon end
@@ -52,23 +51,17 @@ macro _defradonfn(f::Symbol, body)
     esc(quote
         @inline function $f(
             image::AbstractMatrix{T},
-            ts::AbstractVector{X},
-            ϕs::AbstractVector{Y};
+            ts::AbstractVector,
+            ϕs::AbstractVector;
             ν::Real = 1,
             scale::Optional{Real} = nothing,
             τ::Optional{Real} = nothing,
             ratio::Optional{Real} = nothing,
-            background::Optional{Z} = nothing,
+            background::Optional = nothing,
             rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
-        ) where {
-            T <: Union{AbstractFloat,AbstractGray{<:AbstractFloat}},
-            X <: Real,
-            Y <: Real,
-            Z <: Union{Real,AbstractGray},
-            Interp <: AbstractInterp2DOrNone,
-        }
+        ) where {T,Interp <: AbstractInterp2DOrNone}
             ν = maybe(ν, scale)
             @assert ν > 0
             rows, cols = size(image)
@@ -76,15 +69,16 @@ macro _defradonfn(f::Symbol, body)
             @assert τ > 0
             nd = length(ts)
             nϕ = length(ϕs)
-            Tₑ = eltype(T)
-            scϕs = @. sincos(Tₑ(ϕs))
-            z::Tₑ = maybe(zero(T), background)
-            sinog = similar(image, Tₑ, nd, nϕ)
-            fill!(sinog, z)
+            scϕs = map(ϕs) do ϕ
+                s, c = sincos(ϕ)
+                T(s), T(c)
+            end
+            sinog = similar(image, nd, nϕ)
+            fill!(sinog, convert(T, maybe(0.0f0, background)))
             rimage = rescaled ? rescale(image) : image
             interp = isnothing(interpolation) ?
                 interpolate(rimage) : interpolation(rimage)
-            CTSinogram(convert(_atype(image), $body))
+            CTSinogram($body)
         end
     end)
 end
@@ -94,24 +88,21 @@ macro _defiradonfn(f::Symbol, body)
     esc(quote
         @inline function $f(
             sinog::AbstractMatrix{T},
-            xs::AbstractVector{U1},
-            ys::AbstractVector{U2},
+            xs::AbstractVector,
+            ys::AbstractVector,
             ::Cartesian;
             ν::Real = 1,
             scale::Optional{Real} = nothing,
             ϕs::Optional{I} = nothing,
             angles::Optional{J} = nothing,
-            background::Optional{U3} = nothing,
+            background::Optional = nothing,
             filter::Optional{F} = nothing,
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
         ) where {
-            T <: Union{AbstractFloat,AbstractGray{<:AbstractFloat}},
-            U1 <: Real,
-            U2 <: Real,
+            T,
             I <: Interval{:closed},
             J <: Interval{:closed},
-            U3 <: Union{Real,AbstractGray},
             F <: AbstractCTFilter,
             Interp <: AbstractInterp2DOrNone,
         }

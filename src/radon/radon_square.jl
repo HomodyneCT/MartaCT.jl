@@ -17,12 +17,12 @@ function radon_square end
 
 @_defradonfn radon_square begin
     @assert 0 ∈ first(ts)..last(ts)
-    x₀::Tₑ = (cols + 1) / 2
-    y₀::Tₑ = (rows + 1) / 2
-    κx::Tₑ = ν * (x₀ - one(Tₑ)) / half(ts) * ifelse(τ < oneunit(τ), τ, one(τ))
-    κy::Tₑ = ν * (y₀ - one(Tₑ)) / half(ts) * ifelse(τ < oneunit(τ), one(τ), inv(τ))
-    txs = @. Tₑ(ts * κx)
-    tys = @. Tₑ(ts * κy)
+    x₀::T = (cols + 1) / 2
+    y₀::T = (rows + 1) / 2
+    κx::T = ν * (x₀ - one(Tₑ)) / half(ts) * ifelse(τ < oneunit(τ), τ, one(τ))
+    κy::T = ν * (y₀ - one(Tₑ)) / half(ts) * ifelse(τ < oneunit(τ), one(τ), inv(τ))
+    txs = @. T(ts * κx)
+    tys = @. T(ts * κy)
     p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
@@ -41,7 +41,7 @@ function radon_square end
         end
         next!(p)
     end
-    δt::Tₑ = ν * width(ts) / (length(ts) - 1)
+    δt::T = ν * width(ts) / (length(ts) - 1)
     sinog .*= δt^2
 end
 
