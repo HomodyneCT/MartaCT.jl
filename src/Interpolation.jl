@@ -41,17 +41,18 @@ const _interpolation_types = (
 end
 
 @propagate_inbounds function (::BilinearInterpolation)(mat::AbstractMatrix, y, x)
-
-    x1 = floor(Int, AbstractFloat(x))
-    y1 = floor(Int, AbstractFloat(y))
-    x2 = ceil(Int, AbstractFloat(x))
-    y2 = ceil(Int, AbstractFloat(y))
+    T = float(promote_type(eltype(y), eltype(x)))
+    x1 = floor(Int, T(x))
+    y1 = floor(Int, T(y))
+    x2 = ceil(Int, T(x))
+    y2 = ceil(Int, T(y))
     blerp(mat, y1, y2, x1, x2, y, x)
 end
 
 @propagate_inbounds function (::LinearInterpolation)(v::AbstractVector, x)
-    x1 = floor(Int, AbstractFloat(x))
-    x2 = ceil(Int, AbstractFloat(x))
+    T = float(promote_type(eltype(y), eltype(x)))
+    x1 = floor(Int, T(x))
+    x2 = ceil(Int, T(x))
     lerp(v, x1, x2, x)
 end
 
