@@ -87,7 +87,7 @@ end
 macro _defiradonfn(f::Symbol, body)
     esc(quote
         @inline function $f(
-            sinog::AbstractMatrix{T},
+            sinog::AbstractMatrix,
             xs::AbstractVector,
             ys::AbstractVector,
             ::Cartesian;
@@ -100,7 +100,6 @@ macro _defiradonfn(f::Symbol, body)
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
         ) where {
-            T,
             I <: Interval{:closed},
             J <: Interval{:closed},
             F <: AbstractCTFilter,
@@ -112,18 +111,18 @@ macro _defiradonfn(f::Symbol, body)
             nd, nϕ = size(sinog)
             cols = length(xs)
             rows = length(ys)
+            T = real(eltype(sinog))
             filtered = apply(maybe(RamLak(), filter)) do f
-                filter_freq = fft(channelview(sinog), 1) .* f(T, nd, nϕ)
+                filter_freq = fft(real(sinog), 1) .* f(T, nd)
                 bfft(filter_freq, 1) |> real
             end
             interpolation = maybe(interpolate, interpolation)
             interp = interpolation(filtered)
             t₀ = (nd + 1) / 2
             ϕs = maybe(ORI(0..2π), ϕs)
-            Tₑ = eltype(T)
-            scϕs = sincos.(linspace(Tₑ, ϕs, nϕ))
-            z::Tₑ = maybe(zero(T), background)
-            tomog = similar(sinog, Tₑ, rows, cols)
+            scϕs = sincos.(linspace(T, ϕs, nϕ))
+            z::T = maybe(zero(T), background)
+            tomog = similar(sinog, T, rows, cols)
             fill!(tomog, z)
             CTTomogram(convert(_atype(sinog), $body))
         end

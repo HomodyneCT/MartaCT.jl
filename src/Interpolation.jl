@@ -94,7 +94,7 @@ end
     lerp(f(x1), f(x2), (x - x1) / (x2 - x1))
 end
 
-@propagate_inbounds function lerp(v::AbstractVector, x1::X, x2::X, x) where {X}
+@inline @propagate_inbounds function lerp(v::AbstractVector, x1::X, x2::X, x) where {X}
     @boundscheck checkbounds(v, x1)
     x1 == x2 && return @inbounds v[x1]
     @inbounds lerp(v[x1], v[x2], x)
@@ -106,8 +106,7 @@ end
     lerp(lerp(q11, q21, t̄₁), lerp(q12, q22, t̄₁), t̄₂)
 end
 
-
-@propagate_inbounds function blerp(
+@inline @propagate_inbounds function blerp(
     mat::AbstractMatrix, q1::Q, q2::Q, p1::P, p2::P, q, p
 ) where {Q <: Integer,P <: Integer}
     @boundscheck checkbounds(mat, q1, p1)

@@ -31,8 +31,8 @@ include("fbpa_square.jl")
     ϕs = deg2rad(α₀)..(deg2rad(α₀) + deg2rad(α))
     sθ, cθ = sincos(atan(rows, cols))
     x₀, y₀ = cθ, sθ
-    xs = linspace(eltype(sinog), -x₀..x₀, cols)
-    ys = linspace(eltype(sinog), -y₀..y₀, rows)
+    xs = linspace(real(eltype(sinog)), -x₀..x₀, cols)
+    ys = linspace(real(eltype(sinog)), -y₀..y₀, rows)
     a(sinog, xs, ys; ϕs, kwargs...)
 end
 
@@ -56,8 +56,8 @@ end
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd / √2), rows)
     cols = maybe(rows, cols)
-    xs = linspace(eltype(sinog), xsi, cols)
-    ys = linspace(eltype(sinog), ysi, rows)
+    xs = linspace(real(eltype(sinog)), xsi, cols)
+    ys = linspace(real(eltype(sinog)), ysi, rows)
     a(sinog, xs, ys, coo; kwargs...)
 end
 
@@ -83,8 +83,8 @@ end
     ϕs = deg2rad(α₀)..(deg2rad(α₀) + deg2rad(α))
     sθ, cθ = sincos(atan(rows, cols))
     x₀, y₀ = cθ, sθ
-    xs = linspace(eltype(sinog), -x₀..x₀, cols)
-    ys = linspace(eltype(sinog), -y₀..y₀, rows)
+    xs = linspace(real(eltype(sinog)), -x₀..x₀, cols)
+    ys = linspace(real(eltype(sinog)), -y₀..y₀, rows)
     a(sinog, xs, ys; ϕs, kwargs...)
 end
 
@@ -108,8 +108,8 @@ end
     rows = maybe(cols, rows)
     rows = maybe(round(Int, nd), rows)
     cols = maybe(rows, cols)
-    xs = linspace(eltype(sinog), xsi, cols)
-    ys = linspace(eltype(sinog), ysi, rows)
+    xs = linspace(real(eltype(sinog)), xsi, cols)
+    ys = linspace(real(eltype(sinog)), ysi, rows)
     a(sinog, xs, ys, coo; kwargs...)
 end
 
