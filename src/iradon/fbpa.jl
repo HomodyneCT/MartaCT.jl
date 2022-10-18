@@ -12,11 +12,11 @@ function fbpa_fft end
 
 @_defiradonfn fbpa_fft begin
     xys = Vector{NTuple{2,T}}(undef, rows * cols)
-    δx::Tₑ = width(xs)
-    δy::Tₑ = width(ys)
-    h::Tₑ = hypot(δx, δy)
-    λ::Tₑ = (nd - 1) / h
-    κ::Tₑ = λ / ν
+    δx::T = width(xs)
+    δy::T = width(ys)
+    h::T = hypot(δx, δy)
+    λ::T = (nd - 1) / h
+    κ::T = λ / ν
     @inbounds @simd for k ∈ eachindex(xys)
         x = xs[(k - 1) ÷ rows + 1] * κ
         y = ys[(k - 1) % rows + 1] * κ
@@ -33,8 +33,8 @@ function fbpa_fft end
         end
         next!(p)
     end
-    γ::Tₑ = min(rows, cols) / hypot(rows, cols) * rows / cols
-    δt::Tₑ = π * γ / length(scϕs) / nd * λ^2
+    γ::T = min(rows, cols) / hypot(rows, cols) * rows / cols
+    δt::T = π * γ / length(scϕs) / nd * (λ^2)
     tomog .*= δt
 end
 

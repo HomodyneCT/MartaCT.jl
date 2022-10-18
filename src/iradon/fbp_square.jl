@@ -11,16 +11,15 @@ _alg_method(::FBPFFTSquare) = IsIRadonSquare()
 function fbp_fft_square end
 
 @_defiradonfn fbp_fft_square begin
-    κ::Tₑ = (nd - 1) / min(width(xs), width(ys))
-    xxs = xs * (κ * Tₑ(ν))
-    yys = ys * (κ * Tₑ(ν))
-    temp_images = fill(deepcopy(tomog), 1)
+    κ::T = (nd - 1) / min(width(xs), width(ys))
+    xxs = xs * (κ * T(ν))
+    yys = ys * (κ * T(ν))
+    temp_images = [similar(tomog)]
     Threads.resize_nthreads!(temp_images)
     p = _iradon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
-        id = Threads.threadid()
-        @inbounds img = temp_images[id]
+        @inbounds img = temp_images[Threads.threadid()]
         for ix ∈ eachindex(xs), iy ∈ eachindex(ys)
             x, y = xxs[ix], yys[iy]
             t = x * cϕ + y * sϕ + t₀
@@ -33,7 +32,7 @@ function fbp_fft_square end
     foreach(temp_images) do x
         tomog .+= x
     end
-    δt::Tₑ = π / length(scϕs) / nd * κ^2 * rows / cols
+    δt::T = π / length(scϕs) / nd * (κ^2) * rows / cols
     tomog .*= δt
 end
 

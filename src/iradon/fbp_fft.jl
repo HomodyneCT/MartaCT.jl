@@ -11,24 +11,23 @@ _alg_method(::FBP) = IsIRadonDiag()
 function fbp_fft end
 
 @_defiradonfn fbp_fft begin
-    xys = Vector{NTuple{2,Tₑ}}(undef, rows * cols)
-    δx::Tₑ = width(xs)
-    δy::Tₑ = width(ys)
-    h::Tₑ = hypot(δx, δy)
-    λ::Tₑ = (nd - 1) / h
-    κ::Tₑ = λ / ν
+    xys = Vector{NTuple{2,T}}(undef, rows * cols)
+    δx::T = width(xs)
+    δy::T = width(ys)
+    h::T = hypot(δx, δy)
+    λ::T = (nd - 1) / h
+    κ::T = λ / ν
     @inbounds @simd for k ∈ eachindex(xys)
-        x = xs[(k - 1) ÷ rows + 1] * κ
-        y = ys[(k - 1) % rows + 1] * κ
+        x = T(xs[(k - 1) ÷ rows + 1]) * κ
+        y = T(ys[(k - 1) % rows + 1]) * κ
         xys[k] = x, y
     end
-    temp_images = fill(deepcopy(tomog), 1)
+    temp_images = [similar(tomog)]
     Threads.resize_nthreads!(temp_images)
     p = _iradon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
-        id = Threads.threadid()
-        @inbounds img = temp_images[id]
+        @inbounds img = temp_images[Threads.threadid()]
         @inbounds @simd for k ∈ eachindex(xys)
             x, y = xys[k]
             # To be consistent with our conventions should be '+'.
@@ -42,8 +41,8 @@ function fbp_fft end
     foreach(temp_images) do x
         tomog .+= x
     end
-    γ::Tₑ = min(rows, cols) / hypot(rows, cols) * rows / cols
-    δt::Tₑ = π * γ / length(scϕs) / nd * λ^2
+    γ::T = min(rows, cols) / hypot(rows, cols) * rows / cols
+    δt::T = π * γ / length(scϕs) / nd * (λ^2)
     tomog .*= δt
 end
 
@@ -84,7 +83,7 @@ end
 #     temp_images = fill(fill(z, rows, cols), 1)
 #     Threads.resize_nthreads!(temp_images)
 #     p = _iradon_progress(nϕ, progress)
-#     Threads.@threads for iϕ ∈ eachindex(scϕs)
+#     Threads.Threads.@threads for iϕ ∈ eachindex(scϕs)
 #         sϕ, cϕ = scϕs[iϕ]
 #         id = Threads.threadid()
 #         @inbounds img = temp_images[id]
