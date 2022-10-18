@@ -19,8 +19,8 @@ function radon_square end
     @assert 0 ∈ first(ts)..last(ts)
     x₀::T = (cols + 1) / 2
     y₀::T = (rows + 1) / 2
-    κx::T = ν * (x₀ - one(Tₑ)) / half(ts) * ifelse(τ < oneunit(τ), τ, one(τ))
-    κy::T = ν * (y₀ - one(Tₑ)) / half(ts) * ifelse(τ < oneunit(τ), one(τ), inv(τ))
+    κx::T = ν * (x₀ - oneunit(T)) / half(ts) * ifelse(τ < oneunit(τ), τ, oneunit(τ))
+    κy::T = ν * (y₀ - oneunit(T)) / half(ts) * ifelse(τ < oneunit(τ), oneunit(τ), inv(τ))
     txs = @. T(ts * κx)
     tys = @. T(ts * κy)
     p = _radon_progress(length(scϕs), progress)
