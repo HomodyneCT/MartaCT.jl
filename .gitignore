@@ -64,4 +64,5 @@ Makefile
 .tags
 .vscode/
 Manifest.toml
+*.code-workspace
 tags

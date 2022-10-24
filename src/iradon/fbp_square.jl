@@ -14,24 +14,22 @@ function fbp_fft_square end
     κ::T = (nd - 1) / min(width(xs), width(ys))
     xxs = xs * (κ * T(ν))
     yys = ys * (κ * T(ν))
-    temp_images = [similar(tomog)]
-    Threads.resize_nthreads!(temp_images)
+    atomic_tomog = reshape([
+        Threads.Atomic{real(eltype(tomog))}(zero(real(eltype(tomog)))) for _ in eachindex(tomog)
+    ], axes(tomog))
     p = _iradon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
-        @inbounds img = temp_images[Threads.threadid()]
         for ix ∈ eachindex(xs), iy ∈ eachindex(ys)
             x, y = xxs[ix], yys[iy]
             t = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                img[iy,ix] += interp(t, iϕ)
+                Threads.atomic_add!(atomic_tomog[iy,ix], interp(t, iϕ))
             end
         end
         next!(p)
     end
-    foreach(temp_images) do x
-        tomog .+= x
-    end
+    @. tomog = getindex(atomic_tomog)
     δt::T = π / length(scϕs) / nd * (κ^2) * rows / cols
     tomog .*= δt
 end
