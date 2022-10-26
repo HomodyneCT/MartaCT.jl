@@ -2,9 +2,7 @@ module Utils
 
 Base.Experimental.@optlevel 3
 
-export linspace, half
-export yaml_repr, struct2dict
-export ORI
+export ORI, half, linspace
 
 import IntervalSets: width
 using IntervalSets
@@ -14,7 +12,7 @@ ORI(i::Interval{L,R,T}) where {L,R,T} = ORI{T}(i)
 
 function _atype end
 function half end
-function width end
+function linspace end
 
 width(xs::AbstractVector{T}) where T = width(Interval(extrema(xs)...))
 width(xs::AbstractRange{T}) where T = abs(last(xs) - first(xs))
@@ -42,13 +40,13 @@ end
 
 @inline linspace(::Type{T}, i::ORI, len::Integer) where {T} = range(convert(ORI{T}, i), len)
 
-yaml_repr(obj) = obj
-yaml_repr(ntup::NamedTuple) = struct2dict(ntup)
+dict_repr(obj) = obj
+dict_repr(ntup::NamedTuple) = struct2dict(ntup)
 
 function struct2dict(obj)
     Dict(map(propertynames(obj)) do p
         field = getproperty(obj, p)
-        p => yaml_repr(field)
+        p => dict_repr(field)
     end)
 end
 
