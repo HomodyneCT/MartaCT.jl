@@ -40,16 +40,6 @@ end
 
 @inline linspace(::Type{T}, i::ORI, len::Integer) where {T} = range(convert(ORI{T}, i), len)
 
-dict_repr(obj) = obj
-dict_repr(ntup::NamedTuple) = struct2dict(ntup)
-
-function struct2dict(obj)
-    Dict(map(propertynames(obj)) do p
-        field = getproperty(obj, p)
-        p => dict_repr(field)
-    end)
-end
-
 @inline function _compute_radius(x::T, y::T, d::T)::T where {T}
     x == zero(T) && return abs(y) * d + oneunit(T)
     y == zero(T) && return abs(x) * d + oneunit(T)
@@ -66,12 +56,6 @@ end
     θ = atan(y, x)
     θ < zero(T) && return (θ + 2π) * d + oneunit(T)
     θ * d + oneunit(T)
-end
-
-@inline function _wrap_angle(θ::T, n::Integer)::T where {T}
-    θ >= n + 1//2 && return oneunit(T)
-    θ > n && return T(n)
-    θ
 end
 
 end # module

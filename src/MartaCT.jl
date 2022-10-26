@@ -22,6 +22,7 @@ include("FanBeam.jl")
 include("AbstractAlgorithms.jl")
 include("RadonAlgorithm.jl")
 include("Simulations.jl")
+include("CTImages.jl")
 include("CTTestImages.jl")
 include("Calibration.jl")
 

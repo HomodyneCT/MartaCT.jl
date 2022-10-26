@@ -9,7 +9,6 @@ export RadonInfo, FBPInfo
 
 using ..Applicative
 using ..Monads
-using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
 import ..Utils: ORI, linspace, _atype, half, width
@@ -78,7 +77,7 @@ macro _defradonfn(f::Symbol, body)
             rimage = rescaled ? rescale(image) : image
             interp = isnothing(interpolation) ?
                 interpolate(rimage) : interpolation(rimage)
-            CTSinogram($body)
+            $body
         end
     end)
 end
@@ -124,7 +123,7 @@ macro _defiradonfn(f::Symbol, body)
             z::T = maybe(zero(T), background)
             tomog = similar(sinog, T, rows, cols)
             fill!(tomog, z)
-            CTTomogram(convert(_atype(sinog), $body))
+            convert(_atype(sinog), $body)
         end
         @inline function $f(
             sinog::AbstractMatrix,

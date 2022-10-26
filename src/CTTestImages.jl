@@ -19,13 +19,12 @@ using Statistics: mean
 import ..Monads: mjoin, mreturn
 using ..Monads
 import ..CTImages: rescale, rescale!
-using ..CTImages
+using ..CTImages: CTImage, CTImageMat, polar2cart
 using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
 using ..AbstractAlgorithms: AbstractProjectionAlgorithm
-import ..Utils: _atype, yaml_repr, struct2dict, linspace
-import ..Info: CTInfo
+import ..Utils: _atype, linspace
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase:
     calibrate_image,
@@ -47,10 +46,6 @@ function size(p::AbstractImageParams, dim::Integer)
     dim == 2 && return p.cols
     return 1
 end
-
-yaml_repr(imp::AbstractImageParams) = struct2dict(imp)
-CTInfo(imp::AbstractImageParams) = CTInfo(pairs(struct2dict(imp))...)
-
 
 function indicator_matrix(::Type{T}, sq::Int, pad::Int = 0) where {T}
     if pad == 0

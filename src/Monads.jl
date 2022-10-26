@@ -29,9 +29,11 @@ end
 
 const Optional{T} = Union{T,Nothing}
 
+@traitimpl Monad{Optional{<:Some}}
+
 @inline maybe(b, m::Optional) = isnothing(m) ? b : m
 @inline maybe(b) = m::Optional -> maybe(b, m)
-@traitfn @inline maybe(f::F, b, m::Optional) where {F; Callable{F}} =
-    maybe(b, Maybe(m) ↣ f)
+@traitfn @inline maybe(f::F, b, ::Nothing) where {F; Callable{F}} = b
+@traitfn @inline maybe(f::F, b, m::T) where {F,T; Callable{F}} = f(something(m))
 
 end # module
