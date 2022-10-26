@@ -17,11 +17,11 @@ import ..AbstractAlgorithms:
     radon,
     iradon,
     project_image,
-    reconstruct_image,
-    _alg_progress
+    reconstruct_image
+#import ..AbstractAlgorithms: _alg_progress
 using ..AbstractAlgorithms, ..Coordinates
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
-using FFTW, ProgressMeter, IntervalSets
+using FFTW, IntervalSets
 
 
 function _radon end
@@ -198,13 +198,13 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
 end
 
 
-function _radon_progress(n::Integer, p::Bool, dt::Real=0.2)
-    _alg_progress(Progress, "Computing Radon transform...", n, p, dt)
-end
+# function _radon_progress(n::Integer, p::Bool, dt::Real=0.2)
+#     _alg_progress(Progress, "Computing Radon transform...", n, p, dt)
+# end
 
-function _iradon_progress(n::Integer, p::Bool, dt::Real=0.2)
-    _alg_progress(Progress, "Computing inverse Radon transform...", n, p, dt)
-end
+# function _iradon_progress(n::Integer, p::Bool, dt::Real=0.2)
+#     _alg_progress(Progress, "Computing inverse Radon transform...", n, p, dt)
+# end
 
 
 abstract type AbstractFBP <: AbstractIRadonAlgorithm end

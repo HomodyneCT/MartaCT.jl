@@ -21,7 +21,7 @@ function fbpa_fft_square end
         indices[k] = x₀ + ix, y₀ + iy
         xys[k] = xs[ix] * κ * ν, ys[iy] * κ * ν
     end
-    p = _iradon_progress(length(xys), progress)
+    # p = _iradon_progress(length(xys), progress)
     Threads.@threads for k ∈ eachindex(xys)
         ix, iy = indices[k]
         x, y = xys[k]
@@ -31,7 +31,7 @@ function fbpa_fft_square end
             t = (x * cϕ + y * sϕ + 1) * t₀
             t ∈ 1..nd ? interp(t, iϕ) : z
         end
-        next!(p)
+        # next!(p)
     end
     δt::T = π / length(scϕs) / nd * (κ^2) * rows / cols
     tomog .*= δt

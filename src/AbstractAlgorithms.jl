@@ -21,15 +21,15 @@ using ..Coordinates
 using IntervalSets: Interval
 
 
-@inline function _alg_progress(
-    ::Type{T},
-    desc::AbstractString,
-    n::Integer,
-    enabled::Bool,
-    dt::Real=0.2
-) where T
-    T(n; dt, desc, enabled)
-end
+# @inline function _alg_progress(
+#     ::Type{T},
+#     desc::AbstractString,
+#     n::Integer,
+#     enabled::Bool,
+#     dt::Real=0.2
+# ) where T
+#     T(n; dt, desc, enabled)
+# end
 
 
 abstract type AbstractCTAlgorithm end

@@ -22,7 +22,7 @@ function fbpa_fft end
         y = ys[(k - 1) % rows + 1] * κ
         xys[k] = x, y
     end
-    p = _iradon_progress(length(tomog), progress)
+    # p = _iradon_progress(length(tomog), progress)
     Threads.@threads for k ∈ eachindex(xys)
         x, y = xys[k]
         @inbounds tomog[k] = sum(eachindex(scϕs)) do iϕ
@@ -31,7 +31,7 @@ function fbpa_fft end
             t = (x * cϕ + y * sϕ + 1) * t₀
             t ∈ 1..nd ? interp(t, iϕ) : z
         end
-        next!(p)
+        # next!(p)
     end
     γ::T = min(rows, cols) / hypot(rows, cols) * rows / cols
     δt::T = π * γ / length(scϕs) / nd * (λ^2)
