@@ -33,7 +33,7 @@ function fbpa_fft_square end
         end
         next!(p)
     end
-    δt::T = π / length(scϕs) / nd * κ^2 * rows / cols
+    δt::T = π / length(scϕs) / nd * (κ^2) * rows / cols
     tomog .*= δt
 end
 

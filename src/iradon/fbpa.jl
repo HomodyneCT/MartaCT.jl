@@ -34,7 +34,7 @@ function fbpa_fft end
         next!(p)
     end
     γ::T = min(rows, cols) / hypot(rows, cols) * rows / cols
-    δt::T = π * γ / length(scϕs) / nd * λ^2
+    δt::T = π * γ / length(scϕs) / nd * (λ^2)
     tomog .*= δt
 end
 

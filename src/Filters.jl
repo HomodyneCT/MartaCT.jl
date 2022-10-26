@@ -16,12 +16,11 @@ struct RamLak <: AbstractCTFilter end
 (f::RamLak)(args...) = ram_lak(args...)
 
 
-function ram_lak(::Type{T}, nd::Int, nϕ::Int) where {T<:Real}
-    freqs = abs.(fftfreq(nd, one(T)))
-    repeat(freqs, outer = (1, nϕ))
+function ram_lak(::Type{T}, nd::Int) where {T<:Real}
+    abs.(fftfreq(nd, one(T)))
 end
 
-ram_lak(nd::Int, nϕ::Int) = ram_lak(Float32, nd, nϕ)
+ram_lak(nd::Int) = ram_lak(Float32, nd)
 
 
 struct CTFilter{F<:Function} <: AbstractCTFilter

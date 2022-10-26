@@ -26,7 +26,7 @@ include("RadonAlgorithm.jl")
 include("Simulations.jl")
 include("CTIO.jl")
 include("Info.jl")
-include("TestImages.jl")
+include("CTTestImages.jl")
 include("Calibration.jl")
 include("CTScan.jl")
 include("CTPlots.jl")
@@ -44,7 +44,7 @@ include("CTPlots.jl")
     .FanBeam,
     .AbstractAlgorithms,
     .RadonAlgorithm,
-    .TestImages,
+    .CTTestImages,
     .Calibration,
     .CTScan,
     .CTPlots
