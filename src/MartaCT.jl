@@ -35,6 +35,7 @@ include("Calibration.jl")
     .FanBeam,
     .AbstractAlgorithms,
     .RadonAlgorithm,
+    .CTImages,
     .CTTestImages,
     .Calibration
 
