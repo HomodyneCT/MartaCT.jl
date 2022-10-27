@@ -47,7 +47,7 @@ to compute the marginal distributions of the position.
 ```@example qoptics
 ζ = 10
 xs = linspace(-ζ..ζ, 200)
-W = wigner(ρ, xs, xs) |> permutedims |> CTTomogram
+W = wigner(ρ, xs, xs) |> permutedims
 δW = 4ζ^2 / length(W)
 @show sum(W) * δW
 heatmap(xs, xs, W)
