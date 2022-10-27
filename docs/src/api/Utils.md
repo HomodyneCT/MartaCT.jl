@@ -1,5 +1,5 @@
-# Utilities for Marta
+# Utilities for MartaCT
 
 ```@autodocs
-Modules = [Marta.Utils, Marta.TypeDict]
+Modules = [MartaCT.Utils]
 ```

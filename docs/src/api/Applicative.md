@@ -1,5 +1,5 @@
 # Applicative
 
 ```@autodocs
-Modules = [Marta.Applicative]
+Modules = [MartaCT.Applicative]
 ```

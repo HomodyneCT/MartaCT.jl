@@ -1,4 +1,4 @@
-module TestImages
+module CTTestImages
 
 export indicator_matrix, indicator_matrix_2
 export AbstractImageParams, ImageParams, CircleParams
@@ -19,13 +19,12 @@ using Statistics: mean
 import ..Monads: mjoin, mreturn
 using ..Monads
 import ..CTImages: rescale, rescale!
-using ..CTImages
+using ..CTImages: CTImage, CTImageMat, polar2cart
 using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
 using ..AbstractAlgorithms: AbstractProjectionAlgorithm
-import ..Utils: _atype, yaml_repr, struct2dict, linspace
-import ..Info: CTInfo
+import ..Utils: _atype, linspace
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase:
     calibrate_image,
@@ -37,7 +36,7 @@ import Base: getproperty, size, show, getindex, setindex!, IndexStyle, eltype
 using Base: @propagate_inbounds
 
 
-abstract type AbstractImageParams{T<:Real} end
+abstract type AbstractImageParams{T} end
 
 eltype(::Type{P}) where {P<:AbstractImageParams{T}} where T = T
 eltype(imp::AbstractImageParams) = eltype(typeof(imp))
@@ -48,11 +47,7 @@ function size(p::AbstractImageParams, dim::Integer)
     return 1
 end
 
-yaml_repr(imp::AbstractImageParams) = struct2dict(imp)
-CTInfo(imp::AbstractImageParams) = CTInfo(pairs(struct2dict(imp))...)
-
-
-function indicator_matrix(::Type{T}, sq::Int, pad::Int = 0) where {T<:Real}
+function indicator_matrix(::Type{T}, sq::Int, pad::Int = 0) where {T}
     if pad == 0
         pad = sq + 1
     end
@@ -72,7 +67,7 @@ function indicator_matrix_2(
     sq1::Int,
     sq2::Int,
     pad::Int = 0,
-) where {T<:Real}
+) where {T}
     sqmin, sqmax = minmax(sq1, sq2)
     if pad == 0
         pad = sqmin + 1
@@ -99,7 +94,7 @@ const _default_gray_scale_params = Dict(
 
 
 """
-    struct ImageParams{T<:Real}
+    struct ImageParams{T}
 
 Hold information to construct the input test image.
 """
@@ -113,12 +108,14 @@ struct ImageParams{T} <: AbstractImageParams{T}
 
     function ImageParams{T}(
         rows::Optional{Integer} = nothing,
-        cols::Optional{Integer} = nothing,
-        gray_scale::ClosedInterval = -1000..1000,
+        cols::Optional{Integer} = nothing;
+        gray_scale::Optional{ClosedInterval} = nothing,
         calibration_value::Optional{Real} = nothing,
-        background::Optional{Real} = nothing;
+        background::Optional{Real} = nothing,
+        hounsfield::Bool = false,
         kwargs...
-    ) where {T<:Real}
+    ) where {T}
+        gray_scale = maybe(ifelse(hounsfield, -1000..1000, 0..1), gray_scale)
         kw = isempty(kwargs) ? _default_gray_scale_params : Dict(kwargs)
         srows, scols = combined_images_size(; kw...)
         rows, cols = maybe(srows, rows), maybe(scols, cols)
@@ -127,11 +124,11 @@ struct ImageParams{T} <: AbstractImageParams{T}
             "Requested image size is too small: " *
             "rows($rows) ≥ $srows && columns($cols) ≥ $scols"
         )
-        background = maybe(leftendpoint(gray_scale), background)
+        background = maybe(minimum(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
             mean(gray_scale) : calibration_value
 
-        if calibration_value ∉ background..rightendpoint(gray_scale)
+        if calibration_value ∉ background..maximum(gray_scale)
             midpoint = mean(gray_scale)
             @warn(
                 "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
@@ -160,7 +157,7 @@ end
 
 
 """
-    ImageParams([T=Float32]; <keyword arguments>) where {T<:Real}
+    ImageParams([T=Float32]; <keyword arguments>) where {T}
 
 Construct ImageParams object.
 
@@ -170,8 +167,10 @@ Construct ImageParams object.
 - `pad=30`: padding around image.
 - `dist=10`: distance between images.
 - `radius=20`: radius of calibration circle.
-- `gray_scale=0..1`: interval of gray scale values.
+- `gray_scale=1000..1000`: interval of gray scale values.
 - `calibration_value=nothing`: value of the calibration circle. If not specified, is `gray_scale[2]`.
+- `background=nothing`: value to be used as background.
+- `hounsfield=false`: whether the gray scale should be in Hounsfield units.
 """
 function ImageParams(
     ::Type{T} = Float32;
@@ -179,21 +178,11 @@ function ImageParams(
     cols::Optional{Integer} = nothing,
     width::Optional{Integer} = nothing,
     height::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Optional{Real} = nothing,
-    background::Optional{Real} = nothing,
     kwargs...
-) where {T<:Real}
+) where {T}
     rows = maybe(rows, height)
     cols = maybe(cols, width)
-    ImageParams{T}(
-        rows,
-        cols,
-        gray_scale,
-        calibration_value,
-        background;
-        kwargs...
-    )
+    ImageParams{T}(rows, cols; kwargs...)
 end
 
 
@@ -220,19 +209,22 @@ struct CircleParams{T} <: AbstractImageParams{T}
         radius::Integer,
         rows::Integer,
         cols::Integer,
-        nϕ::Optional{Integer} = nothing,
-        gray_scale::ClosedInterval = -1000..1000,
+        nϕ::Optional{Integer} = nothing;
+        gray_scale::Optional{ClosedInterval} = nothing,
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
-    ) where {T<:Real}
-        background = maybe(leftendpoint(gray_scale), background)
+        hounsfield::Bool = false,
+        kwargs...
+    ) where {T}
+        gray_scale = maybe(ifelse(hounsfield, -1000..0, 0..1), gray_scale)
+        background = maybe(minimum(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
-            mean(gray_scale) : calibration_value
+            maximum(gray_scale) : calibration_value
 
-        if calibration_value ∉ background..rightendpoint(gray_scale)
-            midpoint = mean(gray_scale)
-            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
-            calibration_value = midpoint
+        if calibration_value ∉ background..maximum(gray_scale)
+            value = maximum(gray_scale)
+            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking maximum: $value"
+            calibration_value = value
         end
 
         new(
@@ -265,23 +257,23 @@ function CircleParams(
     cols::Optional{Integer} = nothing,
     nϕ::Optional{Integer} = nothing,
     nphi::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Optional{Real} = nothing,
-    background::Optional{Real} = nothing,
-) where {T <: Real}
+    kwargs...
+) where {T}
     nϕ = maybe(nϕ, nphi)
-    factor = 31 / 50 # magic number!
-    circ_zoom = 1.3 / 17
+    #factor = 31 / 50 # magic number!
+    factor = 1
+    #circ_zoom = 1.3 / 17
+    circ_zoom = 1//5
     #=
         If width or height are present, use them, otherwise use rows and cols.
         Finally, if rows or cols are not present, compute defaults.
     =#
     rows, cols = maybe(rows, height), maybe(cols, width)
-    width = maybe(500, cols)
+    width = maybe(512, cols)
     height = isnothing(rows) ? round(Int, width * factor) : rows
     radius = isnothing(radius) ? round(Int, width * circ_zoom) : radius
     rows, cols = height, width
-    CircleParams{T}(radius, rows, cols, nϕ, gray_scale, calibration_value, background)
+    CircleParams{T}(radius, rows, cols, nϕ; kwargs...)
 end
 
 
@@ -296,19 +288,22 @@ struct SquareParams{T} <: AbstractImageParams{T}
     function SquareParams{T}(
         l::Int,
         rows::Integer,
-        cols::Integer,
-        gray_scale::ClosedInterval = -1000..1000,
+        cols::Integer;
+        gray_scale::Optional{ClosedInterval} = nothing,
         calibration_value::Optional{Real} = nothing,
         background::Optional{Real} = nothing,
-    ) where {T <: Real}
-        background = maybe(leftendpoint(gray_scale), background)
+        hounsfield::Bool = false,
+        kwargs...
+    ) where {T}
+        gray_scale = maybe(ifelse(hounsfield, -1000..0, 0..1), gray_scale)
+        background = maybe(minimum(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
-            mean(gray_scale) : calibration_value
+            maximum(gray_scale) : calibration_value
 
-        if calibration_value ∉ background..rightendpoint(gray_scale)
-            midpoint = mean(gray_scale)
-            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking midpoint: $midpoint"
-            calibration_value = midpoint
+        if calibration_value ∉ background..maximum(gray_scale)
+            value = maximum(gray_scale)
+            @warn "Calibration value should be in the interval of the gray scale ($calibration_value ∉ $gray_scale), taking maximum: $value"
+            calibration_value = value
         end
         new(l, rows, cols, gray_scale, calibration_value, background)
     end
@@ -329,23 +324,14 @@ function SquareParams(
     cols::Optional{Integer} = nothing,
     width::Optional{Integer} = nothing,
     height::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Optional{Real} = nothing,
-    background::Optional{Real} = nothing,
-) where {T <: Real}
+    kwargs...
+) where {T}
     rows, cols = maybe(rows, height), maybe(cols, width)
     width = maybe(maybe(512, rows), cols)
     height = maybe(width, rows)
     rows, cols = height, width
     l = maybe(min(rows, cols) ÷ 2, l)
-    SquareParams{T}(
-        l,
-        rows,
-        cols,
-        gray_scale,
-        calibration_value,
-        background
-    )
+    SquareParams{T}(l, rows, cols; kwargs...)
 end
 
 
@@ -418,7 +404,7 @@ end
 
 
 """
-    circle_image([T=Float32]; radius=20, value=1) where {T<:Real}
+    circle_image([T=Float32]; radius=20, value=1) where {T}
 
 Create a square image with a circle of given value.
 
@@ -434,8 +420,8 @@ See also: [`gray_scale_image`](@ref), [`combine_images`](@ref)
 function circle_image(
     ::Type{T} = Float32;
     radius::Integer = 20,
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
+    calibration_value::Real = one(T),
+    background::Real = 0,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
     swidth::Optional{Integer} = nothing,
@@ -445,7 +431,7 @@ function circle_image(
     ν::Real = 1,
     scale::Optional{Real} = nothing,
     kwargs...,
-) where {T<:Real}
+) where {T}
     nϕ = maybe(nϕ, nphi)
     ν = maybe(ν, scale)
     rows = isnothing(sheight) ? maybe(2radius, rows) : sheight
@@ -516,9 +502,9 @@ function gray_scale_image(
     cols::Integer = 40,
     swidth::Optional{Integer} = nothing,
     sheight::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
+    gray_scale::ClosedInterval = 0..1,
     background::Optional{Real} = nothing,
-) where {T<:Real}
+) where {T}
     rows = maybe(rows, sheight)
     cols = maybe(cols, swidth)
     minv, maxv = endpoints(gray_scale)
@@ -531,9 +517,9 @@ end
 
 
 """
-pyramid_gray_scale_image([T=Float32]; swidth=200, sheight=40, gray_scale=-1000..1000, plateau = 0) where {T <: Real}
+pyramid_gray_scale_image([T=Float32]; swidth=200, sheight=40, gray_scale=0..1, plateau = 0) where {T <: Real}
 
-Create an image with a pyramid gray scale rectangle with given scale gray_scale.
+Create an image with a pyramid gray scale rectangle with given scale gray_scale. The `plateau` parameter denotes the percentage of the rectangle width that has the maximum value of `gray_scale`.
 
 # Examples
 ```julia-repl
@@ -548,10 +534,10 @@ function pyramid_gray_scale_image(
     ::Type{T} = Float32;
     swidth::Integer = 200,
     sheight::Integer = 40,
-    gray_scale::ClosedInterval = -1000..1000,
+    gray_scale::ClosedInterval = 0..1,
     background::Optional{Real} = nothing,
     plateau::Real = 0,
-) where {T<:Real}
+) where {T}
     @assert 0 ≤ plateau ≤ 1 "Plateau is a fraction of the gray scale width!"
     minv, maxv = endpoints(gray_scale)
     val_range = fill(maxv, swidth)
@@ -576,7 +562,7 @@ end
 Create an image with a gray scale rectangle with given scale gray_scale
 from parameters `imp`.
 """
-function gray_scale_image(imp::ImageParams{T}) where {T<:Real}
+function gray_scale_image(imp::ImageParams{T}) where {T}
     gray_scale_image(
         T; imp.swidth, imp.sheight, imp.gray_scale, imp.background)
 end
@@ -594,7 +580,7 @@ from parameters `imp`.
 function pyramid_gray_scale_image(
     imp::ImageParams{T};
     plateau::Real = 0,
-) where {T<:Real}
+) where {T}
     pyramid_gray_scale_image(
         T;
         imp.swidth,
@@ -635,7 +621,7 @@ function combine_images(
     imp::ImageParams{T},
     rect::AbstractMatrix{T},
     circle::AbstractMatrix{T},
-) where {T<:Real}
+) where {T}
     rect_rows, rect_cols = size(rect)
     circ_rows, circ_cols = size(circle)
 
@@ -704,14 +690,14 @@ end
 
 Create pyramid gray scale image.
 """
-function create_pyramid_image(par::ImageParams; plateau::Real = 0)
+function create_pyramid_image(par::ImageParams; plateau = 0)
     circ_img = circle_image(par)
     rect_img = pyramid_gray_scale_image(par; plateau)
     combine_images(par, rect_img, circ_img) |> CTImage
 end
 
 
-abstract type AbstractTestImage{T<:Real} <: AbstractMatrix{T} end
+abstract type AbstractTestImage{T} <: AbstractMatrix{T} end
 abstract type AbstractGrayScale{T} <: AbstractTestImage{T} end
 
 
@@ -743,7 +729,7 @@ end
 IndexStyle(::Type{T}) where {T<:AbstractTestImage} = IndexLinear()
 
 
-struct CircleImage{T<:Real} <: AbstractTestImage{T}
+struct CircleImage{T} <: AbstractTestImage{T}
     params::CircleParams{T}
     image::CTImageMat{T}
 end
@@ -762,7 +748,7 @@ end
 
 
 function CircleImage(
-    ::Type{T} = Float32; interpolation = nothing, kwargs...) where{T <: Real}
+    ::Type{T} = Float32; interpolation = nothing, kwargs...) where{T}
     interpolation = maybe(NoInterpolation(), interpolation)
     CircleImage(CircleParams(T; kwargs...); interpolation)
 end
@@ -798,8 +784,8 @@ function getproperty(grimg::GrayScaleLine, s::Symbol)
 end
 
 
-function GrayScaleLine(imp::ImageParams; kwargs...)
-    GrayScaleLine(imp, create_image(imp); kwargs...)
+function GrayScaleLine(imp::ImageParams)
+    GrayScaleLine(imp, create_image(imp))
 end
 
 
@@ -810,11 +796,8 @@ function GrayScaleLine(
     height::Optional{Integer} = nothing,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
     kwargs...,
-) where {T<:Real}
+) where {T}
     factor = 31 / 50 # magic number!
     #=
         If width or height are present, use them, otherwise use rows and cols.
@@ -839,11 +822,9 @@ function GrayScaleLine(
         pad,
         dist,
         radius,
-        gray_scale,
-        calibration_value,
-        background,
+        kwargs...
     )
-    GrayScaleLine(imp; kwargs...)
+    GrayScaleLine(imp)
 end
 
 
@@ -871,9 +852,9 @@ end
 
 
 function GrayScalePyramid(
-    imp::ImageParams{T}; plateau::Real = zero(T), kwargs...) where {T<:Real}
+    imp::ImageParams{T}; plateau::Real = zero(T)) where {T}
     image = create_pyramid_image(imp; plateau)
-    GrayScalePyramid(imp, plateau, image)
+    GrayScalePyramid(imp, T(plateau), image)
 end
 
 
@@ -884,12 +865,9 @@ function GrayScalePyramid(
     height::Optional{Integer} = nothing,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
-    gray_scale::ClosedInterval = -1000..1000,
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
     plateau::Real = zero(T),
     kwargs...,
-) where {T<:Real}
+) where {T}
     factor = 31 / 50 # magic number!
     #=
         If width or height are present, use them, otherwise use rows and cols.
@@ -914,11 +892,9 @@ function GrayScalePyramid(
         pad,
         dist,
         radius,
-        gray_scale,
-        calibration_value,
-        background,
+        kwargs...
     )
-    GrayScalePyramid(imp; plateau, kwargs...)
+    GrayScalePyramid(imp; plateau)
 end
 
 
@@ -933,7 +909,7 @@ end
 
 
 """
-    circle_polar_image([T=Float32] nr, nϕ, radius; value=1) where {T<:Real}
+    circle_polar_image([T=Float32] nr, nϕ, radius; value=1) where {T}
 
 Create a circle of radius `radius` inside a `nr×nϕ` image
 in polar coordinates .
@@ -950,9 +926,9 @@ function circle_polar_image(
     nr::Integer,
     nϕ::Integer,
     radius::Integer;
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
-) where {T<:Real}
+    calibration_value::Real = one(T),
+    background::Real = 0,
+) where {T}
     @assert radius <= nr "Radius should be less than number of radial points"
     mat = fill(T(background), nϕ, nr)
     mat[:, 1:radius] .= calibration_value
@@ -974,7 +950,7 @@ function circle_polar_image(
     nr::Optional{Integer} = nothing,
     nϕ::Optional{Integer} = nothing,
     nphi::Optional{Integer} = nothing,
-    kwargs...) where {T<:Real}
+    kwargs...) where {T}
     nr = maybe(2radius, nr)
     nϕ = maybe(nr, maybe(nϕ, nphi))
     circle_polar_image(T, nr, nϕ, radius; kwargs...)
@@ -982,7 +958,7 @@ end
 
 
 """
-    square_image([T=Float32] r, c; l=nothing) where {T<:Real}
+    square_image([T=Float32] r, c; l=nothing) where {T}
 
 Create a `l×l` square inside a `r×c` image.
 
@@ -998,9 +974,9 @@ function square_image(
     r::Integer,
     c::Integer,
     l::Optional{Integer} = nothing;
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
-) where {T<:Real}
+    calibration_value::Real = one(T),
+    background::Real = 0,
+) where {T}
     matrix = fill(T(background), r, c)
     if isnothing(l)
         l = min(r, c)
@@ -1061,11 +1037,7 @@ function SquareImage(
     l::Optional{Integer} = nothing,
     kwargs...
 ) where {T <: Real}
-    imp = SquareParams(
-        T;
-        l,
-        kwargs...
-    )
+    imp = SquareParams(T; l, kwargs...)
     SquareImage(imp)
 end
 
@@ -1082,8 +1054,8 @@ function getproperty(grimg::WhiteRect, s::Symbol)
 end
 
 
-function WhiteRect(imp::ImageParams; kwargs...)
-    grimg = GrayScaleLine(imp; kwargs...)
+function WhiteRect(imp::ImageParams)
+    grimg = GrayScalePyramid(imp; plateau = 1)
     WhiteRect(grimg.params, grimg.image)
 end
 
@@ -1095,12 +1067,8 @@ function WhiteRect(
     height::Optional{Integer} = nothing,
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
-    gray_scale::Union{ClosedInterval,U} = 1000,
-    calibration_value::Real = zero(T),
-    background::Real = -1000,
     kwargs...,
-) where {T<:Real,U<:Real}
-    gray_scale = gray_scale isa Real ? gray_scale..gray_scale : gray_scale
+) where {T}
     factor = 31 / 50 # magic number!
     #=
         If width or height are present, use them, otherwise use rows and cols.
@@ -1125,11 +1093,9 @@ function WhiteRect(
         pad,
         dist,
         radius,
-        gray_scale,
-        calibration_value,
-        background,
+        kwargs...
     )
-    WhiteRect(imp; kwargs...)
+    WhiteRect(imp)
 end
 
 

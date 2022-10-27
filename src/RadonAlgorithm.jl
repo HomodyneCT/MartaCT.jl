@@ -9,19 +9,19 @@ export RadonInfo, FBPInfo
 
 using ..Applicative
 using ..Monads
-using ..CTImages
 using ..Geometry
+using ..CTImages: rescale
 using ..FanBeam: fan2para, para2fan
 import ..Utils: ORI, linspace, _atype, half, width
 import ..AbstractAlgorithms:
     radon,
     iradon,
     project_image,
-    reconstruct_image,
-    _alg_progress
+    reconstruct_image
+#import ..AbstractAlgorithms: _alg_progress
 using ..AbstractAlgorithms, ..Coordinates
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
-using FFTW, ProgressMeter, IntervalSets
+using FFTW, IntervalSets
 
 
 function _radon end
@@ -30,18 +30,20 @@ function _alg_method end
 
 @inline function _radon(
     a::AbstractProjectionAlgorithm,
-    x::AbstractMatrix;
+    img::AbstractMatrix,
+    args...;
     kwargs...
 )
-    _radon(_alg_method(a), a, x; kwargs...)
+    _radon(_alg_method(a), a, img, args...; kwargs...)
 end
 
 @inline function _iradon(
     a::AbstractIRadonAlgorithm,
-    x::AbstractMatrix;
+    sinog::AbstractMatrix,
+    args...;
     kwargs...
 )
-    _iradon(_alg_method(a), a, x; kwargs...)
+    _iradon(_alg_method(a), a, sinog, args...; kwargs...)
 end
 
 
@@ -49,36 +51,34 @@ macro _defradonfn(f::Symbol, body)
     esc(quote
         @inline function $f(
             image::AbstractMatrix{T},
-            ts::AbstractVector{X},
-            ϕs::AbstractVector{Y};
+            ts::AbstractVector,
+            ϕs::AbstractVector;
             ν::Real = 1,
             scale::Optional{Real} = nothing,
-            τ::Real = 1,
-            ratio::Optional{Real} = 1,
-            background::Optional{Z} = nothing,
+            τ::Optional{Real} = nothing,
+            ratio::Optional{Real} = nothing,
+            background::Optional = nothing,
             rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
-        ) where {
-            T <: Real,
-            X <: Real,
-            Y <: Real,
-            Z <: Real,
-            Interp <: AbstractInterp2DOrNone,
-        }
+        ) where {T,Interp <: AbstractInterp2DOrNone}
             ν = maybe(ν, scale)
-            τ = maybe(τ, ratio)
+            @assert ν > 0
             rows, cols = size(image)
+            τ = maybe(maybe(rows / cols, τ), ratio)
+            @assert τ > 0
             nd = length(ts)
             nϕ = length(ϕs)
-            scϕs = sincos.(ϕs)
-            z::T = maybe(zero(T), background)
-            sinog = similar(_atype(image), nd, nϕ)
-            fill!(sinog, z)
+            scϕs = map(ϕs) do ϕ
+                s, c = sincos(ϕ)
+                T(s), T(c)
+            end
+            sinog = similar(image, nd, nϕ)
+            fill!(sinog, convert(T, maybe(0.0f0, background)))
             rimage = rescaled ? rescale(image) : image
             interp = isnothing(interpolation) ?
                 interpolate(rimage) : interpolation(rimage)
-            CTSinogram($body)
+            $body
         end
     end)
 end
@@ -87,53 +87,51 @@ end
 macro _defiradonfn(f::Symbol, body)
     esc(quote
         @inline function $f(
-            sinog::AbstractMatrix{T},
-            xs::AbstractVector{U1},
-            ys::AbstractVector{U2},
+            sinog::AbstractMatrix,
+            xs::AbstractVector,
+            ys::AbstractVector,
             ::Cartesian;
             ν::Real = 1,
             scale::Optional{Real} = nothing,
             ϕs::Optional{I} = nothing,
             angles::Optional{J} = nothing,
-            background::Optional{U3} = nothing,
+            background::Optional = nothing,
             filter::Optional{F} = nothing,
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
         ) where {
-            T <: Real,
-            U1 <: Real,
-            U2 <: Real,
             I <: Interval{:closed},
             J <: Interval{:closed},
-            U3 <: Real,
             F <: AbstractCTFilter,
             Interp <: AbstractInterp2DOrNone,
         }
             ν = maybe(ν, scale)
+            @assert ν > 0
             ϕs = maybe(ϕs, angles)
             nd, nϕ = size(sinog)
             cols = length(xs)
             rows = length(ys)
+            T = real(eltype(sinog))
             filtered = apply(maybe(RamLak(), filter)) do f
-                filter_freq = fft(sinog, 1) .* f(T, nd, nϕ)
+                filter_freq = fft(real(sinog), 1) .* f(T, nd)
                 bfft(filter_freq, 1) |> real
             end
             interpolation = maybe(interpolate, interpolation)
             interp = interpolation(filtered)
-            t₀::T = (nd + 1) / 2
+            t₀ = (nd + 1) / 2
             ϕs = maybe(ORI(0..2π), ϕs)
             scϕs = sincos.(linspace(T, ϕs, nϕ))
             z::T = maybe(zero(T), background)
-            tomog = similar(_atype(sinog), rows, cols)
+            tomog = similar(sinog, T, rows, cols)
             fill!(tomog, z)
-            CTTomogram($body)
+            convert(_atype(sinog), $body)
         end
         @inline function $f(
-            sinog::AbstractMatrix{T},
-            xs::AbstractVector{X},
-            ys::AbstractVector{Y};
+            sinog::AbstractMatrix,
+            xs::AbstractVector,
+            ys::AbstractVector;
             kwargs...
-        ) where {T<:Real,X<:Real,Y<:Real}
+        )
             $f(sinog, xs, ys, Cartesian(); kwargs...)
         end
     end)
@@ -149,6 +147,14 @@ macro _defradonalgfn(A::Symbol, f::Symbol)
             kwargs...
         )
             $f(image, ts, ϕs; kwargs...)
+        end
+        @inline function (a::$A)(
+            image::AbstractMatrix,
+            ts::Interval,
+            ϕs::Interval;
+            kwargs...
+        )
+            _radon(a, image, ts, ϕs; kwargs...)
         end
         @inline function (a::$A)(image::AbstractMatrix; kwargs...)
             _radon(a, image; kwargs...)
@@ -170,6 +176,15 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
         end
         @inline function (a::$A)(
             sinog::AbstractMatrix,
+            xs::Interval,
+            ys::Interval,
+            coo::AbstractCoordinates = Cartesian();
+            kwargs...
+        )
+            _iradon(a, sinog, xs, ys, coo; kwargs...)
+        end
+        @inline function (a::$A)(
+            sinog::AbstractMatrix,
             xs::AbstractVector,
             coo::AbstractCoordinates = Cartesian();
             kwargs...
@@ -183,13 +198,13 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
 end
 
 
-function _radon_progress(n::Integer, p::Bool, dt::Real=0.2)
-    _alg_progress(Progress, "Computing Radon transform...", n, p, dt)
-end
+# function _radon_progress(n::Integer, p::Bool, dt::Real=0.2)
+#     _alg_progress(Progress, "Computing Radon transform...", n, p, dt)
+# end
 
-function _iradon_progress(n::Integer, p::Bool, dt::Real=0.2)
-    _alg_progress(Progress, "Computing inverse Radon transform...", n, p, dt)
-end
+# function _iradon_progress(n::Integer, p::Bool, dt::Real=0.2)
+#     _alg_progress(Progress, "Computing inverse Radon transform...", n, p, dt)
+# end
 
 
 abstract type AbstractFBP <: AbstractIRadonAlgorithm end

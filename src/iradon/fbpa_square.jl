@@ -13,15 +13,15 @@ function fbpa_fft_square end
 @_defiradonfn fbpa_fft_square begin
     l = min(rows, cols)
     x₀, y₀ = (cols - l) ÷ 2, (rows - l) ÷ 2
-    κ::T = min(half(xs), half(ys))
+    κ::T = (nd - 1) / min(width(xs), width(ys))
     xys = Vector{NTuple{2,T}}(undef, l^2)
     indices = Vector{NTuple{2,Int}}(undef, l^2)
     @inbounds @simd for k ∈ eachindex(xys)
         ix, iy = (k - 1) ÷ l + 1, (k - 1) % l + 1
         indices[k] = x₀ + ix, y₀ + iy
-        xys[k] = xs[ix] / κ, ys[iy] / κ
+        xys[k] = xs[ix] * κ * ν, ys[iy] * κ * ν
     end
-    p = _iradon_progress(length(xys), progress)
+    # p = _iradon_progress(length(xys), progress)
     Threads.@threads for k ∈ eachindex(xys)
         ix, iy = indices[k]
         x, y = xys[k]
@@ -29,11 +29,12 @@ function fbpa_fft_square end
             sϕ, cϕ = scϕs[iϕ]
             # To be consistent with our conventions should be '+'.
             t = (x * cϕ + y * sϕ + 1) * t₀
-            t ∈ 1..nd ? interp(t, T(iϕ)) : z
+            t ∈ 1..nd ? interp(t, iϕ) : z
         end
-        next!(p)
+        # next!(p)
     end
-    tomog
+    δt::T = π / length(scϕs) / nd * (κ^2) * rows / cols
+    tomog .*= δt
 end
 
 

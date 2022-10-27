@@ -1,12 +1,12 @@
 using Documenter
-using Marta
+using MartaCT
 
 makedocs(
-    sitename = "Marta",
+    sitename = "MartaCT",
     format = Documenter.HTML(
         prettyurls = "local" ∉ ARGS,
     ),
-    modules = [Marta],
+    modules = [MartaCT],
     pages = [
         "Home" => "index.md",
         "Getting Started" => [
@@ -20,13 +20,9 @@ makedocs(
             "api/Algorithms.md",
             "api/CTImages.md",
             "api/Geometry.md",
-            "api/CTIO.md",
-            "api/CTPlots.md",
             "api/Simulations.md",
             "api/Calibration.md",
-            "api/TestImages.md",
-            "api/CTScan.md",
-            "api/Info.md",
+            "api/CTTestImages.md",
             "api/Interpolation.md",
             "api/Applicative.md",
             "api/Monads.md",

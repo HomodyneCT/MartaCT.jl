@@ -5,7 +5,7 @@ Base.Experimental.@optlevel 3
 using IntervalSets,  Statistics
 using ..Monads
 using ..CTImages
-using ..TestImages
+using ..CTTestImages
 import ..CalibrationBase:
     calibrate_image,
     calibrate_image!,

@@ -15,33 +15,32 @@ function fbp_fft end
     δx::T = width(xs)
     δy::T = width(ys)
     h::T = hypot(δx, δy)
-    κ::T = (nd - 1) / h / ν
+    λ::T = (nd - 1) / h
+    κ::T = λ / ν
     @inbounds @simd for k ∈ eachindex(xys)
-        x = xs[(k - 1) ÷ rows + 1] * κ
-        y = ys[(k - 1) % rows + 1] * κ
+        x = T(xs[(k - 1) ÷ rows + 1]) * κ
+        y = T(ys[(k - 1) % rows + 1]) * κ
         xys[k] = x, y
     end
-    temp_images = fill(deepcopy(tomog), 1)
-    Threads.resize_nthreads!(temp_images)
-    p = _iradon_progress(nϕ, progress)
+    atomic_tomog = reshape([
+        Threads.Atomic{real(eltype(tomog))}(zero(real(eltype(tomog)))) for _ in eachindex(tomog)
+    ], axes(tomog))
+    # p = _iradon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
-        id = Threads.threadid()
-        @inbounds img = temp_images[id]
-        @inbounds @simd for k ∈ eachindex(xys)
+        @inbounds for k ∈ eachindex(xys)
             x, y = xys[k]
             # To be consistent with our conventions should be '+'.
             t = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                img[k] += interp(t, T(iϕ))
+                Threads.atomic_add!(atomic_tomog[k],  interp(t, iϕ))
             end
         end
-        next!(p)
+        # next!(p)
     end
-    foreach(temp_images) do x
-        tomog .+= x
-    end
-    δt::T = π * (nd - 1) / length(scϕs) / 2
+    @. tomog = getindex(atomic_tomog)
+    γ::T = min(rows, cols) / hypot(rows, cols) * rows / cols
+    δt::T = π * γ / length(scϕs) / nd * (λ^2)
     tomog .*= δt
 end
 
@@ -82,7 +81,7 @@ end
 #     temp_images = fill(fill(z, rows, cols), 1)
 #     Threads.resize_nthreads!(temp_images)
 #     p = _iradon_progress(nϕ, progress)
-#     Threads.@threads for iϕ ∈ eachindex(scϕs)
+#     Threads.Threads.@threads for iϕ ∈ eachindex(scϕs)
 #         sϕ, cϕ = scϕs[iϕ]
 #         id = Threads.threadid()
 #         @inbounds img = temp_images[id]

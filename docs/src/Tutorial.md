@@ -2,19 +2,19 @@
 
 ```@setup ex_img
 ENV["GKS_WSTYPE"] = "svg"
-using Marta, Plots, Plots.Measures, IntervalSets
+using MartaCT, Plots, Plots.Measures, IntervalSets
 gr()
 Plots.reset_defaults()
 Plots.default(size=(500,300), rightmargin=1cm, color=:grays)
 ```
 
-Let's see a brief example on how Marta can be used.
+Let's see a brief example on how MartaCT can be used.
 
 As a starting point we prepare the session importing some
 packages:
 
 ```julia
-using Marta, Plots, IntervalSets
+using MartaCT, Plots, IntervalSets
 ```
 
 Now we can generate our first image from the available test
@@ -71,9 +71,9 @@ savefig("tomog.svg"); nothing # hide
 ![](tomog.svg)
 
 Here we can see that the final scale is not recovered
-properly: we need to calibrate the image! Marta provides a
+properly: we need to calibrate the image! MartaCT provides a
 convenient framework for image calibration and analysis.
-Since we are studying a well defined image, Marta knows how
+Since we are studying a well defined image, MartaCT knows how
 to calibrate the resulting image according to the original
 image. In the general case, this would require to provide at
 least two ROIs (regions of interest) which are used to

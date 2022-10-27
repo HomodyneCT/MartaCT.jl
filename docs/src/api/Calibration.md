@@ -1,5 +1,5 @@
 # Calibration
 
 ```@autodocs
-Modules = [Marta.CalibrationBase, Marta.Calibration]
+Modules = [MartaCT.CalibrationBase, MartaCT.Calibration]
 ```

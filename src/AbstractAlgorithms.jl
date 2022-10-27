@@ -18,17 +18,18 @@ using ..Geometry:
     AbstractGeometry, AbstractParallelBeamGeometry, AbstractFanBeamGeometry
 using ..FanBeam: fan2para
 using ..Coordinates
+using IntervalSets: Interval
 
 
-@inline function _alg_progress(
-    ::Type{T},
-    desc::AbstractString,
-    n::Integer,
-    enabled::Bool,
-    dt::Real=0.2
-) where T
-    T(n; dt, desc, enabled)
-end
+# @inline function _alg_progress(
+#     ::Type{T},
+#     desc::AbstractString,
+#     n::Integer,
+#     enabled::Bool,
+#     dt::Real=0.2
+# ) where T
+#     T(n; dt, desc, enabled)
+# end
 
 
 abstract type AbstractCTAlgorithm end
@@ -166,8 +167,8 @@ See Also: [`reconstruct_image`](@ref)
 """
 @inline function iradon(
     sinog::AbstractMatrix,
-    xs::AbstractVector,
-    ys::AbstractVector,
+    xs::Union{AbstractVector,Interval},
+    ys::Union{AbstractVector,Interval},
     alg::AbstractReconstructionAlgorithm,
     coo::AbstractCoordinates = Cartesian();
     kwargs...

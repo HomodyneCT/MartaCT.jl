@@ -1,21 +1,26 @@
-struct CTSimulation <: AbstractSimulation end
-
-@inline function Random.rand(
-    sinog::CTSinogram,
-    nphotons::Integer,
-    ::CTSimulation;
-    kwargs...
-)
-    sample_sinogram(sinog; kwargs...)
-end
-
-@inline function Random.rand(sinog::CTSinogram, ::CTSimulation; kwargs...)
-    rand(sinog, nphotons, CTSimulation(); kwargs...)
+Base.@kwdef struct CTSimulation <: AbstractSimulation
+    nphotons::Int = 10000
 end
 
 
 """
-    StatsBase.sample(data::CTSinogram, xs::AbstractVector[; nsamples=1000, nblks=1, nbins=nothing])
+    simulate(sim::CTSimulation, sinog::AbstractMatrix; <keyword arguments>)
+
+Simulate a CT scan by generating `sim.nphotons` Poisson-distributed photons for
+each angle, which are then detected with a probability given by
+``p_{ϕ_j}(x_i) = exp(-s_{i,j})``, where ``s_{i,j}`` is `sinog[i,j]`.
+
+The keyword arguments are the same as those for [`simulate_ct`](@ref).
+
+See also: [`simulate_ct`](@ref)
+"""
+@inline function simulate(sim::CTSimulation, sinog::AbstractMatrix; kwargs...)
+    simulate_ct(sinog; sim.nphotons, kwargs...)
+end
+
+
+"""
+    StatsBase.sample(data::AbstractMatrix, xs::AbstractVector[; nsamples=1000, nblks=1, nbins=nothing])
 
 Compute `nsamples` from `xs` according to the distribution given by each column
 of `data`. Optionally, if `nblks > 1`, `nblks × nsamples` samples are computed.
@@ -23,17 +28,16 @@ The sampled data are collected into a histogram of length `nbins` for each
 column in `data`. The resulting data have size `(nbins, size(data, 2), nblks)`.
 """
 function StatsBase.sample(
-    data::CTSinogram,
+    data::AbstractMatrix,
     xs::AbstractVector;
     nsamples::Integer = 1000,
     nblks::Integer = 1,
     nbins::Optional{Integer} = nothing,
-    progress::Bool = true,
+    progress::Bool = false,
 )
     nd, nϕ = size(data)
     @assert length(xs) == nd "Dimension mismatch: `xs` vector should match first dimension of `data`"
-    Random.seed!()
-    nbins = maybe(nd+1, nbins)
+    nbins = maybe(nd, nbins)
     ζ = half(xs)
     bins = linspace(-ζ..ζ, nbins+1)
 	sampled = similar(data, (nbins, nϕ, nblks))
@@ -56,6 +60,16 @@ function StatsBase.sample(
         next!(p)
     end
 	sampled
+end
+
+
+@inline function StatsBase.sample(
+    data::AbstractMatrix,
+    xsi::Interval;
+    kwargs...
+)
+    xs = linspace(xsi, size(data, 1))
+    sample(data, xs; kwargs...)
 end
 
 
@@ -89,7 +103,7 @@ Return a `nd × nϕ` matrix with the generated photons.
 end
 
 
-"""simulate_ct(sinog::AbstractMatrix{T}; <keyword arguments>) where {T <: Real}
+"""simulate_ct(sinog::AbstractMatrix; <keyword arguments>) where {T}
 
 Simulate a low dose CT scan. This samples `sinog` with ``⟨n⟩``
 random photons per projection angle.
@@ -98,16 +112,16 @@ random photons per projection angle.
 - `sinog`: sinogram data.
 - `nphotons::Integer=10000`: mean number of photons.
 - `ϵ::Real=1`: detectors quantum efficiency.
-- `take_log::Bool=true`: whether to take the logarithm of the
+- `take_log::Bool=false`: whether to take the logarithm of the
   resampled intensities to obtain the corresponding
   sinogram.
 """
 function simulate_ct(
-    sinog::AbstractMatrix{T};
+    sinog::AbstractMatrix;
     nphotons::Integer = 10000,
     ϵ::Real = 1,
-    take_log::Bool = true,
-) where {T <: Real}
+    take_log::Bool = false,
+)
     nd, nϕ = size(sinog)
     photons = generate_photons(nphotons, nd, nϕ)
     rngs_absorp = [Random.MersenneTwister() for _ ∈ 1:Threads.nthreads()]
@@ -143,7 +157,7 @@ simulate_ct(; kwargs...) = x -> simulate_ct(x; kwargs...)
 
 
 """
-    sample_sinogram_external(sinog::AbstractMatrix{T}; <keyword arguments>) where {T <: Real}
+    sample_sinogram_external(sinog::AbstractMatrix; <keyword arguments>)
 
 Simulate a low dose CT scan. This Resample `sinog` with `n` photons.
 
@@ -159,7 +173,7 @@ Simulate a low dose CT scan. This Resample `sinog` with `n` photons.
 - `options=[]`: Additional options to be passed to the program.
 """
 function sample_sinogram_external(
-    sinog::AbstractMatrix{T};
+    sinog::AbstractMatrix;
     sinog_path = "_tmp_sinog.dat",
     resampled_path = "_tmp_resampled.dat",
     log_path = "_tmp_log.txt",
@@ -170,7 +184,7 @@ function sample_sinogram_external(
     verbosity = nothing,
     progress = false,
     options = [],
-) where {T<:Real}
+)
     ϵ = isnothing(eps) ? ϵ : eps
     tmp_path = mk_temp_dir()
     sinog_path = joinpath(tmp_path, sinog_path)
@@ -196,6 +210,3 @@ function sample_sinogram_external(
     ))
     read_ct_image(resampled_path; rows = nd, cols = nϕ)
 end
-
-
-@deprecate resample_sinogram sample_sinogram_external false

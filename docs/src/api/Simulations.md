@@ -1,5 +1,5 @@
 # Simulations
 
 ```@autodocs
-Modules = [Marta.Simulations]
+Modules = [MartaCT.Simulations]
 ```

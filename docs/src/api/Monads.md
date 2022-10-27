@@ -1,5 +1,5 @@
 # Monads
 
 ```@autodocs
-Modules = [Marta.Monads]
+Modules = [MartaCT.Monads]
 ```

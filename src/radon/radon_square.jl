@@ -11,7 +11,7 @@ Compute the Radon transform of `image` inside the circle
 contained in the square of side `min(rows,cols)` where `rows` and `cols` are the
 dimensions of `image`.
 
-See also: [`radon_default`](@ref)
+See also: [`radon_diag`](@ref)
 """
 function radon_square end
 
@@ -19,11 +19,11 @@ function radon_square end
     @assert 0 ∈ first(ts)..last(ts)
     x₀::T = (cols + 1) / 2
     y₀::T = (rows + 1) / 2
-    κx::T = ν * (x₀ - 1) / half(ts) * ifelse(τ < 1, τ, 1)
-    κy::T = ν * (y₀ - 1) / half(ts) * ifelse(τ < 1, 1, inv(τ))
+    κx::T = ν * (x₀ - oneunit(T)) / half(ts) * ifelse(τ < oneunit(τ), τ, oneunit(τ))
+    κy::T = ν * (y₀ - oneunit(T)) / half(ts) * ifelse(τ < oneunit(τ), oneunit(τ), inv(τ))
     txs = @. T(ts * κx)
     tys = @. T(ts * κy)
-    p = _radon_progress(length(scϕs), progress)
+    # p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for j ∈ eachindex(ts)
@@ -34,12 +34,12 @@ function radon_square end
                 wx, wy = txs[k], tys[k]
                 x = prex - wx * s
                 y = prey + wy * c
-                if x ∈ 1..cols && y ∈ 1..rows
+                if 1 <= x <= cols && 1 <= y <= rows
                     sinog[j,iϕ] += interp(y, x)
                 end
             end
         end
-        next!(p)
+        # next!(p)
     end
     δt::T = ν * width(ts) / (length(ts) - 1)
     sinog .*= δt^2

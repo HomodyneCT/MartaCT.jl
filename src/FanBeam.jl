@@ -3,11 +3,18 @@ module FanBeam
 export para2fan, fan2para
 
 using ..Monads
-using ..CTImages: CTSinogram
+#using ..CTImages: CTSinogram
 using ..Geometry
 using ..Interpolation: interpolate, AbstractInterp2DOrNone
-using ..Utils: linspace, ORI, _wrap_angle
+using ..Utils: linspace, ORI
 using IntervalSets
+
+
+@inline function _wrap_angle(θ::T, n::Integer)::T where {T}
+    θ >= T(n + 1//2) && return oneunit(T)
+    θ > T(n) && return T(n)
+    θ
+end
 
 
 """
@@ -15,7 +22,7 @@ using IntervalSets
         sinog_para::AbstractMatrix{T},
         fbg::FanBeamGeometry;
         <keyword arguments>
-    ) where {T<:Real} -> fbg, sinog_fan
+    ) where {T} -> fbg, sinog_fan
 
 Convert given sinogram `sinog_para` from parallel beam geometry
 to fan beam projections.
@@ -45,7 +52,7 @@ function para2fan(
     fbg::FanBeamGeometry;
     background::Optional{Real} = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {T <: Real, Interp <: AbstractInterp2DOrNone}
+) where {T, Interp <: AbstractInterp2DOrNone}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     @assert (nd, nϕ) == size(sinog_para) "Sinogram size $(size(sinog_para)) should match geometry ($nd,$nϕ)"
@@ -95,7 +102,7 @@ function para2fan(
         end
     end
 
-    fbg, CTSinogram(sinog_fan)
+    fbg, sinog_fan
 end
 
 
@@ -110,7 +117,7 @@ function para2fan(
     δ::Optional{Real} = one(T),
     dx::Optional{Real} = one(T),
     kwargs...,
-) where {T<:Real}
+) where {T}
     D′ = maybe(D′, D1)
     γ = maybe(γ, gamma)
     δ = maybe(δ, dx)
@@ -141,7 +148,7 @@ para2fan(g::AbstractGeometry; kwargs...) = x -> para2fan(x, g; kwargs...)
         sinog_fan::AbstractMatrix{T},
         fbg::FanBeamGeometry;
         <keyword arguments>
-    ) where {T<:Real} -> pbg, sinog_para
+    ) where {T} -> pbg, sinog_para
 
 Convert given sinogram `sinog_fan` from fan beam geometry
 to parallel beam projections.
@@ -168,7 +175,7 @@ function fan2para(
     fbg::FanBeamGeometry{T,DefaultTomograph};
     background::Optional{Real} = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {T <: Real, Interp <: AbstractInterp2DOrNone}
+) where {T, Interp <: AbstractInterp2DOrNone}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     @assert (nd, nϕ) == size(sinog_fan) "Sinogram size $(size(sinog_fan)) should match geometry ($nd,$nϕ)"

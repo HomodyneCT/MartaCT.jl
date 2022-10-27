@@ -11,7 +11,6 @@ export scan_angle, start_angle, center_channel
 export num_rows, num_cols, tomograph, channel_spacing
 
 using ..Monads
-import ..Utils: yaml_repr, struct2dict
 import Base: show, getproperty, eltype
 
 
@@ -35,7 +34,7 @@ struct DefaultTomograph <: AbstractTomograph end
 
 abstract type AbstractParallelBeamGeometry <: AbstractGeometry end
 
-struct ParallelBeamGeometry{T <: Real,CT <: AbstractTomograph} <: AbstractParallelBeamGeometry
+struct ParallelBeamGeometry{T,CT <: AbstractTomograph} <: AbstractParallelBeamGeometry
     ct::CT
     nϕ::Int
     nd::Int
@@ -56,8 +55,6 @@ end
 end
 
 eltype(::Type{G}) where {G <: ParallelBeamGeometry{T}} where {T} = T
-
-yaml_repr(g::ParallelBeamGeometry) = struct2dict(g)
 
 tomograph(x::ParallelBeamGeometry) = x.ct
 num_proj(x::ParallelBeamGeometry) = x.nϕ
@@ -101,7 +98,7 @@ function ParallelBeamGeometry(
     α₀::Real = 0,
     alpha0::Optional{Real} = nothing,
     center::Optional{Real} = nothing,
-) where {T <: Real}
+) where {T}
     nϕ = maybe(nϕ, nphi)
     α = maybe(α, alpha)
     α₀ = maybe(α₀, alpha0)
@@ -176,8 +173,6 @@ end
 
 eltype(::Type{G}) where {G <: FanBeamGeometry{T}} where {T} = T
 
-yaml_repr(g::FanBeamGeometry) = struct2dict(g)
-
 tomograph(x::FanBeamGeometry) = x.ct
 num_proj(x::FanBeamGeometry) = x.nϕ
 num_det(x::FanBeamGeometry) = x.nd
@@ -240,7 +235,7 @@ function FanBeamGeometry(
     α₀::Real = zero(T),
     alpha0::Real = zero(T),
     center::Optional{Real} = nothing,
-) where {T <: Real}
+) where {T}
     nϕ = maybe(nϕ, nphi)
     D′ = maybe(D′, D1)
     γ = maybe(γ, gamma)
