@@ -24,7 +24,7 @@ makedocs(
             "api/CTPlots.md",
             "api/Simulations.md",
             "api/Calibration.md",
-            "api/TestImages.md",
+            "api/CTTestImages.md",
             "api/CTScan.md",
             "api/Info.md",
             "api/Interpolation.md",

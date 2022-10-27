@@ -3,11 +3,18 @@ module FanBeam
 export para2fan, fan2para
 
 using ..Monads
-using ..CTImages: CTSinogram
+#using ..CTImages: CTSinogram
 using ..Geometry
 using ..Interpolation: interpolate, AbstractInterp2DOrNone
-using ..Utils: linspace, ORI, _wrap_angle
+using ..Utils: linspace, ORI
 using IntervalSets
+
+
+@inline function _wrap_angle(θ::T, n::Integer)::T where {T}
+    θ >= T(n + 1//2) && return oneunit(T)
+    θ > T(n) && return T(n)
+    θ
+end
 
 
 """
@@ -15,7 +22,7 @@ using IntervalSets
         sinog_para::AbstractMatrix{T},
         fbg::FanBeamGeometry;
         <keyword arguments>
-    ) where {T<:Real} -> fbg, sinog_fan
+    ) where {T} -> fbg, sinog_fan
 
 Convert given sinogram `sinog_para` from parallel beam geometry
 to fan beam projections.
@@ -45,7 +52,7 @@ function para2fan(
     fbg::FanBeamGeometry;
     background::Optional{Real} = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {T <: Real, Interp <: AbstractInterp2DOrNone}
+) where {T, Interp <: AbstractInterp2DOrNone}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     @assert (nd, nϕ) == size(sinog_para) "Sinogram size $(size(sinog_para)) should match geometry ($nd,$nϕ)"
@@ -63,7 +70,6 @@ function para2fan(
     γ₀::T = center * δγ
     γs = linspace(T, ORI(-γ₀..γ₀), nd)
     x′₀::T = center + 1
-    nthalf = nϕ + 1//2
 
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(sinog_para)
@@ -83,7 +89,7 @@ function para2fan(
         x′ = x′ * δx′i + x′₀
         ϕ = mod2pi(ϕ) * δϕi + 1 # need +1 in order to be in 1:nϕ
         return x′ ∈ 1..nd && ϕ ∈ 1..nϕ+1 ?
-            interp(x′, _wrap_angle(ϕ, nϕ, nthalf)) : z
+            interp(x′, _wrap_angle(ϕ, nϕ)) : z
     end
 
     Threads.@threads for iγ ∈ 1:nd
@@ -96,7 +102,7 @@ function para2fan(
         end
     end
 
-    fbg, CTSinogram(sinog_fan)
+    fbg, sinog_fan
 end
 
 
@@ -111,7 +117,7 @@ function para2fan(
     δ::Optional{Real} = one(T),
     dx::Optional{Real} = one(T),
     kwargs...,
-) where {T<:Real}
+) where {T}
     D′ = maybe(D′, D1)
     γ = maybe(γ, gamma)
     δ = maybe(δ, dx)
@@ -142,7 +148,7 @@ para2fan(g::AbstractGeometry; kwargs...) = x -> para2fan(x, g; kwargs...)
         sinog_fan::AbstractMatrix{T},
         fbg::FanBeamGeometry;
         <keyword arguments>
-    ) where {T<:Real} -> pbg, sinog_para
+    ) where {T} -> pbg, sinog_para
 
 Convert given sinogram `sinog_fan` from fan beam geometry
 to parallel beam projections.
@@ -169,7 +175,7 @@ function fan2para(
     fbg::FanBeamGeometry{T,DefaultTomograph};
     background::Optional{Real} = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {T <: Real, Interp <: AbstractInterp2DOrNone}
+) where {T, Interp <: AbstractInterp2DOrNone}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     @assert (nd, nϕ) == size(sinog_fan) "Sinogram size $(size(sinog_fan)) should match geometry ($nd,$nϕ)"
@@ -206,7 +212,6 @@ function fan2para(
     z::T = maybe(zero(T), background)
     sinog_para = similar(sinog_fan, nd, nϕ)
     fill!(sinog_para, z)
-    nthalf = nϕ + 1//2
 
     @inline function compute_value(γ′::T, β::T)
         if β < 0
@@ -224,7 +229,7 @@ function fan2para(
         γ′′ = γ′ * δγi + γ₀
         β = mod2pi(β) * δβi + 1 # need +1 in order to be in 1:nβ
         return γ′′ ∈ 1..nd && β ∈ 1..nϕ+1 ?
-            interp(γ′′, _wrap_angle(β, nϕ, nthalf)) : z
+            interp(γ′′, _wrap_angle(β, nϕ)) : z
     end
 
     Threads.@threads for ix ∈ 1:nd

@@ -19,13 +19,12 @@ using Statistics: mean
 import ..Monads: mjoin, mreturn
 using ..Monads
 import ..CTImages: rescale, rescale!
-using ..CTImages
+using ..CTImages: CTImage, CTImageMat, polar2cart
 using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
 import ..Geometry
 using ..AbstractAlgorithms: AbstractProjectionAlgorithm
-import ..Utils: _atype, yaml_repr, struct2dict, linspace
-import ..Info: CTInfo
+import ..Utils: _atype, linspace
 import ..AbstractAlgorithms: project_image
 import ..CalibrationBase:
     calibrate_image,
@@ -37,7 +36,7 @@ import Base: getproperty, size, show, getindex, setindex!, IndexStyle, eltype
 using Base: @propagate_inbounds
 
 
-abstract type AbstractImageParams{T<:Real} end
+abstract type AbstractImageParams{T} end
 
 eltype(::Type{P}) where {P<:AbstractImageParams{T}} where T = T
 eltype(imp::AbstractImageParams) = eltype(typeof(imp))
@@ -48,11 +47,7 @@ function size(p::AbstractImageParams, dim::Integer)
     return 1
 end
 
-yaml_repr(imp::AbstractImageParams) = struct2dict(imp)
-CTInfo(imp::AbstractImageParams) = CTInfo(pairs(struct2dict(imp))...)
-
-
-function indicator_matrix(::Type{T}, sq::Int, pad::Int = 0) where {T<:Real}
+function indicator_matrix(::Type{T}, sq::Int, pad::Int = 0) where {T}
     if pad == 0
         pad = sq + 1
     end
@@ -72,7 +67,7 @@ function indicator_matrix_2(
     sq1::Int,
     sq2::Int,
     pad::Int = 0,
-) where {T<:Real}
+) where {T}
     sqmin, sqmax = minmax(sq1, sq2)
     if pad == 0
         pad = sqmin + 1
@@ -99,7 +94,7 @@ const _default_gray_scale_params = Dict(
 
 
 """
-    struct ImageParams{T<:Real}
+    struct ImageParams{T}
 
 Hold information to construct the input test image.
 """
@@ -119,7 +114,7 @@ struct ImageParams{T} <: AbstractImageParams{T}
         background::Optional{Real} = nothing,
         hounsfield::Bool = false,
         kwargs...
-    ) where {T<:Real}
+    ) where {T}
         gray_scale = maybe(ifelse(hounsfield, -1000..1000, 0..1), gray_scale)
         kw = isempty(kwargs) ? _default_gray_scale_params : Dict(kwargs)
         srows, scols = combined_images_size(; kw...)
@@ -162,7 +157,7 @@ end
 
 
 """
-    ImageParams([T=Float32]; <keyword arguments>) where {T<:Real}
+    ImageParams([T=Float32]; <keyword arguments>) where {T}
 
 Construct ImageParams object.
 
@@ -184,7 +179,7 @@ function ImageParams(
     width::Optional{Integer} = nothing,
     height::Optional{Integer} = nothing,
     kwargs...
-) where {T<:Real}
+) where {T}
     rows = maybe(rows, height)
     cols = maybe(cols, width)
     ImageParams{T}(rows, cols; kwargs...)
@@ -220,7 +215,7 @@ struct CircleParams{T} <: AbstractImageParams{T}
         background::Optional{Real} = nothing,
         hounsfield::Bool = false,
         kwargs...
-    ) where {T<:Real}
+    ) where {T}
         gray_scale = maybe(ifelse(hounsfield, -1000..0, 0..1), gray_scale)
         background = maybe(minimum(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
@@ -263,7 +258,7 @@ function CircleParams(
     nϕ::Optional{Integer} = nothing,
     nphi::Optional{Integer} = nothing,
     kwargs...
-) where {T <: Real}
+) where {T}
     nϕ = maybe(nϕ, nphi)
     #factor = 31 / 50 # magic number!
     factor = 1
@@ -299,7 +294,7 @@ struct SquareParams{T} <: AbstractImageParams{T}
         background::Optional{Real} = nothing,
         hounsfield::Bool = false,
         kwargs...
-    ) where {T <: Real}
+    ) where {T}
         gray_scale = maybe(ifelse(hounsfield, -1000..0, 0..1), gray_scale)
         background = maybe(minimum(gray_scale), background)
         calibration_value = isnothing(calibration_value) ?
@@ -330,7 +325,7 @@ function SquareParams(
     width::Optional{Integer} = nothing,
     height::Optional{Integer} = nothing,
     kwargs...
-) where {T <: Real}
+) where {T}
     rows, cols = maybe(rows, height), maybe(cols, width)
     width = maybe(maybe(512, rows), cols)
     height = maybe(width, rows)
@@ -409,7 +404,7 @@ end
 
 
 """
-    circle_image([T=Float32]; radius=20, value=1) where {T<:Real}
+    circle_image([T=Float32]; radius=20, value=1) where {T}
 
 Create a square image with a circle of given value.
 
@@ -436,7 +431,7 @@ function circle_image(
     ν::Real = 1,
     scale::Optional{Real} = nothing,
     kwargs...,
-) where {T<:Real}
+) where {T}
     nϕ = maybe(nϕ, nphi)
     ν = maybe(ν, scale)
     rows = isnothing(sheight) ? maybe(2radius, rows) : sheight
@@ -509,7 +504,7 @@ function gray_scale_image(
     sheight::Optional{Integer} = nothing,
     gray_scale::ClosedInterval = 0..1,
     background::Optional{Real} = nothing,
-) where {T<:Real}
+) where {T}
     rows = maybe(rows, sheight)
     cols = maybe(cols, swidth)
     minv, maxv = endpoints(gray_scale)
@@ -542,7 +537,7 @@ function pyramid_gray_scale_image(
     gray_scale::ClosedInterval = 0..1,
     background::Optional{Real} = nothing,
     plateau::Real = 0,
-) where {T<:Real}
+) where {T}
     @assert 0 ≤ plateau ≤ 1 "Plateau is a fraction of the gray scale width!"
     minv, maxv = endpoints(gray_scale)
     val_range = fill(maxv, swidth)
@@ -567,7 +562,7 @@ end
 Create an image with a gray scale rectangle with given scale gray_scale
 from parameters `imp`.
 """
-function gray_scale_image(imp::ImageParams{T}) where {T<:Real}
+function gray_scale_image(imp::ImageParams{T}) where {T}
     gray_scale_image(
         T; imp.swidth, imp.sheight, imp.gray_scale, imp.background)
 end
@@ -585,7 +580,7 @@ from parameters `imp`.
 function pyramid_gray_scale_image(
     imp::ImageParams{T};
     plateau::Real = 0,
-) where {T<:Real}
+) where {T}
     pyramid_gray_scale_image(
         T;
         imp.swidth,
@@ -626,7 +621,7 @@ function combine_images(
     imp::ImageParams{T},
     rect::AbstractMatrix{T},
     circle::AbstractMatrix{T},
-) where {T<:Real}
+) where {T}
     rect_rows, rect_cols = size(rect)
     circ_rows, circ_cols = size(circle)
 
@@ -695,14 +690,14 @@ end
 
 Create pyramid gray scale image.
 """
-function create_pyramid_image(par::ImageParams; plateau::Real = 0)
+function create_pyramid_image(par::ImageParams; plateau = 0)
     circ_img = circle_image(par)
     rect_img = pyramid_gray_scale_image(par; plateau)
     combine_images(par, rect_img, circ_img) |> CTImage
 end
 
 
-abstract type AbstractTestImage{T<:Real} <: AbstractMatrix{T} end
+abstract type AbstractTestImage{T} <: AbstractMatrix{T} end
 abstract type AbstractGrayScale{T} <: AbstractTestImage{T} end
 
 
@@ -734,7 +729,7 @@ end
 IndexStyle(::Type{T}) where {T<:AbstractTestImage} = IndexLinear()
 
 
-struct CircleImage{T<:Real} <: AbstractTestImage{T}
+struct CircleImage{T} <: AbstractTestImage{T}
     params::CircleParams{T}
     image::CTImageMat{T}
 end
@@ -753,7 +748,7 @@ end
 
 
 function CircleImage(
-    ::Type{T} = Float32; interpolation = nothing, kwargs...) where{T <: Real}
+    ::Type{T} = Float32; interpolation = nothing, kwargs...) where{T}
     interpolation = maybe(NoInterpolation(), interpolation)
     CircleImage(CircleParams(T; kwargs...); interpolation)
 end
@@ -802,7 +797,7 @@ function GrayScaleLine(
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
     kwargs...,
-) where {T<:Real}
+) where {T}
     factor = 31 / 50 # magic number!
     #=
         If width or height are present, use them, otherwise use rows and cols.
@@ -857,7 +852,7 @@ end
 
 
 function GrayScalePyramid(
-    imp::ImageParams{T}; plateau::Real = zero(T)) where {T<:Real}
+    imp::ImageParams{T}; plateau::Real = zero(T)) where {T}
     image = create_pyramid_image(imp; plateau)
     GrayScalePyramid(imp, T(plateau), image)
 end
@@ -872,7 +867,7 @@ function GrayScalePyramid(
     cols::Optional{Integer} = nothing,
     plateau::Real = zero(T),
     kwargs...,
-) where {T<:Real}
+) where {T}
     factor = 31 / 50 # magic number!
     #=
         If width or height are present, use them, otherwise use rows and cols.
@@ -914,7 +909,7 @@ end
 
 
 """
-    circle_polar_image([T=Float32] nr, nϕ, radius; value=1) where {T<:Real}
+    circle_polar_image([T=Float32] nr, nϕ, radius; value=1) where {T}
 
 Create a circle of radius `radius` inside a `nr×nϕ` image
 in polar coordinates .
@@ -933,7 +928,7 @@ function circle_polar_image(
     radius::Integer;
     calibration_value::Real = one(T),
     background::Real = 0,
-) where {T<:Real}
+) where {T}
     @assert radius <= nr "Radius should be less than number of radial points"
     mat = fill(T(background), nϕ, nr)
     mat[:, 1:radius] .= calibration_value
@@ -955,7 +950,7 @@ function circle_polar_image(
     nr::Optional{Integer} = nothing,
     nϕ::Optional{Integer} = nothing,
     nphi::Optional{Integer} = nothing,
-    kwargs...) where {T<:Real}
+    kwargs...) where {T}
     nr = maybe(2radius, nr)
     nϕ = maybe(nr, maybe(nϕ, nphi))
     circle_polar_image(T, nr, nϕ, radius; kwargs...)
@@ -963,7 +958,7 @@ end
 
 
 """
-    square_image([T=Float32] r, c; l=nothing) where {T<:Real}
+    square_image([T=Float32] r, c; l=nothing) where {T}
 
 Create a `l×l` square inside a `r×c` image.
 
@@ -981,7 +976,7 @@ function square_image(
     l::Optional{Integer} = nothing;
     calibration_value::Real = one(T),
     background::Real = 0,
-) where {T<:Real}
+) where {T}
     matrix = fill(T(background), r, c)
     if isnothing(l)
         l = min(r, c)
@@ -1073,7 +1068,7 @@ function WhiteRect(
     rows::Optional{Integer} = nothing,
     cols::Optional{Integer} = nothing,
     kwargs...,
-) where {T<:Real,U<:Real}
+) where {T}
     factor = 31 / 50 # magic number!
     #=
         If width or height are present, use them, otherwise use rows and cols.

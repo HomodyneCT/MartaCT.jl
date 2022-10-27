@@ -14,8 +14,8 @@
 The MartaCT package can be installed with the following commands:
 
 ```julia
-import Pkg
-Pkg.add("https://gitlab.com/homodyne-ct/MartaCT.jl")
+using Pkg
+pkg"add MartaCT"
 ```
 
 ## Documentation

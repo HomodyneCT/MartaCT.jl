@@ -23,7 +23,7 @@ function radon_diag end
     sθ = τ * cθ
     txs = @. T(ts * (x₀ - 1) / cθ)
     tys = @. T(ts * (y₀ - 1) / sθ)
-    p = _radon_progress(length(scϕs), progress)
+    #p = _radon_progress(length(scϕs), progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
         @inbounds @simd for i ∈ eachindex(ts)
@@ -39,7 +39,7 @@ function radon_diag end
             end
             sinog[i, iϕ] = tmp
         end
-        next!(p)
+        # next!(p)
     end
     γ = hypot(rows, cols) / min(rows, cols)
     δt = ν * γ * width(ts) / (length(ts) - 1)

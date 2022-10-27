@@ -2,16 +2,16 @@ module CTImages
 
 export rescale!, rescale, rotate
 export polar2cart
-export AbstractCTImage, CTImage, CTSinogram, CTTomogram
-export CTImageOrTomog, CTImageMat, CTSinogMat, CTTomogMat
-export ctimage, ctsinogram, cttomogram
+# export AbstractCTImage, CTImage, CTSinogram, CTTomogram
+# export CTImageOrTomog, CTImageMat, CTSinogMat, CTTomogMat
+# export ctimage, ctsinogram, cttomogram
 
 using IntervalSets, SimpleTraits
 import ..Monads: mjoin
-using ..Utils: linspace, half, _compute_radius, _compute_angle, _wrap_angle
-import ..Utils: _atype
-using ..Applicative, ..Monads, ..Interpolation
-using ..Geometry:
+using MartaCT.Utils: linspace, half, _compute_radius, _compute_angle
+import MartaCT.Utils: _atype
+using MartaCT.Applicative, ..Monads, ..Interpolation
+using MartaCT.Geometry:
     AbstractParallelBeamGeometry, AbstractFanBeamGeometry, ParallelBeamGeometry
 import Base: size, convert, similar, eltype, ndims, getindex, setindex!, IndexStyle
 using Base: @propagate_inbounds
@@ -79,13 +79,9 @@ for nm in ctnames
         @inline $nm{T,N,M}(img::$nm) where {T,N,M} = $nm{T,N,M}(mjoin(img))
         @inline $nm{T}(img::M) where {T,M<:AbstractArray{T,N}} where N = $nm{T,N,M}(img)
         @inline $nm(img::$nm) = img
-        @inline convert(::Type{M}, img::AbstractArray) where {M<:$nm} =
-            mreturn(M, img)
-        @inline convert(::Type{M}, img::$nm) where {M<:$nm} =
-            mreturn($nm, convert(_atype(M), mjoin(img)))
-        @inline function similar(img::M) where {M<:$nm}
-            mreturn(M, similar(mjoin(img)))
-        end
+        @inline convert(::Type{M}, img::AbstractArray) where {M<:$nm} = mreturn(M, img)
+        @inline convert(::Type{M}, img::$nm) where {M<:$nm} = mreturn($nm, convert(_atype(M), mjoin(img)))
+        @inline similar(img::M) where {M<:$nm} = mreturn(M, similar(mjoin(img)))
         @inline function similar(
             img::M,
             ::Type{S},

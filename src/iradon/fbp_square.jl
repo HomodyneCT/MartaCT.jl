@@ -17,7 +17,7 @@ function fbp_fft_square end
     atomic_tomog = reshape([
         Threads.Atomic{real(eltype(tomog))}(zero(real(eltype(tomog)))) for _ in eachindex(tomog)
     ], axes(tomog))
-    p = _iradon_progress(nϕ, progress)
+    # p = _iradon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         sϕ, cϕ = scϕs[iϕ]
         for ix ∈ eachindex(xs), iy ∈ eachindex(ys)
@@ -27,7 +27,7 @@ function fbp_fft_square end
                 Threads.atomic_add!(atomic_tomog[iy,ix], interp(t, iϕ))
             end
         end
-        next!(p)
+        # next!(p)
     end
     @. tomog = getindex(atomic_tomog)
     δt::T = π / length(scϕs) / nd * (κ^2) * rows / cols

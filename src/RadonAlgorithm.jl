@@ -9,7 +9,6 @@ export RadonInfo, FBPInfo
 
 using ..Applicative
 using ..Monads
-using ..CTImages
 using ..Geometry
 using ..FanBeam: fan2para, para2fan
 import ..Utils: ORI, linspace, _atype, half, width
@@ -17,11 +16,11 @@ import ..AbstractAlgorithms:
     radon,
     iradon,
     project_image,
-    reconstruct_image,
-    _alg_progress
+    reconstruct_image
+#import ..AbstractAlgorithms: _alg_progress
 using ..AbstractAlgorithms, ..Coordinates
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
-using FFTW, ProgressMeter, IntervalSets
+using FFTW, IntervalSets
 
 
 function _radon end
@@ -78,7 +77,7 @@ macro _defradonfn(f::Symbol, body)
             rimage = rescaled ? rescale(image) : image
             interp = isnothing(interpolation) ?
                 interpolate(rimage) : interpolation(rimage)
-            CTSinogram($body)
+            $body
         end
     end)
 end
@@ -124,7 +123,7 @@ macro _defiradonfn(f::Symbol, body)
             z::T = maybe(zero(T), background)
             tomog = similar(sinog, T, rows, cols)
             fill!(tomog, z)
-            CTTomogram(convert(_atype(sinog), $body))
+            convert(_atype(sinog), $body)
         end
         @inline function $f(
             sinog::AbstractMatrix,
@@ -198,13 +197,13 @@ macro _defiradonalgfn(A::Symbol, f::Symbol)
 end
 
 
-function _radon_progress(n::Integer, p::Bool, dt::Real=0.2)
-    _alg_progress(Progress, "Computing Radon transform...", n, p, dt)
-end
+# function _radon_progress(n::Integer, p::Bool, dt::Real=0.2)
+#     _alg_progress(Progress, "Computing Radon transform...", n, p, dt)
+# end
 
-function _iradon_progress(n::Integer, p::Bool, dt::Real=0.2)
-    _alg_progress(Progress, "Computing inverse Radon transform...", n, p, dt)
-end
+# function _iradon_progress(n::Integer, p::Bool, dt::Real=0.2)
+#     _alg_progress(Progress, "Computing inverse Radon transform...", n, p, dt)
+# end
 
 
 abstract type AbstractFBP <: AbstractIRadonAlgorithm end

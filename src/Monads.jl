@@ -1,6 +1,8 @@
 module Monads
 
-export Monad, Maybe, Optional
+
+
+export Monad, Optional
 export mreturn, mjoin, mbind, mmap
 export maybe, ↣
 
@@ -25,23 +27,13 @@ function mjoin end
 end
 @traitfn @inline ↣(m::M, f::F) where {M,F; Monad{M},Callable{F}} = mbind(f, m)
 
-const Optional{T} = Union{Nothing,T}
-const Maybe{T} = Optional{Some{T}}
+const Optional{T} = Union{T,Nothing}
 
-@traitimpl Monad{Maybe}
-
-Maybe{T}(x::T) where {T} = Some(x)
-Maybe{T}(::Nothing) where {T} = nothing
-Maybe(::Nothing) = nothing
-Maybe(x::T) where {T} = Maybe{T}(x)
-Maybe(m::Maybe) = m
-
-@traitfn @inline mbind(f::F, m::Maybe) where {F; Callable{F}} =
-    isnothing(m) ? nothing : f(something(m))
+@traitimpl Monad{Optional{<:Some}}
 
 @inline maybe(b, m::Optional) = isnothing(m) ? b : m
 @inline maybe(b) = m::Optional -> maybe(b, m)
-@traitfn @inline maybe(f::F, b, m::Optional) where {F; Callable{F}} =
-    maybe(b, Maybe(m) ↣ f)
+@traitfn @inline maybe(f::F, b, ::Nothing) where {F; Callable{F}} = b
+@traitfn @inline maybe(f::F, b, m::T) where {F,T; Callable{F}} = f(something(m))
 
 end # module
