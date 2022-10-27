@@ -4,7 +4,6 @@ using Reexport
 import
     LinearAlgebra,
     IterTools,
-    YAML,
     FFTW,
     Statistics,
     StatsBase,
