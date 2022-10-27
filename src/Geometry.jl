@@ -67,7 +67,7 @@ center_channel(x::ParallelBeamGeometry) = x.center
 
 
 """
-    ParallelBeamGeometry([T=Float32]; <keyword arguments>) where {T<:Real}
+    ParallelBeamGeometry([T=Float32]; <keyword arguments>) where {T}
 
 Construct geometry for the simulation.
 
@@ -189,7 +189,7 @@ center_channel(x::FanBeamGeometry) = x.center
 
 
 """
-    FanBeamGeometry([T=Float32]; <keyword arguments>) where {T<:Real}
+    FanBeamGeometry([T=Float32]; <keyword arguments>) where {T}
 
 Create a new FanBeamGeometry object with given parameters.
 
