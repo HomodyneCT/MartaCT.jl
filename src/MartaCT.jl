@@ -17,11 +17,11 @@ include("CalibrationBase.jl")
 include("Interpolation.jl")
 include("Coordinates.jl")
 include("Geometry.jl")
+include("CTImages.jl")
 include("FanBeam.jl")
 include("AbstractAlgorithms.jl")
 include("RadonAlgorithm.jl")
 include("Simulations.jl")
-include("CTImages.jl")
 include("CTTestImages.jl")
 include("Calibration.jl")
 
@@ -31,11 +31,11 @@ include("Calibration.jl")
     .Monads,
     .CalibrationBase,
     .Coordinates,
+    .CTImages,
     .Geometry,
     .FanBeam,
     .AbstractAlgorithms,
     .RadonAlgorithm,
-    .CTImages,
     .CTTestImages,
     .Calibration
 
