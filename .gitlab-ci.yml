@@ -13,7 +13,7 @@ test:
       paths:
       - ./
 pages:
-  image: julia:1.5
+  image: julia:1.6
   stage: deploy
   dependencies:
   - test
