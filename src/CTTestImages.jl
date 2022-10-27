@@ -483,7 +483,7 @@ end
         swidth=nothing,
         sheight=nothing,
         gray_scale=-1000..1000,
-    ) where {T <: Real}
+    ) where {T}
 
 Create an image with a gray scale rectangle with given scale gray_scale.
 
@@ -517,7 +517,7 @@ end
 
 
 """
-pyramid_gray_scale_image([T=Float32]; swidth=200, sheight=40, gray_scale=0..1, plateau = 0) where {T <: Real}
+pyramid_gray_scale_image([T=Float32]; swidth=200, sheight=40, gray_scale=0..1, plateau = 0) where {T}
 
 Create an image with a pyramid gray scale rectangle with given scale gray_scale. The `plateau` parameter denotes the percentage of the rectangle width that has the maximum value of `gray_scale`.
 
@@ -608,7 +608,7 @@ end
 
 
 """
-    combine_images(imp::ImageParams{T}, rect::AbstractMatrix{T}, circle::AbstractMatrix{T}) where {T <: Real}
+    combine_images(imp::ImageParams{T}, rect::AbstractMatrix{T}, circle::AbstractMatrix{T}) where {T}
 
 Helper function to create a gray scale image.
 
@@ -998,7 +998,7 @@ function square_image(
     cols::Integer,
     l::Optional{Integer} = nothing,
     kwargs...
-) where {T <: Real}
+) where {T}
     square_image(T, rows, cols, l; kwargs...)
 end
 
@@ -1036,7 +1036,7 @@ function SquareImage(
     ::Type{T} = Float32;
     l::Optional{Integer} = nothing,
     kwargs...
-) where {T <: Real}
+) where {T}
     imp = SquareParams(T; l, kwargs...)
     SquareImage(imp)
 end

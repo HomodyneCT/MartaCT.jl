@@ -68,34 +68,34 @@ end
 
 
 """
-    calibrate_image(image::AbstractMatrix{T}; min_pos, max_pos, interval=0..1, window=nothing) where {T<:Real}
+    calibrate_image(image::AbstractMatrix; min_pos, max_pos, interval=0..1, window=nothing)
 
 Perform calibration of `image` with reference values.
 """
 function calibrate_image(
-    image::AbstractMatrix{T};
+    image::AbstractMatrix;
     min_pos,
     max_pos,
     interval::ClosedInterval = 0..1,
-    window::Optional{ClosedInterval{U}} = nothing,
-) where {T<:Real,U<:Real}
+    window::Optional{ClosedInterval} = nothing,
+)
     calibration = calibration_helper(image, min_pos, max_pos)
     rescale(image; interval, calibration, window)
 end
 
 
 """
-    calibrate_image!(image::AbstractMatrix{T}; min_pos, max_pos, interval=0..1, window=nothing) where {T<:Real}
+    calibrate_image!(image::AbstractMatrix; min_pos, max_pos, interval=0..1, window=nothing)
 
 Perform calibration of `image` with reference values.
 """
 function calibrate_image!(
-    image::AbstractMatrix{T};
+    image::AbstractMatrix;
     min_pos,
     max_pos,
     interval::ClosedInterval = 0..1,
-    window::Optional{ClosedInterval{U}} = nothing,
-) where {T<:Real,U<:Real}
+    window::Optional{ClosedInterval} = nothing,
+)
     calibration = calibration_helper(image, min_pos, max_pos)
     rescale!(image; interval, calibration, window)
 end
@@ -107,16 +107,16 @@ end
 
 
 """
-    calibrate_image(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
+    calibrate_image(image::AbstractMatrix, imp::AbstractImageParams; interval=nothing, window=nothing)
 
 Perform calibration of `image` using image parameters as reference.
 """
 function calibrate_image(
-    image::AbstractMatrix{T},
+    image::AbstractMatrix,
     imp::AbstractImageParams;
-    interval::Optional{ClosedInterval{U}} = nothing,
-    window::Optional{ClosedInterval{W}} = nothing,
-) where {T<:Real,U<:Real,W<:Real}
+    interval::Optional{ClosedInterval} = nothing,
+    window::Optional{ClosedInterval} = nothing,
+)
     min_pos, max_pos = calibration_data(imp)
     if isnothing(interval)
         interval = imp.background..imp.calibration_value
@@ -132,16 +132,16 @@ end
 
 
 """
-    calibrate_image!(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
+    calibrate_image!(image::AbstractMatrix, imp::AbstractImageParams; interval=nothing, window=nothing)
 
 Perform calibration of `image` using image parameters as reference.
 """
 function calibrate_image!(
-    image::AbstractMatrix{T},
+    image::AbstractMatrix,
     imp::AbstractImageParams;
-    interval::Optional{ClosedInterval{U}} = nothing,
-    window::Optional{ClosedInterval{W}} = nothing,
-) where {T<:Real,U<:Real,W<:Real}
+    interval::Optional{ClosedInterval} = nothing,
+    window::Optional{ClosedInterval} = nothing,
+)
     min_pos, max_pos = calibration_data(imp)
     if isnothing(interval)
         interval = imp.background..imp.calibration_value
@@ -166,31 +166,31 @@ end
 
 
 """
-    calibrate_tomogram(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
+    calibrate_tomogram(image::AbstractMatrix, imp::AbstractImageParams; interval=nothing, window=nothing)
 
 Perform calibration of reconstructed `image` with image parameters as reference.
 """
 function calibrate_tomogram(
-    image::AbstractMatrix{T},
+    image::AbstractMatrix,
     imp::AbstractImageParams;
-    interval::Optional{ClosedInterval{U}} = nothing,
-    window::Optional{ClosedInterval{W}} = nothing,
-) where {T<:Real,U<:Real,W<:Real}
+    interval::Optional{ClosedInterval} = nothing,
+    window::Optional{ClosedInterval} = nothing,
+)
     calibrate_image(image, imp; interval, window)
 end
 
 
 """
-    calibrate_tomogram!(image::AbstractMatrix{T}, imp::AbstractImageParams; interval=nothing, window=nothing) where {T<:Real}
+    calibrate_tomogram!(image::AbstractMatrix, imp::AbstractImageParams; interval=nothing, window=nothing)
 
 Perform calibration of reconstructed `image` with image parameters as reference.
 """
 function calibrate_tomogram!(
-    image::AbstractMatrix{T},
+    image::AbstractMatrix,
     imp::AbstractImageParams;
-    interval::Optional{ClosedInterval{U}} = nothing,
-    window::Optional{ClosedInterval{W}} = nothing,
-) where {T<:Real,U<:Real,W<:Real}
+    interval::Optional{ClosedInterval} = nothing,
+    window::Optional{ClosedInterval} = nothing,
+)
     calibrate_image!(image, imp; interval, window)
 end
 
@@ -205,17 +205,17 @@ end
 
 
 """
-    calibrate_tomogram(image::AbstractMatrix{T}; min_pos, max_pos, interval=0..1, window=nothing) where {T<:Real}
+    calibrate_tomogram(image::AbstractMatrix; min_pos, max_pos, interval=0..1, window=nothing)
 
 Perform calibration of reconstructed `image` with reference values.
 """
 function calibrate_tomogram(
-    image::AbstractMatrix{T};
+    image::AbstractMatrix;
     min_pos,
     max_pos,
     interval::ClosedInterval = 0..1,
-    window::Optional{ClosedInterval{U}} = nothing,
-) where {T<:Real,U<:Real}
+    window::Optional{ClosedInterval} = nothing,
+)
     calibrate_image(
         image;
         min_pos,
@@ -227,17 +227,17 @@ end
 
 
 """
-    calibrate_tomogram(image::AbstractMatrix{T}; min_pos, max_pos, interval=0..1, window=nothing) where {T<:Real}
+    calibrate_tomogram(image::AbstractMatrix; min_pos, max_pos, interval=0..1, window=nothing)
 
 Perform calibration of reconstructed `image` with reference values.
 """
 function calibrate_tomogram!(
-    image::AbstractMatrix{T};
+    image::AbstractMatrix;
     min_pos,
     max_pos,
     interval::ClosedInterval = 0..1,
-    window::Optional{ClosedInterval{U}} = nothing,
-) where {T<:Real,U<:Real}
+    window::Optional{ClosedInterval} = nothing,
+)
     calibrate_image!(
         image;
         min_pos,
