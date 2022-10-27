@@ -10,6 +10,7 @@ export RadonInfo, FBPInfo
 using ..Applicative
 using ..Monads
 using ..Geometry
+using ..CTImages: rescale
 using ..FanBeam: fan2para, para2fan
 import ..Utils: ORI, linspace, _atype, half, width
 import ..AbstractAlgorithms:
