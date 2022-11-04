@@ -67,15 +67,15 @@ end
 end
 
 
-@inline interpolate(mat::AbstractMatrix{T}) where {T <: Number} =
+@inline interpolate(mat::AbstractMatrix) =
     interpolate(mat,  BilinearInterpolation())
 
-@inline interpolate(v::AbstractVector{T}) where {T <: Number} =
+@inline interpolate(v::AbstractVector) =
     interpolate(v, LinearInterpolation())
 
 for nm ∈ _interpolation_types
     @eval begin
-        @inline function (interp::$nm)(a::AbstractArray{T}) where {T <: Number}
+        @inline function (interp::$nm)(a::AbstractArray)
             interpolate(a, interp)
         end
     end
