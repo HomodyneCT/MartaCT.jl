@@ -1,7 +1,7 @@
 module CTTestImages
 
 export indicator_matrix, indicator_matrix_2
-export AbstractImageParams, ImageParams, CircleParams
+export AbstractImageParams, ImageParams, CircleParams, SquareParams
 export circle_position, square_position
 export calibration_position, background_position
 export gray_scale_indices
