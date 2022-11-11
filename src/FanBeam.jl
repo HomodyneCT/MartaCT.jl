@@ -73,11 +73,11 @@ function para2fan(
 
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(sinog_para)
-    z = maybe(zero(T), T(background))
+    z::T = maybe(zero(T), background)
     sinog_fan = similar(sinog_para, nd, nϕ)
     fill!(sinog_fan, z)
 
-    @inline function compute_value(x′, ϕ:)
+    @inline function compute_value(x′, ϕ)
         if ϕ < 0
             ϕ += π
             x′ = -x′
@@ -117,7 +117,7 @@ function para2fan(
     δ::Optional{Real} = one(T),
     dx::Optional{Real} = one(T),
     kwargs...,
-) where {T}
+) where {T,U}
     D′ = maybe(D′, D1)
     γ = maybe(γ, gamma)
     δ = maybe(δ, dx)
@@ -175,7 +175,7 @@ function fan2para(
     fbg::FanBeamGeometry{U,DefaultTomograph};
     background::Optional = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {U, Interp <: AbstractInterp2DOrNone}
+) where {T,U,Interp <: AbstractInterp2DOrNone}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     @assert (nd, nϕ) == size(sinog_fan) "Sinogram size $(size(sinog_fan)) should match geometry ($nd,$nϕ)"
@@ -209,7 +209,7 @@ function fan2para(
 
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(sinog_fan)
-    z = maybe(zero(T), T(background))
+    z::T = maybe(zero(T), background)
     sinog_para = similar(sinog_fan, nd, nϕ)
     fill!(sinog_para, z)
 
