@@ -49,35 +49,35 @@ See Also: [`fan2para`](@ref)
 """
 function para2fan(
     sinog_para::AbstractMatrix{T},
-    fbg::FanBeamGeometry;
-    background::Optional{Real} = nothing,
+    fbg::FanBeamGeometry{U};
+    background::Optional = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {T, Interp <: AbstractInterp2DOrNone}
+) where {T,U,Interp <: AbstractInterp2DOrNone}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     @assert (nd, nϕ) == size(sinog_para) "Sinogram size $(size(sinog_para)) should match geometry ($nd,$nϕ)"
 
-    D::T = f2iso(fbg)
-    Δβ::T = deg2rad(scan_angle(fbg)) # This should be 2π?
-    βs = linspace(T, ORI(0..Δβ), nϕ)
-    β₀::T = deg2rad(start_angle(fbg)) + 1
-    δϕi::T = nϕ / 2π # This should be α / nϕ?
-    γ::T = fan_angle(fbg)
-    δγ::T = γ / nd
+    D = f2iso(fbg)
+    Δβ = deg2rad(scan_angle(fbg)) # This should be 2π?
+    βs = linspace(U, ORI(0..Δβ), nϕ)
+    β₀ = deg2rad(start_angle(fbg)) + 1
+    δϕi::U = nϕ / 2π # This should be α / nϕ?
+    γ = fan_angle(fbg)
+    δγ = γ / nd
     x′max::T = D * sin(γ/2)
     δx′i::T = nd / 2x′max
     center = center_channel(fbg)
-    γ₀::T = center * δγ
-    γs = linspace(T, ORI(-γ₀..γ₀), nd)
-    x′₀::T = center + 1
+    γ₀ = center * δγ
+    γs = linspace(U, ORI(-γ₀..γ₀), nd)
+    x′₀ = center + 1
 
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(sinog_para)
-    z::T = maybe(zero(T), background)
+    z = maybe(zero(T), T(background))
     sinog_fan = similar(sinog_para, nd, nϕ)
     fill!(sinog_fan, z)
 
-    @inline function compute_value(x′::T, ϕ::T)
+    @inline function compute_value(x′, ϕ:)
         if ϕ < 0
             ϕ += π
             x′ = -x′
@@ -108,7 +108,7 @@ end
 
 function para2fan(
     sinog_para::AbstractMatrix{T},
-    pbg::ParallelBeamGeometry;
+    pbg::ParallelBeamGeometry{U};
     D::Real = 500,
     D′::Optional{Real} = nothing,
     D1::Optional{Real} = nothing,
@@ -122,7 +122,7 @@ function para2fan(
     γ = maybe(γ, gamma)
     δ = maybe(δ, dx)
     fbg = FanBeamGeometry(
-        T,
+        U,
         pbg.ct;
         pbg.nϕ,
         pbg.nd,
@@ -172,16 +172,16 @@ See Also: [`para2fan`](@ref)
 """
 function fan2para(
     sinog_fan::AbstractMatrix{T},
-    fbg::FanBeamGeometry{T,DefaultTomograph};
-    background::Optional{Real} = nothing,
+    fbg::FanBeamGeometry{U,DefaultTomograph};
+    background::Optional = nothing,
     interpolation::Optional{Interp} = nothing,
-) where {T, Interp <: AbstractInterp2DOrNone}
+) where {U, Interp <: AbstractInterp2DOrNone}
     nd, nϕ = num_det(fbg), num_proj(fbg)
 
     @assert (nd, nϕ) == size(sinog_fan) "Sinogram size $(size(sinog_fan)) should match geometry ($nd,$nϕ)"
 
     pbg = ParallelBeamGeometry(
-        T,
+        U,
         fbg.ct;
         nϕ,
         nd,
@@ -191,29 +191,29 @@ function fan2para(
         fbg.center,
     )
 
-    D::T = f2iso(fbg)
-    γ::T = fan_angle(fbg)
-    Δϕ::T = deg2rad(scan_angle(fbg))
-    ϕs = linspace(T, ORI(0..Δϕ), nϕ)
-    δβi::T = nϕ / 2π
-    β₀::T = deg2rad(start_angle(fbg))
-    δγi::T = nd / γ
-    x′max::T = D * sin(γ/2)
-    δx′::T = 2x′max / nd
-    center::T = center_channel(pbg)
-    x′₀::T = center * δx′
-    x′₁::T = (nd - center) * δx′
+    D = f2iso(fbg)
+    γ = fan_angle(fbg)
+    Δϕ = deg2rad(scan_angle(fbg))
+    ϕs = linspace(U, ORI(0..Δϕ), nϕ)
+    δβi = nϕ / 2π
+    β₀ = deg2rad(start_angle(fbg))
+    δγi = nd / γ
+    x′max = D * sin(γ/2)
+    δx′ = 2x′max / nd
+    center = center_channel(pbg)
+    x′₀ = center * δx′
+    x′₁ = (nd - center) * δx′
     xs = linspace(T, -x′₀..x′₁, nd) # support for custom center channel
     @assert (x′₀ / D) <= 1 "Fan beam parameters incompatible |x′₀/D| = $(x′₀ / D) which should be less than 1"
-    γ₀::T = center + 1 # support for custom center channel.
+    γ₀ = center + 1 # support for custom center channel.
 
     interpolation = maybe(interpolate, interpolation)
     interp = interpolation(sinog_fan)
-    z::T = maybe(zero(T), background)
+    z = maybe(zero(T), T(background))
     sinog_para = similar(sinog_fan, nd, nϕ)
     fill!(sinog_para, z)
 
-    @inline function compute_value(γ′::T, β::T)
+    @inline function compute_value(γ′, β)
         if β < 0
             # β += 2γ′ + π
             # γ′ = -γ′
@@ -234,7 +234,7 @@ function fan2para(
 
     Threads.@threads for ix ∈ 1:nd
         @inbounds x′ = xs[ix]
-        γ′ = asin(x′ / D)
+        γ′ = asin(real(x′) / D)
         @inbounds @simd for iϕ ∈ 1:nϕ
             ϕ = ϕs[iϕ]
             #β::T = ϕ - γ′ + β₀ # Default tomograph geometry requires '-'
@@ -243,7 +243,7 @@ function fan2para(
         end
     end
 
-    pbg, CTSinogram(sinog_para)
+    pbg, sinog_para
 end
 
 

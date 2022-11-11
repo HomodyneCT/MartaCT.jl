@@ -34,7 +34,7 @@ struct DefaultTomograph <: AbstractTomograph end
 
 abstract type AbstractParallelBeamGeometry <: AbstractGeometry end
 
-struct ParallelBeamGeometry{T,CT <: AbstractTomograph} <: AbstractParallelBeamGeometry
+struct ParallelBeamGeometry{T <: Real,CT <: AbstractTomograph} <: AbstractParallelBeamGeometry
     ct::CT
     nϕ::Int
     nd::Int
@@ -98,7 +98,7 @@ function ParallelBeamGeometry(
     α₀::Real = 0,
     alpha0::Optional{Real} = nothing,
     center::Optional{Real} = nothing,
-) where {T}
+) where {T<:Real}
     nϕ = maybe(nϕ, nphi)
     α = maybe(α, alpha)
     α₀ = maybe(α₀, alpha0)
@@ -143,7 +143,7 @@ show(io::IO, g::AbstractParallelBeamGeometry) = print(
 
 abstract type AbstractFanBeamGeometry <: AbstractGeometry end
 
-struct FanBeamGeometry{T,CT <: AbstractTomograph} <:
+struct FanBeamGeometry{T <: Real,CT <: AbstractTomograph} <:
        AbstractFanBeamGeometry
     ct::CT
     nϕ::Int
@@ -235,7 +235,7 @@ function FanBeamGeometry(
     α₀::Real = zero(T),
     alpha0::Real = zero(T),
     center::Optional{Real} = nothing,
-) where {T}
+) where {T<:Real}
     nϕ = maybe(nϕ, nphi)
     D′ = maybe(D′, D1)
     γ = maybe(γ, gamma)
