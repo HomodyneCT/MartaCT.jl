@@ -93,8 +93,8 @@ end
     ::IsIRadonSquare,
     a::A,
     sinog::AbstractMatrix,
-    xs::Interval,
-    ys::Interval,
+    xsi::Interval,
+    ysi::Interval,
     coo::Cartesian = Cartesian();
     rows::Optional{I} = nothing,
     cols::Optional{J} = nothing,
