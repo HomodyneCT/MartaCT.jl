@@ -105,8 +105,8 @@ end
 end
 
 @inline @propagate_inbounds function blerp(
-    mat::AbstractMatrix, q1::Q, q2::Q, p1::P, p2::P, q, p
-) where {Q <: Integer,P <: Integer}
+    mat::AbstractMatrix, q1::Int, q2::Int, p1::Int, p2::Int, q, p
+)
     @boundscheck checkbounds(mat, q1, p1)
     @boundscheck checkbounds(mat, q1, p2)
     @boundscheck checkbounds(mat, q2, p1)
