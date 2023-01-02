@@ -8,9 +8,11 @@ export AbstractLinearInterpolation, AbstractBilinearInterpolation
 export NoInterpolation
 export LinearInterpolation, BilinearInterpolation
 export AbstractInterp1DOrNone, AbstractInterp2DOrNone
+export InterpolatedArray
 export interpolate
 
 using Base: @propagate_inbounds
+import Base: size, getindex
 
 abstract type AbstractInterpolation end
 abstract type AbstractInterpolation1D <: AbstractInterpolation end
@@ -33,50 +35,102 @@ const _interpolation_types = (
 )
 
 
-@propagate_inbounds function (::NoInterpolation)(a::AbstractArray, x, xs...)
-    xs = (x, xs...)
-    inds = round.(Int, xs)
+struct InterpolatedArray{I<:AbstractInterpolation,T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
+    data::A
+end
+
+function InterpolatedArray(a::AbstractArray, interp::AbstractInterpolation)
+    InterpolatedArray{typeof(interp),eltype(a),ndims(a),typeof(a)}(a)
+end
+
+
+size(interp::InterpolatedArray) = size(interp.data)
+
+
+@propagate_inbounds function getindex(iarr::InterpolatedArray{NoInterpolation}, x, xs...)
+    a = iarr.data
+    inds = round(Int, x), (round(Int, x′) for x′ in xs)...
     @boundscheck checkbounds(a, inds...)
     @inbounds a[inds...]
 end
 
 
-@propagate_inbounds function (::BilinearInterpolation)(mat::AbstractMatrix, y, x)
-    x1 = floor(Int, real(x))
-    y1 = floor(Int, real(y))
-    x2 = ceil(Int, real(x))
-    y2 = ceil(Int, real(y))
-    @boundscheck checkbounds(mat, y1, x1)
-    @boundscheck checkbounds(mat, y1, x2)
-    @boundscheck checkbounds(mat, y2, x1)
-    @boundscheck checkbounds(mat, y2, x2)
-    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
-end
-
-
-@propagate_inbounds function (::LinearInterpolation)(v::AbstractVector, x)
+@propagate_inbounds function getindex(iarr::InterpolatedArray{LinearInterpolation}, x)
+    v = iarr.data
     x1 = floor(Int, real(x))
     x2 = ceil(Int, real(x))
-    @boundscheck checkbounds(v, x1)
-    @boundscheck checkbounds(v, x2)
+    @boundscheck begin
+        checkbounds(v, x1)
+        checkbounds(v, x2)
+    end
     @inbounds lerp(v, x1, x2, x)
 end
 
 
-@propagate_inbounds function interpolate(a::AbstractArray, interp::AbstractInterpolation)
+@propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation}, y, x)
+    mat = iarr.data
+    x1 = floor(Int, real(x))
+    y1 = floor(Int, real(y))
+    x2 = ceil(Int, real(x))
+    y2 = ceil(Int, real(y))
+    @boundscheck begin
+        checkbounds(mat, y1, x1)
+        checkbounds(mat, y1, x2)
+        checkbounds(mat, y2, x1)
+        checkbounds(mat, y2, x2)
+    end
+    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
+end
+
+
+@propagate_inbounds function (iarr::InterpolatedArray{NoInterpolation})(x, xs...)
+    a = iarr.data
+    inds = round(Int, x), (round(Int, x′) for x′ in xs)...
+    @boundscheck checkbounds(a, inds...)
+    @inbounds a[inds...]
+end
+
+
+@propagate_inbounds function (iarr::InterpolatedArray{LinearInterpolation})(x)
+    v = iarr.data
+    x1 = floor(Int, real(x))
+    x2 = ceil(Int, real(x))
+    @boundscheck begin
+        checkbounds(v, x1)
+        checkbounds(v, x2)
+    end
+    @inbounds lerp(v, x1, x2, x)
+end
+
+
+@propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation})(y, x)
+    mat = iarr.data
+    x1 = floor(Int, real(x))
+    y1 = floor(Int, real(y))
+    x2 = ceil(Int, real(x))
+    y2 = ceil(Int, real(y))
+    @boundscheck begin
+        checkbounds(mat, y1, x1)
+        checkbounds(mat, y1, x2)
+        checkbounds(mat, y2, x1)
+        checkbounds(mat, y2, x2)
+    end
+    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
+end
+
+
+function interpolate(a::AbstractArray, interp::AbstractInterpolation)
     @assert(
         a isa AbstractVecOrMat || interp isa NoInterpolation,
         "Interpolation of arrays with dimensions higher than 2 " *
         "is not currently supported"
     )
-    @propagate_inbounds function (xs...)
-        interp(a, xs...)
-    end
+    InterpolatedArray(a, interp)
 end
 
 
-@inline interpolate(mat::AbstractMatrix) = interpolate(mat,  BilinearInterpolation())
-@inline interpolate(v::AbstractVector) = interpolate(v, LinearInterpolation())
+interpolate(mat::AbstractMatrix) = interpolate(mat, BilinearInterpolation())
+interpolate(v::AbstractVector) = interpolate(v, LinearInterpolation())
 
 
 for nm ∈ _interpolation_types
@@ -100,7 +154,11 @@ end
 end
 
 
-@inline function lerp(v::AbstractVector, x1::X, x2::X, x) where {X}
+@propagate_inbounds function lerp(v::AbstractVector, x1::Int, x2::Int, x)
+    @boundscheck begin
+        checkbounds(v, x1)
+        checkbounds(v, x2)
+    end
     @inbounds begin
         x1 == x2 && return v[x1]
         lerp(v[x1], v[x2], x)
@@ -115,9 +173,15 @@ end
 end
 
 
-@inline function blerp(
+@propagate_inbounds function blerp(
     mat::AbstractMatrix, q1::Int, q2::Int, p1::Int, p2::Int, q, p
 )
+    @boundscheck begin
+        checkbounds(mat, q1, p1)
+        checkbounds(mat, q1, p2)
+        checkbounds(mat, q2, p1)
+        checkbounds(mat, q2, p2)
+    end
     @inbounds if p1 == p2
         q1 == q2 && return mat[q1, p1]
         q11 = mat[q1, p1]

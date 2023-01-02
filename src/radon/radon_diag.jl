@@ -34,7 +34,7 @@ function radon_diag end
                 x = prex - txs[j] * s
                 y = prey + tys[j] * c
                 if x ∈ 1..cols && y ∈ 1..rows
-                    tmp += interp(y, x)
+                    tmp += interp[y, x]
                 end
             end
             sinog[i, iϕ] = tmp

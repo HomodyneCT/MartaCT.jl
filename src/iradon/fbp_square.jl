@@ -24,7 +24,7 @@ function fbp_fft_square end
             x, y = xxs[ix], yys[iy]
             t = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                Threads.atomic_add!(atomic_tomog[iy,ix], interp(t, iϕ))
+                Threads.atomic_add!(atomic_tomog[iy,ix], interp[t, iϕ])
             end
         end
         # next!(p)
