@@ -33,7 +33,7 @@ function fbp_fft end
             # To be consistent with our conventions should be '+'.
             t = x * cϕ + y * sϕ + t₀
             if t ∈ 1..nd
-                Threads.atomic_add!(atomic_tomog[k],  interp(t, iϕ))
+                Threads.atomic_add!(atomic_tomog[k],  interp[t, iϕ])
             end
         end
         # next!(p)

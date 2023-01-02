@@ -24,12 +24,18 @@ function fbpa_fft end
     end
     # p = _iradon_progress(length(tomog), progress)
     Threads.@threads for k ∈ eachindex(xys)
-        x, y = xys[k]
-        @inbounds tomog[k] = sum(eachindex(scϕs)) do iϕ
-            sϕ, cϕ = scϕs[iϕ]
-            # To be consistent with our conventions should be '+'.
-            t = (x * cϕ + y * sϕ + 1) * t₀
-            @inbounds t ∈ 1..nd ? interp(t, iϕ) : z
+        @inbounds begin
+            x, y = xys[k]
+            s = z
+            for iϕ in eachindex(scϕs)
+                sϕ, cϕ = scϕs[iϕ]
+                # To be consistent with our conventions should be '+'.
+                t = (x * cϕ + y * sϕ + 1) * t₀
+                if t ∈ 1..nd
+                    s += interp[t, iϕ]
+                end
+            end
+            tomog[k] = s
         end
         # next!(p)
     end
