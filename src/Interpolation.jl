@@ -46,10 +46,10 @@ end
     y1 = floor(Int, real(y))
     x2 = ceil(Int, real(x))
     y2 = ceil(Int, real(y))
-    @boundscheck checkbounds(mat, x1, y1)
-    @boundscheck checkbounds(mat, x1, y2)
-    @boundscheck checkbounds(mat, x2, y1)
-    @boundscheck checkbounds(mat, x2, y2)
+    @boundscheck checkbounds(mat, y1, x1)
+    @boundscheck checkbounds(mat, y1, x2)
+    @boundscheck checkbounds(mat, y2, x1)
+    @boundscheck checkbounds(mat, y2, x2)
     @inbounds blerp(mat, y1, y2, x1, x2, y, x)
 end
 
