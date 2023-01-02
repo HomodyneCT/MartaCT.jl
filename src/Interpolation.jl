@@ -40,18 +40,26 @@ const _interpolation_types = (
     @inbounds a[inds...]
 end
 
+
 @propagate_inbounds function (::BilinearInterpolation)(mat::AbstractMatrix, y, x)
     x1 = floor(Int, real(x))
     y1 = floor(Int, real(y))
     x2 = ceil(Int, real(x))
     y2 = ceil(Int, real(y))
-    blerp(mat, y1, y2, x1, x2, y, x)
+    @boundscheck checkbounds(mat, x1, y1)
+    @boundscheck checkbounds(mat, x1, y2)
+    @boundscheck checkbounds(mat, x2, y1)
+    @boundscheck checkbounds(mat, x2, y2)
+    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
 end
+
 
 @propagate_inbounds function (::LinearInterpolation)(v::AbstractVector, x)
     x1 = floor(Int, real(x))
     x2 = ceil(Int, real(x))
-    lerp(v, x1, x2, x)
+    @boundscheck checkbounds(v, x1)
+    @boundscheck checkbounds(v, x2)
+    @inbounds lerp(v, x1, x2, x)
 end
 
 
@@ -67,11 +75,9 @@ end
 end
 
 
-@inline interpolate(mat::AbstractMatrix) =
-    interpolate(mat,  BilinearInterpolation())
+@inline interpolate(mat::AbstractMatrix) = interpolate(mat,  BilinearInterpolation())
+@inline interpolate(v::AbstractVector) = interpolate(v, LinearInterpolation())
 
-@inline interpolate(v::AbstractVector) =
-    interpolate(v, LinearInterpolation())
 
 for nm ∈ _interpolation_types
     @eval begin
@@ -87,16 +93,20 @@ end
     (oneunit(Q) - t′) * q1 + t′ * q2
 end
 
+
 @inline function lerp(f::Function, x1::X, x2::X, x) where {X}
     x1 == x2 && return f(x1)
     lerp(f(x1), f(x2), (x - x1) / (x2 - x1))
 end
 
-@inline @propagate_inbounds function lerp(v::AbstractVector, x1::X, x2::X, x) where {X}
-    @boundscheck checkbounds(v, x1)
-    x1 == x2 && return @inbounds v[x1]
-    @inbounds lerp(v[x1], v[x2], x)
+
+@inline function lerp(v::AbstractVector, x1::X, x2::X, x) where {X}
+    @inbounds begin
+        x1 == x2 && return v[x1]
+        lerp(v[x1], v[x2], x)
+    end
 end
+
 
 @inline function blerp(q11::Q, q12::Q, q21::Q, q22::Q, t₁, t₂) where {Q}
     t̄₁::Q = t₁
@@ -104,13 +114,10 @@ end
     lerp(lerp(q11, q21, t̄₁), lerp(q12, q22, t̄₁), t̄₂)
 end
 
-@inline @propagate_inbounds function blerp(
+
+@inline function blerp(
     mat::AbstractMatrix, q1::Int, q2::Int, p1::Int, p2::Int, q, p
 )
-    @boundscheck checkbounds(mat, q1, p1)
-    @boundscheck checkbounds(mat, q1, p2)
-    @boundscheck checkbounds(mat, q2, p1)
-    @boundscheck checkbounds(mat, q2, p2)
     @inbounds if p1 == p2
         q1 == q2 && return mat[q1, p1]
         q11 = mat[q1, p1]
