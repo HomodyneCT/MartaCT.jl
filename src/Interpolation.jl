@@ -67,19 +67,19 @@ end
 end
 
 
-@propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation}, y, x)
+@propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation}, y, x, idxs::Int...)
     mat = iarr.data
     x1 = floor(Int, real(x))
     y1 = floor(Int, real(y))
     x2 = ceil(Int, real(x))
     y2 = ceil(Int, real(y))
     @boundscheck begin
-        checkbounds(mat, y1, x1)
-        checkbounds(mat, y1, x2)
-        checkbounds(mat, y2, x1)
-        checkbounds(mat, y2, x2)
+        checkbounds(mat, y1, x1, idxs...)
+        checkbounds(mat, y1, x2, idxs...)
+        checkbounds(mat, y2, x1, idxs...)
+        checkbounds(mat, y2, x2, idxs...)
     end
-    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
+    @inbounds blerp(mat, y1, y2, x1, x2, y, x, idxs...)
 end
 
 
@@ -103,28 +103,28 @@ end
 end
 
 
-@propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation})(y, x)
+@propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation})(y, x, idxs::Int...)
     mat = iarr.data
     x1 = floor(Int, real(x))
     y1 = floor(Int, real(y))
     x2 = ceil(Int, real(x))
     y2 = ceil(Int, real(y))
     @boundscheck begin
-        checkbounds(mat, y1, x1)
-        checkbounds(mat, y1, x2)
-        checkbounds(mat, y2, x1)
-        checkbounds(mat, y2, x2)
+        checkbounds(mat, y1, x1, idxs...)
+        checkbounds(mat, y1, x2, idxs...)
+        checkbounds(mat, y2, x1, idxs...)
+        checkbounds(mat, y2, x2, idxs...)
     end
-    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
+    @inbounds blerp(mat, y1, y2, x1, x2, y, x, idxs...)
 end
 
 
 function interpolate(a::AbstractArray, interp::AbstractInterpolation)
-    @assert(
-        a isa AbstractVecOrMat || interp isa NoInterpolation,
-        "Interpolation of arrays with dimensions higher than 2 " *
-        "is not currently supported"
-    )
+    # @assert(
+    #     a isa AbstractVecOrMat || interp isa NoInterpolation,
+    #     "Interpolation of arrays with dimensions higher than 2 " *
+    #     "is not currently supported"
+    # )
     InterpolatedArray(a, interp)
 end
 
@@ -174,30 +174,30 @@ end
 
 
 @propagate_inbounds function blerp(
-    mat::AbstractMatrix, q1::Int, q2::Int, p1::Int, p2::Int, q, p
+    mat::AbstractMatrix, q1::Int, q2::Int, p1::Int, p2::Int, q, p, idxs::Int...
 )
     @boundscheck begin
-        checkbounds(mat, q1, p1)
-        checkbounds(mat, q1, p2)
-        checkbounds(mat, q2, p1)
-        checkbounds(mat, q2, p2)
+        checkbounds(mat, q1, p1, idxs...)
+        checkbounds(mat, q1, p2, idxs...)
+        checkbounds(mat, q2, p1, idxs...)
+        checkbounds(mat, q2, p2, idxs...)
     end
     @inbounds if p1 == p2
-        q1 == q2 && return mat[q1, p1]
-        q11 = mat[q1, p1]
-        q21 = mat[q2, p1]
+        q1 == q2 && return mat[q1, p1, idxs...]
+        q11 = mat[q1, p1, idxs...]
+        q21 = mat[q2, p1, idxs...]
         lerp(q11, q21, (q - q1) / (q2 - q1))
     elseif q1 == q2
-        q11 = mat[q1, p1]
-        q12 = mat[q1, p2]
+        q11 = mat[q1, p1, idxs...]
+        q12 = mat[q1, p2, idxs...]
         lerp(q11, q12, (p - p1) / (p2 - p1))
     else
         t1 = (q - q1) / (q2 - q1)
         t2 = (p - p1) / (p2 - p1)
-        q11 = mat[q1, p1]
-        q12 = mat[q1, p2]
-        q21 = mat[q2, p1]
-        q22 = mat[q2, p2]
+        q11 = mat[q1, p1, idxs...]
+        q12 = mat[q1, p2, idxs...]
+        q21 = mat[q2, p1, idxs...]
+        q22 = mat[q2, p2, idxs...]
         blerp(q11, q12, q21, q22, t1, t2)
     end
 end
