@@ -51,84 +51,64 @@ function interpolate end
 function blerp end
 function lerp end
 
-macro _checkbounds end
-
-
-macro _checkbounds(s, a, x, xs...)
-    if s === :NoInterpolation
-        quote
-            x_ = $(esc(x))
-            inds = round(Int, x_), round.(Int, $(esc.(xs)...))...
-            @boundscheck checkbounds($(esc(a)), inds...)
-            inds
-        end
-    elseif s === :LinearInterpolation
-        quote
-            v = $(esc(a))
-            x_ = $(esc(x))
-            x1 = floor(Int, x_)
-            x2 = ceil(Int, x_)
-            @boundscheck begin
-                checkbounds(v, x1)
-                checkbounds(v, x2)
-            end
-            x1, x2
-        end
-    elseif s === :BilinearInterpolation
-        @assert length(xs) >= 1
-        quote
-            mat = $(esc(a))
-            c_, idxs... = $(esc.(xs)...)
-            r_ = $(esc(x))
-            r1 = floor(Int, r_)
-            c1 = floor(Int, c_)
-            r2 = ceil(Int, r_)
-            c2 = ceil(Int, c_)
-            @boundscheck begin
-                checkbounds(mat, r1, c1, idxs...)
-                checkbounds(mat, r1, c2, idxs...)
-                checkbounds(mat, r2, c1, idxs...)
-                checkbounds(mat, r2, c2, idxs...)
-            end
-            r1, r2, c1, c2
-        end
-    else
-        error("Unknown interpolation kind, got: '$s'")
-    end
-end
-
 
 @propagate_inbounds function getindex(iarr::InterpolatedArray{NoInterpolation}, x, xs...)
     a = iarr.data
-    inds = @_checkbounds NoInterpolation a x xs...
+    inds = round(Int, x), (round(Int, x) for x in xs)...
+    @boundscheck checkbounds(a, inds...)
     @inbounds a[inds...]
 end
 
 
 @propagate_inbounds function getindex(iarr::InterpolatedArray{LinearInterpolation}, x)
     v = iarr.data
-    x1, x2 = @_checkbounds LinearInterpolation v x
+    x1 = floor(Int, x)
+    x2 = ceil(Int, x)
+    @boundscheck begin
+        checkbounds(v, x1)
+        checkbounds(v, x2)
+    end
     @inbounds lerp(v, x1, x2, x)
 end
 
 
 @propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation,T,2}, y, x) where T
     mat = iarr.data
-    y1, y2, x1, x2 = @_checkbounds BilinearInterpolation mat y x
-    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
+    q, p = y, x
+    q1 = floor(Int, q)
+    p1 = floor(Int, p)
+    q2 = ceil(Int, q)
+    p2 = ceil(Int, p)
+    @boundscheck begin
+        checkbounds(mat, q1, p1, idxs...)
+        checkbounds(mat, q1, p2, idxs...)
+        checkbounds(mat, q2, p1, idxs...)
+        checkbounds(mat, q2, p2, idxs...)
+    end
+    @inbounds blerp(mat, q1, q2, p1, p2, q, p)
 end
 
 
 @propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation}, y, x, idxs::Int...)
     arr = iarr.data
-    y1, y2, x1, x2 = @_checkbounds BilinearInterpolation arr y x idxs...
-    @inbounds blerp(arr, y1, y2, x1, x2, y, x, idxs...)
+    q, p = y, x
+    q1 = floor(Int, q)
+    p1 = floor(Int, p)
+    q2 = ceil(Int, q)
+    p2 = ceil(Int, p)
+    @boundscheck begin
+        checkbounds(mat, q1, p1, idxs...)
+        checkbounds(mat, q1, p2, idxs...)
+        checkbounds(mat, q2, p1, idxs...)
+        checkbounds(mat, q2, p2, idxs...)
+    end
+    @inbounds blerp(arr, q1, q2, p1, p2, q, p, idxs...)
 end
 
 
 @propagate_inbounds function (iarr::InterpolatedArray{NoInterpolation})(x, xs...)
     a = iarr.data
-    inds = round(Int, x), (round(Int, x′) for x′ in xs)...
+    inds = round(Int, real(x)), (round(Int, real(x′)) for x′ in xs)...
     @boundscheck checkbounds(a, inds...)
     @inbounds a[inds...]
 end
@@ -136,8 +116,9 @@ end
 
 @propagate_inbounds function (iarr::InterpolatedArray{LinearInterpolation})(x)
     v = iarr.data
-    x1 = floor(Int, real(x))
-    x2 = ceil(Int, real(x))
+    x′ = real(x)
+    x1 = floor(Int, x′)
+    x2 = ceil(Int, x′)
     @boundscheck begin
         checkbounds(v, x1)
         checkbounds(v, x2)
@@ -148,33 +129,35 @@ end
 
 @propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation,T,2})(y, x) where T
     mat = iarr.data
-    x1 = floor(Int, real(x))
-    y1 = floor(Int, real(y))
-    x2 = ceil(Int, real(x))
-    y2 = ceil(Int, real(y))
+    q, p = real(y), real(x)
+    q1 = floor(Int, q)
+    p1 = floor(Int, p)
+    q2 = ceil(Int, q)
+    p2 = ceil(Int, p)
     @boundscheck begin
-        checkbounds(mat, y1, x1)
-        checkbounds(mat, y1, x2)
-        checkbounds(mat, y2, x1)
-        checkbounds(mat, y2, x2)
+        checkbounds(mat, q1, p1)
+        checkbounds(mat, q1, p2)
+        checkbounds(mat, q2, p1)
+        checkbounds(mat, q2, p2)
     end
-    @inbounds blerp(mat, y1, y2, x1, x2, y, x)
+    @inbounds blerp(mat, q1, q2, p1, p2, q, p)
 end
 
 
 @propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation})(y, x, idxs::Int...)
     mat = iarr.data
-    x1 = floor(Int, real(x))
-    y1 = floor(Int, real(y))
-    x2 = ceil(Int, real(x))
-    y2 = ceil(Int, real(y))
+    q, p = real(y), real(x)
+    q1 = floor(Int, q)
+    p1 = floor(Int, p)
+    q2 = ceil(Int, q)
+    p2 = ceil(Int, p)
     @boundscheck begin
-        checkbounds(mat, y1, x1, idxs...)
-        checkbounds(mat, y1, x2, idxs...)
-        checkbounds(mat, y2, x1, idxs...)
-        checkbounds(mat, y2, x2, idxs...)
+        checkbounds(mat, q1, p1, idxs...)
+        checkbounds(mat, q1, p2, idxs...)
+        checkbounds(mat, q2, p1, idxs...)
+        checkbounds(mat, q2, p2, idxs...)
     end
-    @inbounds blerp(mat, y1, y2, x1, x2, y, x, idxs...)
+    @inbounds blerp(mat, q1, q2, p1, p2, q, p, idxs...)
 end
 
 
