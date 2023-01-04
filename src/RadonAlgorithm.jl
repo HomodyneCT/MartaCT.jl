@@ -113,7 +113,7 @@ macro _defiradonfn(f::Symbol, body)
             rows = length(ys)
             T = real(eltype(sinog))
             filtered = apply(maybe(RamLak(), filter)) do f
-                filter_freq = fft(real(sinog), 1) .* f(T, nd)
+                filter_freq = fft(sinog, 1) .* f(T, nd)
                 bfft(filter_freq, 1) |> real
             end
             interpolation = maybe(interpolate, interpolation)

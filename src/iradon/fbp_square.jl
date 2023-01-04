@@ -19,12 +19,14 @@ function fbp_fft_square end
     ], axes(tomog))
     # p = _iradon_progress(nϕ, progress)
     Threads.@threads for iϕ ∈ eachindex(scϕs)
-        sϕ, cϕ = scϕs[iϕ]
-        for ix ∈ eachindex(xs), iy ∈ eachindex(ys)
-            x, y = xxs[ix], yys[iy]
-            t = x * cϕ + y * sϕ + t₀
-            if t ∈ 1..nd
-                Threads.atomic_add!(atomic_tomog[iy,ix], interp[t, iϕ])
+        @inbounds begin
+            sϕ, cϕ = scϕs[iϕ]
+            for ix ∈ eachindex(xs), iy ∈ eachindex(ys)
+                x, y = xxs[ix], yys[iy]
+                t = x * cϕ + y * sϕ + t₀
+                if t ∈ 1..nd
+                    Threads.atomic_add!(atomic_tomog[iy,ix], interp[t, iϕ])
+                end
             end
         end
         # next!(p)
