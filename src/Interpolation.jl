@@ -58,7 +58,7 @@ macro _checkbounds(s, a, x, xs...)
     if s === :NoInterpolation
         quote
             x_ = $(esc(x))
-            inds = round(Int, $x), round.(Int, $(xs...))...
+            inds = round(Int, x_), round.(Int, $(esc.(xs)...))...
             @boundscheck checkbounds($(esc(a)), inds...)
             inds
         end
@@ -77,9 +77,9 @@ macro _checkbounds(s, a, x, xs...)
     elseif s === :BilinearInterpolation
         @assert length(xs) >= 1
         quote
+            mat = $(esc(a))
             c_, idxs... = $(esc.(xs)...)
             r_ = $(esc(x))
-            mat = $(esc(a))
             r1 = floor(Int, r_)
             c1 = floor(Int, c_)
             r2 = ceil(Int, r_)
