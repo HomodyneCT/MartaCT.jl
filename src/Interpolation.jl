@@ -97,10 +97,10 @@ end
     q2 = ceil(Int, q)
     p2 = ceil(Int, p)
     @boundscheck begin
-        checkbounds(mat, q1, p1, idxs...)
-        checkbounds(mat, q1, p2, idxs...)
-        checkbounds(mat, q2, p1, idxs...)
-        checkbounds(mat, q2, p2, idxs...)
+        checkbounds(arr, q1, p1, idxs...)
+        checkbounds(arr, q1, p2, idxs...)
+        checkbounds(arr, q2, p1, idxs...)
+        checkbounds(arr, q2, p2, idxs...)
     end
     @inbounds blerp(arr, q1, q2, p1, p2, q, p, idxs...)
 end
