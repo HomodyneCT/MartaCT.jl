@@ -121,7 +121,7 @@ end
         checkbounds(mat, q2, p1)
         checkbounds(mat, q2, p2)
     end
-    @_blerp_impl arr q1 q2 p1 p2 q p
+    @_blerp_impl mat q1 q2 p1 p2 q p
 end
 
 

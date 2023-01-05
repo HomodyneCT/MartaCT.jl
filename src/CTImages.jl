@@ -147,7 +147,7 @@ function rotate(
         x′ = x * cϕ + y * sϕ + x′₀
         y′ = y * cϕ - x * sϕ + y′₀
         if x′ ∈ 1..ocols && y′ ∈ 1..orows
-            rmat[iy, ix] = convert(T, interp(y′, x′))
+            rmat[iy, ix] = convert(T, interp[y′, x′])
         end
     end
     rmat
@@ -328,7 +328,7 @@ function polar2cart(
                 elseif θ > nθ
                     θ = nθ
                 end
-                mc[iy,ix] = interp(θ, r)
+                mc[iy,ix] = interp[θ, r]
             end
         end
     end
