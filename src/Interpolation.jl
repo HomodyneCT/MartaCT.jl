@@ -149,20 +149,20 @@ end
 end
 
 
-@propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation})(y, x, idxs::Int...)
-    mat = iarr.data
+@propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation})(y, x, b::Int, idxs::Int...)
+    arr = iarr.data
     q, p = real(y), real(x)
     q1 = _floori(q)
     p1 = _floori(p)
     q2 = _ceili(q)
     p2 = _ceili(p)
     @boundscheck begin
-        checkbounds(mat, q1, p1, idxs...)
-        checkbounds(mat, q1, p2, idxs...)
-        checkbounds(mat, q2, p1, idxs...)
-        checkbounds(mat, q2, p2, idxs...)
+        checkbounds(arr, q1, p1, b, idxs...)
+        checkbounds(arr, q1, p2, b, idxs...)
+        checkbounds(arr, q2, p1, b, idxs...)
+        checkbounds(arr, q2, p2, b, idxs...)
     end
-    @inbounds blerp(mat, q1, q2, p1, p2, q, p, idxs...)
+    @inbounds blerp(arr, q1, q2, p1, p2, q, p, b, idxs...)
 end
 
 
@@ -252,16 +252,51 @@ end
 
 
 @propagate_inbounds function blerp(
-    arr::AbstractArray, q1::Int, q2::Int, p1::Int, p2::Int, q, p, idxs::Int...
+    arr::AbstractArray, q1::Int, q2::Int, p1::Int, p2::Int, q, p, b::Int, idxs::Int...
 )
     @boundscheck begin
-        checkbounds(arr, q1, p1, idxs...)
-        checkbounds(arr, q1, p2, idxs...)
-        checkbounds(arr, q2, p1, idxs...)
-        checkbounds(arr, q2, p2, idxs...)
+        checkbounds(arr, q1, p1, b, idxs...)
+        checkbounds(arr, q1, p2, b, idxs...)
+        checkbounds(arr, q2, p1, b, idxs...)
+        checkbounds(arr, q2, p2, b, idxs...)
     end
-    mat = @view arr[:,:,idxs...]
+    @inbounds begin
+        mat = @view arr[:,:,b,idxs...]
+        blerp(mat, q1, q2, p1, p2, q, p)
+    end
+end
+
+
+@propagate_inbounds function blerp(mat::AbstractMatrix, q, p)
+    q1 = _floori(q)
+    p1 = _floori(p)
+    q2 = _ceili(q)
+    p2 = _ceili(p)
+    @boundscheck begin
+        checkbounds(arr, q1, p1)
+        checkbounds(arr, q1, p2)
+        checkbounds(arr, q2, p1)
+        checkbounds(arr, q2, p2)
+    end
     @inbounds blerp(mat, q1, q2, p1, p2, q, p)
+end
+
+
+@propagate_inbounds function blerp(arr::AbstractArray, q, p, b::Int, idxs::Int...)
+    q1 = _floori(q)
+    p1 = _floori(p)
+    q2 = _ceili(q)
+    p2 = _ceili(p)
+    @boundscheck begin
+        checkbounds(arr, q1, p1, b, idxs...)
+        checkbounds(arr, q1, p2, b, idxs...)
+        checkbounds(arr, q2, p1, b, idxs...)
+        checkbounds(arr, q2, p2, b, idxs...)
+    end
+    @inbounds begin
+        mat = @view arr[:,:,b,idxs...]
+        blerp(mat, q1, q2, p1, p2, q, p)
+    end
 end
 
 end # module
