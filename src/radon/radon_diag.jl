@@ -17,27 +17,28 @@ function radon_diag end
 
 @_defradonfn radon_diag begin
     @assert 0 ∈ first(ts)..last(ts)
-    x₀ = (cols + 1) / 2
-    y₀ = (rows + 1) / 2
-    cθ = half(ts) * inv(√(1+τ^2))
+    x₀::T = (cols + 1) / 2
+    y₀::T = (rows + 1) / 2
+    cθ = half(ts) * inv(√(oneunit(τ)+τ^2))
     sθ = τ * cθ
-    txs = @. T(ts * (x₀ - 1) / cθ)
-    tys = @. T(ts * (y₀ - 1) / sθ)
+    txs = @. T(ts * (x₀ - oneunit(T)) / cθ)
+    tys = @. T(ts * (y₀ - oneunit(T)) / sθ)
     #p = _radon_progress(length(scϕs), progress)
+    _0 = zero(eltype(sinog))
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
-        @inbounds @simd for i ∈ eachindex(ts)
-            prex = txs[i] * c + T(x₀)
-            prey = tys[i] * s + T(y₀)
-            tmp = zero(eltype(sinog))
-            for j ∈ eachindex(ts)
+        @inbounds for i ∈ eachindex(ts)
+            prex = txs[i] * c + x₀
+            prey = tys[i] * s + y₀
+            ∑ = _0
+            @simd for j ∈ eachindex(ts)
                 x = prex - txs[j] * s
                 y = prey + tys[j] * c
                 if x ∈ 1..cols && y ∈ 1..rows
-                    tmp += interp[y, x]
+                    ∑ += interp[y, x]
                 end
             end
-            sinog[i, iϕ] = tmp
+            sinog[i, iϕ] = ∑
         end
         # next!(p)
     end

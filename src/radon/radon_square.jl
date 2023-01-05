@@ -24,20 +24,23 @@ function radon_square end
     txs = @. T(ts * κx)
     tys = @. T(ts * κy)
     # p = _radon_progress(length(scϕs), progress)
+    _0 = zero(eltype(sinog))
     Threads.@threads for iϕ ∈ eachindex(scϕs)
         @inbounds s, c = scϕs[iϕ]
-        @inbounds @simd for j ∈ eachindex(ts)
+        @inbounds for j ∈ eachindex(ts)
             tx, ty = txs[j], tys[j]
             prex = tx * c + x₀
             prey = ty * s + y₀
-            for k ∈ eachindex(ts)
+            ∑ = _0
+            @simd for k ∈ eachindex(ts)
                 wx, wy = txs[k], tys[k]
                 x = prex - wx * s
                 y = prey + wy * c
-                if 1 <= x <= cols && 1 <= y <= rows
-                    sinog[j,iϕ] += interp[y, x]
+                if x ∈ 1..cols && y ∈ 1..rows
+                    ∑ += interp[y, x]
                 end
             end
+            sinog[j, iϕ] = ∑
         end
         # next!(p)
     end
