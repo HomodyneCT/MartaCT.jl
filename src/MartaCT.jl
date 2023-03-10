@@ -1,14 +1,6 @@
 module MartaCT
 
 using Reexport
-import
-    LinearAlgebra,
-    IterTools,
-    FFTW,
-    Statistics,
-    StatsBase,
-    Distributions,
-    IntervalSets
 
 include("Utils.jl")
 include("Applicative.jl")
@@ -19,6 +11,7 @@ include("Coordinates.jl")
 include("Geometry.jl")
 include("CTImages.jl")
 include("FanBeam.jl")
+include("Filters.jl")
 include("AbstractAlgorithms.jl")
 include("RadonAlgorithm.jl")
 include("Simulations.jl")
