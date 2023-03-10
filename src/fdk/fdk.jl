@@ -28,8 +28,6 @@ function fdkdata(::Type{F}, proj, us, vs, xs, ys, βs) where {F<:AbstractCTFilte
     M̂ = zeros(complex(eltype(M)), axes(inv(P)))
     _1 = oneunit(T)
     W = @. inv(sqrt(_1 + us^2 + vs'^2))
-
-
     vdata = _vdata(xs′, ys′, βs)
     FDKData((nu,nv,nβ), M, M̂, W, vdata, fp)
 end
