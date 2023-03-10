@@ -5,16 +5,38 @@ Base.Experimental.@optlevel 3
 export AbstractFDK
 export FDK, FDKGPU
 export FDKInfo
+export fdk
 
-using FFTW, LinearAlgebra, IntervalSets
+
+using IntervalSets
 using Unitful: NoUnits
 using ..Interpolation: blerp
 using ..Utils: linspace
+using ..Geometry
 import ..AbstractAlgorithms: reconstruct_image
-using ..AbstractAlgorithms, ..Coordinates
+using ..AbstractAlgorithms
+
+
+abstract type AbstractFDK <: AbstractIRadonAlgorithm end
+abstract type AbstractFDKData end
+
+
+function fdkdata end
+function fdkfilter end
 
 
 include("fdk/fdk.jl")
+
+
+struct FDKInfo{
+    G <: AbstractConeBeamGeometry,
+    A <: AbstractFDK
+} <: AlgorithmInfo{A}
+    geometry::G
+    algorithm::A
+end
+
+FDKInfo(g::AbstractConeBeamGeometry) = FDKInfo(g, FDK())
 
 
 using Requires
