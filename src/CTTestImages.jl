@@ -18,7 +18,6 @@ using IntervalSets, SimpleTraits
 using Statistics: mean
 import ..Monads: mjoin, mreturn
 using ..Monads
-import ..CTImages: rescale, rescale!
 using ..CTImages: CTImage, CTImageMat, polar2cart
 using ..Interpolation: NoInterpolation
 import ..Geometry: ParallelBeamGeometry, FanBeamGeometry, AbstractParallelBeamGeometry
