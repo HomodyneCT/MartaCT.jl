@@ -1,1 +1,3 @@
-using MartaCT, Test
+using Test
+import FFTW
+using MartaCT
