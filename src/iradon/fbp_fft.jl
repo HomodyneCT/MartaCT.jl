@@ -3,7 +3,6 @@ struct FBP{F<:AbstractCTFilter} <: AbstractFBP
 end
 
 FBP() = FBP(RamLak())
-FBP(f::Function) = FBP(CTFilter(f))
 
 _alg_method(::FBP) = IsIRadonDiag()
 @_defiradonalgfn FBP fbp_fft

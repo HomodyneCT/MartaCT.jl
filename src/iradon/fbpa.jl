@@ -3,7 +3,6 @@ struct FBPAFFT{F<:AbstractCTFilter} <: AbstractFBP
 end
 
 FBPAFFT() = FBPAFFT(RamLak())
-FBPAFFT(f::Function) = FBPAFFT(CTFilter(f))
 
 _alg_method(::FBPAFFT) = IsIRadonDiag()
 @_defiradonalgfn FBPAFFT fbpa_fft

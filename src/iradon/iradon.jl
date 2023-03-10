@@ -1,4 +1,4 @@
-import .Filters: AbstractCTFilter, CTFilter, RamLak
+import ..Filters: AbstractCTFilter, RamLak
 
 struct IsIRadonDiag end
 struct IsIRadonSquare end
@@ -140,4 +140,128 @@ end
 
 @inline function iradon(g::AbstractGeometry; kwargs...)
     iradon(g, FBP(); kwargs...)
+end
+
+
+"""
+    iradon(sinog::AbstractMatrix[, algorithm::AbstractIRadonAlgorithm]; <keyword arguments>)
+
+Compute the inverse Radon transform of `sinog` with parameters given as keyword
+arguments. The parameters depend on the algorithm, please see the relative
+documentation. The default algorithm is [`FBP`](@ref).
+
+See Also: [`reconstruct_image`](@ref)
+"""
+@inline function iradon(
+    sinog::AbstractMatrix,
+    alg::AbstractIRadonAlgorithm;
+    kwargs...
+)
+    alg(sinog; kwargs...)
+end
+
+
+"""
+    iradon(sinog::AbstractMatrix, xs[, ys[, algorithm::AbstractIRadonAlgorithm[, coo::AbstractCoordinates]]]; <keyword arguments>)
+
+Compute the inverse Radon transform of `sinog` on the points given by the
+vectors `xs` and `ys`. If `ys` is omitted, the reconstruction is performed on
+the square with `xs == ys`. The default reconstruction algorithm is
+[`FBP`](@ref). Please refer to the respective documentation for additional
+parameters.
+
+See Also: [`reconstruct_image`](@ref)
+"""
+@inline function iradon(
+    sinog::AbstractMatrix,
+    xs::Union{AbstractVector,Interval},
+    ys::Union{AbstractVector,Interval},
+    alg::AbstractIRadonAlgorithm,
+    coo::AbstractCoordinates = Cartesian();
+    kwargs...
+)
+    alg(sinog, xs, ys, coo; kwargs...)
+end
+
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    xs::AbstractVector,
+    alg::AbstractIRadonAlgorithm,
+    coo::AbstractCoordinates = Cartesian();
+    kwargs...
+)
+    alg(sinog, xs, coo; kwargs...)
+end
+
+
+"""
+    iradon(sinog::AbstractMatrix[, geometry::AbstractGeometry[, params::AbstractParams[, algorithm::AbstractIRadonAlgorithm]]]; <keyword arguments>)
+
+Compute the inverse Radon transform of `sinog` with explicit geometry. If the
+algorithm needs specific parameters, these can be passed with `params`.
+Additional parameters can be passed to the algorithm through keyword arguments.
+Please see the respective documentation for more details. The default algorithm
+is [`FBP`](@ref).
+
+See Also: [`reconstruct_image`](@ref)
+"""
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractParallelBeamGeometry,
+    alg::AbstractIRadonAlgorithm;
+    kwargs...
+)
+    rows = geometry.rows
+    cols = geometry.cols
+    α = geometry.α
+    α₀ = geometry.α₀
+    iradon(sinog, alg; rows, cols, α, α₀, kwargs...)
+end
+
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractFanBeamGeometry,
+    alg::AbstractIRadonAlgorithm;
+    kwargs...
+)
+    g′, para_sinog = fan2para(sinog, geometry)
+    iradon(para_sinog, g′, alg; kwargs...)
+end
+
+
+@inline function iradon(
+    g::AbstractGeometry,
+    alg::AbstractIRadonAlgorithm;
+    kwargs...
+)
+    x -> iradon(x, g, alg; kwargs...)
+end
+
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractParallelBeamGeometry,
+    params::AbstractParams,
+    alg::AbstractIRadonAlgorithm;
+    kwargs...
+)
+    rows = geometry.rows
+    cols = geometry.cols
+    α = geometry.α
+    α₀ = geometry.α₀
+    alg(sinog, params; rows, cols, α, α₀, kwargs...)
+end
+
+
+@inline function iradon(
+    sinog::AbstractMatrix,
+    geometry::AbstractFanBeamGeometry,
+    params::AbstractParams,
+    alg::AbstractIRadonAlgorithm;
+    kwargs...
+)
+    g′, para_sinog = fan2para(sinog, geometry)
+    iradon(sinog, g′, params, alg; kwargs...)
 end

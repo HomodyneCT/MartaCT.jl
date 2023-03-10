@@ -3,7 +3,6 @@ struct FBPAFFTSquare{F<:AbstractCTFilter} <: AbstractFBP
 end
 
 FBPAFFTSquare() = FBPAFFTSquare(RamLak())
-FBPAFFTSquare(f::Function) = FBPAFFTSquare(CTFilter(f))
 
 _alg_method(::FBPAFFTSquare) = IsIRadonSquare()
 @_defiradonalgfn FBPAFFTSquare fbpa_fft_square
