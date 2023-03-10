@@ -10,18 +10,14 @@ export RadonInfo, FBPInfo
 using ..Applicative
 using ..Monads
 using ..Geometry
-using ..CTImages: rescale
 using ..FanBeam: fan2para, para2fan
 import ..Utils: ORI, linspace, _atype, half, width
-import ..AbstractAlgorithms:
-    radon,
-    iradon,
-    project_image,
-    reconstruct_image
+import ..AbstractAlgorithms: radon, iradon
 #import ..AbstractAlgorithms: _alg_progress
 using ..AbstractAlgorithms, ..Coordinates
 using ..Interpolation: AbstractInterp2DOrNone, interpolate
-using FFTW, IntervalSets
+using AbstractFFTs, IntervalSets
+import FFTW
 
 
 function _radon end
@@ -58,7 +54,6 @@ macro _defradonfn(f::Symbol, body)
             τ::Optional{Real} = nothing,
             ratio::Optional{Real} = nothing,
             background::Optional = nothing,
-            rescaled::Bool = false,
             interpolation::Optional{Interp} = nothing,
             progress::Bool = false,
         ) where {T,Interp <: AbstractInterp2DOrNone}
@@ -75,9 +70,8 @@ macro _defradonfn(f::Symbol, body)
             end
             sinog = similar(image, nd, nϕ)
             fill!(sinog, convert(T, maybe(0.0f0, background)))
-            rimage = rescaled ? rescale(image) : image
             interp = isnothing(interpolation) ?
-                interpolate(rimage) : interpolation(rimage)
+                interpolate(image) : interpolation(image)
             $body
         end
     end)
@@ -209,7 +203,6 @@ end
 
 abstract type AbstractFBP <: AbstractIRadonAlgorithm end
 
-include("Filters.jl")
 include("radon/radon.jl")
 include("iradon/iradon.jl")
 
