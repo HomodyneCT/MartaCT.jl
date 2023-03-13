@@ -30,7 +30,8 @@ show(io::IO, ::T) where T <: AbstractTomograph = print(io, "$(nameof(T))")
 struct DefaultTomograph <: AbstractTomograph end
 
 
-const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry, :ConeBeamFlatGeometry)
+const _geometry_names = (:ParallelBeamGeometry, :FanBeamGeometry)
+const _geometry3d_names = (:ConeBeamFlatGeometry,)
 
 abstract type AbstractGeometry end
 
