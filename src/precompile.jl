@@ -1,11 +1,11 @@
-using SnoopPrecompile
+using PrecompileTools
 
-@precompile_setup begin
+@setup_workload begin
     const _pre_types = (:Float32, :Float64)
     const width = 5
     const nϕ = 11
 
-    @precompile_all_calls begin
+    @compile_workload begin
         for T ∈ _pre_types, Img ∈ CTTestImages._gs_images, G ∈ Geometry._geometry_names, A ∈ (:Radon, :RadonSquare), F ∈ (:FBP, :FBPAFFT, :FBPAFFTSquare, :FBPFFTSquare)
             @eval begin
                 gs = $Img($T; width)
