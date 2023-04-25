@@ -30,6 +30,7 @@ Reexport = "0.2, 1"
 Requires = "1"
 SimpleTraits = "0.9"
 StatsBase = "0.33"
+Unitful = "1"
 julia = "1.5"
 
 [extras]
