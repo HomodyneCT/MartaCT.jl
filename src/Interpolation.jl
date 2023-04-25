@@ -35,6 +35,48 @@ const _interpolation_types = (
 )
 
 
+function interpolate end
+function blerp end
+function lerp end
+
+
+_floori(x) = unsafe_trunc(Int, floor(x))
+_ceili(x) = unsafe_trunc(Int, ceil(x))
+_roundi(x) = unsafe_trunc(Int, round(x))
+
+
+macro _blerp_impl(arr_, q1_, q2_, p1_, p2_, q_, p_, idxs_...)
+    quote
+        arr = $(esc(arr_))
+        q1 = $(esc(q1_))
+        q2 = $(esc(q2_))
+        p1 = $(esc(p1_))
+        p2 = $(esc(p2_))
+        q = $(esc(q_))
+        p = $(esc(p_))
+        idxs = tuple($(esc.(idxs_)...))
+        @inbounds if p1 == p2
+            q1 == q2 && return arr[q1, p1, idxs...]
+            q11 = arr[q1, p1, idxs...]
+            q21 = arr[q2, p1, idxs...]
+            lerp(q11, q21, (q - q1) / (q2 - q1))
+        elseif q1 == q2
+            q11 = arr[q1, p1, idxs...]
+            q12 = arr[q1, p2, idxs...]
+            lerp(q11, q12, (p - p1) / (p2 - p1))
+        else
+            t1 = (q - q1) / (q2 - q1)
+            t2 = (p - p1) / (p2 - p1)
+            q11 = arr[q1, p1, idxs...]
+            q12 = arr[q1, p2, idxs...]
+            q21 = arr[q2, p1, idxs...]
+            q22 = arr[q2, p2, idxs...]
+            blerp(q11, q12, q21, q22, t1, t2)
+        end
+    end
+end
+
+
 struct InterpolatedArray{I<:AbstractInterpolation,T,N,A<:AbstractArray{T,N}} <: AbstractArray{T,N}
     data::A
 end
@@ -45,16 +87,6 @@ end
 
 
 size(interp::InterpolatedArray) = size(interp.data)
-
-
-function interpolate end
-function blerp end
-function lerp end
-
-
-_floori(x) = unsafe_trunc(Int, floor(x))
-_ceili(x) = unsafe_trunc(Int, ceil(x))
-_roundi(x) = unsafe_trunc(Int, round(x))
 
 
 @propagate_inbounds function getindex(iarr::InterpolatedArray{NoInterpolation}, x, xs...)
@@ -77,9 +109,8 @@ end
 end
 
 
-@propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation,T,2}, y, x) where T
+@propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation,T,2}, q, p) where T
     mat = iarr.data
-    q, p = y, x
     q1 = _floori(q)
     p1 = _floori(p)
     q2 = _ceili(q)
@@ -90,68 +121,12 @@ end
         checkbounds(mat, q2, p1)
         checkbounds(mat, q2, p2)
     end
-    @inbounds blerp(mat, q1, q2, p1, p2, q, p)
+    @_blerp_impl mat q1 q2 p1 p2 q p
 end
 
 
-@propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation}, y, x, idxs::Int...)
+@propagate_inbounds function getindex(iarr::InterpolatedArray{BilinearInterpolation}, q, p, b::Int, idxs::Int...)
     arr = iarr.data
-    q, p = y, x
-    q1 = _floori(q)
-    p1 = _floori(p)
-    q2 = _ceili(q)
-    p2 = _ceili(p)
-    @boundscheck begin
-        checkbounds(arr, q1, p1, idxs...)
-        checkbounds(arr, q1, p2, idxs...)
-        checkbounds(arr, q2, p1, idxs...)
-        checkbounds(arr, q2, p2, idxs...)
-    end
-    @inbounds blerp(arr, q1, q2, p1, p2, q, p, idxs...)
-end
-
-
-@propagate_inbounds function (iarr::InterpolatedArray{NoInterpolation})(x, xs...)
-    a = iarr.data
-    inds = round(Int, real(x)), (round(Int, real(x′)) for x′ in xs)...
-    @boundscheck checkbounds(a, inds...)
-    @inbounds a[inds...]
-end
-
-
-@propagate_inbounds function (iarr::InterpolatedArray{LinearInterpolation})(x)
-    v = iarr.data
-    x′ = real(x)
-    x1 = _floori(x′)
-    x2 = _ceili(x′)
-    @boundscheck begin
-        checkbounds(v, x1)
-        checkbounds(v, x2)
-    end
-    @inbounds lerp(v, x1, x2, x)
-end
-
-
-@propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation,T,2})(y, x) where T
-    mat = iarr.data
-    q, p = real(y), real(x)
-    q1 = _floori(q)
-    p1 = _floori(p)
-    q2 = _ceili(q)
-    p2 = _ceili(p)
-    @boundscheck begin
-        checkbounds(mat, q1, p1)
-        checkbounds(mat, q1, p2)
-        checkbounds(mat, q2, p1)
-        checkbounds(mat, q2, p2)
-    end
-    @inbounds blerp(mat, q1, q2, p1, p2, q, p)
-end
-
-
-@propagate_inbounds function (iarr::InterpolatedArray{BilinearInterpolation})(y, x, b::Int, idxs::Int...)
-    arr = iarr.data
-    q, p = real(y), real(x)
     q1 = _floori(q)
     p1 = _floori(p)
     q2 = _ceili(q)
@@ -162,7 +137,7 @@ end
         checkbounds(arr, q2, p1, b, idxs...)
         checkbounds(arr, q2, p2, b, idxs...)
     end
-    @inbounds blerp(arr, q1, q2, p1, p2, q, p, b, idxs...)
+    @_blerp_impl arr q1 q2 p1 p2 q p b idxs...
 end
 
 
@@ -230,24 +205,7 @@ end
         checkbounds(mat, q2, p1)
         checkbounds(mat, q2, p2)
     end
-    @inbounds if p1 == p2
-        q1 == q2 && return mat[q1, p1]
-        q11 = mat[q1, p1]
-        q21 = mat[q2, p1]
-        lerp(q11, q21, (q - q1) / (q2 - q1))
-    elseif q1 == q2
-        q11 = mat[q1, p1]
-        q12 = mat[q1, p2]
-        lerp(q11, q12, (p - p1) / (p2 - p1))
-    else
-        t1 = (q - q1) / (q2 - q1)
-        t2 = (p - p1) / (p2 - p1)
-        q11 = mat[q1, p1]
-        q12 = mat[q1, p2]
-        q21 = mat[q2, p1]
-        q22 = mat[q2, p2]
-        blerp(q11, q12, q21, q22, t1, t2)
-    end
+    @_blerp_impl mat q1 q2 p1 p2 q p
 end
 
 
@@ -260,10 +218,7 @@ end
         checkbounds(arr, q2, p1, b, idxs...)
         checkbounds(arr, q2, p2, b, idxs...)
     end
-    @inbounds begin
-        mat = @view arr[:,:,b,idxs...]
-        blerp(mat, q1, q2, p1, p2, q, p)
-    end
+    @_blerp_impl arr q1 q2 p1 p2 q p b idxs...
 end
 
 
@@ -278,7 +233,7 @@ end
         checkbounds(arr, q2, p1)
         checkbounds(arr, q2, p2)
     end
-    @inbounds blerp(mat, q1, q2, p1, p2, q, p)
+    @_blerp_impl arr q1 q2 p1 p2 q p
 end
 
 
@@ -293,10 +248,7 @@ end
         checkbounds(arr, q2, p1, b, idxs...)
         checkbounds(arr, q2, p2, b, idxs...)
     end
-    @inbounds begin
-        mat = @view arr[:,:,b,idxs...]
-        blerp(mat, q1, q2, p1, p2, q, p)
-    end
+    @_blerp_impl arr q1 q2 p1 p2 q p b idxs...
 end
 
 end # module
