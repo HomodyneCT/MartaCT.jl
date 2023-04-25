@@ -328,7 +328,7 @@ function polar2cart(
                 elseif θ > nθ
                     θ = nθ
                 end
-                mc[iy,ix] = interp(θ, r)
+                mc[iy,ix] = interp[θ, r]
             end
         end
     end
