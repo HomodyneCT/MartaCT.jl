@@ -88,8 +88,8 @@ function para2fan(
         end
         x′ = x′ * δx′i + x′₀
         ϕ = mod2pi(ϕ) * δϕi + 1 # need +1 in order to be in 1:nϕ
-        return x′ ∈ 1..nd && ϕ ∈ 1..nϕ+1 ?
-            interp(x′, _wrap_angle(ϕ, nϕ)) : z
+        @inbounds return x′ ∈ 1..nd && ϕ ∈ 1..nϕ+1 ?
+            interp[x′, _wrap_angle(ϕ, nϕ)] : z
     end
 
     Threads.@threads for iγ ∈ 1:nd
